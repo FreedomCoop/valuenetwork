@@ -86,7 +86,11 @@ urlpatterns = [
     url(r"^create-your-project/$", work.views.create_your_project, name="create_your_project"),
     url(r"^change-your-project/(?P<agent_id>\d+)/$", work.views.change_your_project, name="change_your_project"),
     url(r'^project-feedback/(?P<agent_id>\d+)/(?P<join_request_id>\d+)/$', work.views.project_feedback,
+        name="project_feedback_old"),
+    url(r'^agent/(?P<agent_id>\d+)/feedback/(?P<join_request_id>\d+)/$', work.views.project_feedback,
         name="project_feedback"),
+    url(r'^(?P<agent_id>\d+)/feedback/(?P<join_request_id>\d+)/$', work.views.project_feedback,
+        name="project_feedback_bad"),
     url(r'^joinaproject/(?P<agent_id>\d+)/(?P<join_request_id>\d+)/$', work.views.project_feedback,
         name="joinaproject"),
     url(r'^agent/(?P<agent_id>\d+)/project_joinform/$', work.views.joinaproject_request_internal,
@@ -131,6 +135,9 @@ urlpatterns = [
     url(r'^share-payment/(?P<agent_id>\d+)/$', work.views.share_payment, name="share_payment"),
     url(r"^validate-nick/$", work.views.validate_nick, name="validate_nick"),
     url(r"^validate-username/$", work.views.validate_username, name="validate_username"),
+    #url(r"^validate-email/$", work.views.validate_email, name="validate_email"),
+    url(r"^validate-name/$", work.views.validate_name, name="validate_name"),
+
     url(r'^new-features/$', work.views.new_features, name='new_features'),
 
     url(r"^invoice-number/$", work.views.invoice_number, name="invoice_number"),

@@ -512,6 +512,12 @@
                             {% endif %}
                           {% endif %}</td>
                       </tr>
+                      {% if agent.project.joining_style == 'moderated' %}
+                          <tr>
+                            <th>{% trans "Auto create users+agents and confirm email:" %}</th>
+                            <td>{{ agent.project.auto_create_pass }}</td>
+                          </tr>
+                      {% endif %}
                       <tr>
                         <th>{% trans "Project Visibility:" %}</th>
                         <td>{{ agent.project.visibility }}</td>
@@ -762,22 +768,42 @@
 
 
         <div class="span6">
-          {% if user_agent in agent.managers or user_is_agent or user_agent in agent.members %}{% if agent.project and form_entries and fobi_name and user_agent in agent.managers %}
+          {% if user_agent in agent.managers or user_is_agent or user_agent in agent.members %}
+            {% if agent.project and form_entries and fobi_name and user_agent in agent.managers %}
             <div class="requests span6" style="width:100%;">
-              <h3>
+              <h3 style="margin-bottom: 10px;">
                 {% trans "Pending to create user+agent:" %} &nbsp;
                 <a class="btn btn-primary" href="{% url "join_requests" agent_id=agent.id %}">{% trans "Manage Join Requests" %}</a>
               </h3>
               <ul>
                 {% for req in form_entries %}
                   <li>
-                    {{ req.name }} <!--( <a href="mailto:{{ req.email_address }}">{{ req.email_address }}</a> )-->
+                    {{ req.name }} (<a href="{% url 'project_feedback' agent_id=agent.id join_request_id=req.id %}">{{ req.requested_username }}</a>): <b>{{ req.email_address }}</b> ({{ req.request_date }}) &nbsp;
+                      <form class="action-form"
+                        id="create-form{{ req.id }}"
+                        action="{% url "confirm_request" join_request_id=req.id %}"
+                        method="POST" >
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="project">
+                        <input type="submit" class="btn btn-mini btn-primary" name="submit" value='{% trans "confirm email" %}' />
+                      </form>
+                      &nbsp;
+                      <form class="action-form" style=""
+                            id="delete-form{{ req.id }}"
+                            action="{% url "delete_request" join_request_id=req.id %}"
+                            method="POST" >
+                          {% csrf_token %}
+                          <input type="hidden" name="next" value="project">
+                          <input type="submit" class="btn btn-mini btn-danger" name="submit" value='{% trans "x" %}' />
+                      </form>
+
                   </li>
                 {% endfor %}
               </ul>
               <p>&nbsp;</p>
             </div>
-          {% endif %}{% endif %}
+            {% endif %}
+          {% endif %}
 
 
           {% if agent.is_individual and agent.need_skills or user_is_agent and agent.need_skills %}
@@ -1296,14 +1322,14 @@
                       required: true,
                       maxlength: 32,
                       remote: {
-                          url:"/work/validate-nick/",
+                          url:"{% url 'validate_nick' %}",
                           //type: "post",
                           data: {
                               agent_id: function() {
-                                return $( "#agentForm" ).attr('name');
+                                  return $( "#agentForm" ).attr('name');
                               }
                           },
-                          async:false
+                          //async:false
                       }
                   },
                   url: {
@@ -1314,11 +1340,32 @@
                   },
                   name: {
                       required: true,
+                      remote: {
+                          url:"{% url 'validate_name' %}",
+                          type:"post",
+                          data: {
+                              agent_id: function(){
+                                  return $( "#agentForm" ).attr('name');
+                              },
+                              typeofuser: function(){
+                                  valu = $("#agentForm").find("select#id_agent_type").find(":selected").val();
+                                  if(valu == '1'){
+                                      return 'individual';
+                                  } else {
+                                      return 'collective';
+                                  }
+                              },
+                              csrfmiddlewaretoken: function(){
+                                  return $("#agentForm").find("[name=csrfmiddlewaretoken]").val();
+                              }
+                          },
+                      },
                   },
               },
               highlight: function(label) {
                   $(label).closest('.control-group').removeClass('success').addClass('error');
               },
+              onkeyup: false,
           });
 
           $( "#uploadForm" ).validate({

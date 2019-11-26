@@ -112,6 +112,9 @@ input {
 	padding: 10px 20px 10px;
   text-shadow: none;
 }
+.btn-mini {
+    padding: 5px 10px;
+}
 body .btn, body .btn:hover {
 	color: inherit;
 }

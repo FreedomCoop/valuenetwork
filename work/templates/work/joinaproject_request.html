@@ -25,7 +25,9 @@
         .captcha {
             vertical-align: top;
         }
-
+        .error {
+            color: #b94a48 !important;
+        }
 
     </style>
 
@@ -36,6 +38,9 @@
     {% endif %}
 
     <script src="{% static "pinax/js/jquery.js" %}"></script>
+
+    <script type="text/javascript" src="{% static 'js/jquery.validate.min.js' %}"></script>
+
     <script type="text/javascript">
 
       {% if project.custom_js %}
@@ -63,7 +68,7 @@
       })();
 
 
-      var $_POST = {% if post %} JSON.parse(decodeEntities("{{ post }}")) {% else %} false {% endif %};
+      //var $_POST = {% if post %} JSON.parse(decodeEntities("{{ post }}")) {% else %} false {% endif %};
 
       $(document).ready(function(){
         $('#div_id_captcha').detach().insertBefore('input[name="submit"]');
@@ -79,7 +84,7 @@
         });
         $('p[id^="error_id"]').addClass('error').attr('style', 'color:#b94a48 !important; margin:0 0 0.6em 0 !important;').css('font-size','1em');
 
-        if( $_POST ) {
+        /*if( $_POST ) {
           var str = '';
           for(i in $_POST){
             $('textarea#id_'+i).val( $_POST[i] );
@@ -87,7 +92,61 @@
             str += i+': '+$_POST[i]+' / ';
           }
           //alert(str);
-        }
+        }*/
+
+        $('div.control-group.error span').each(function(){
+            if($(this).text().indexOf(' login ') != -1){
+                $(this).append(' &nbsp; <a href="{% url 'project_login' form_slug=project.fobi_slug %}" class="btn btn-primary btn-mini">{% trans "Login" %}</a>');
+                //alert($(this).text());
+            }
+        });
+
+        $('#joinForm').validate(
+        {
+            //onkeyup: false,
+            rules: {
+                surname: {
+                    required: {
+                        depends: function(element){
+                            return $("#id_type_of_user").val() == "individual";
+                        },
+                    },
+                },
+                name: {
+                    required: true,
+                    minlength: 2, /*{
+                        param: 3,
+                        depends: function(element){
+                            return $("#id_type_of_user").val() == "collective";
+                        },
+                    },
+                    /*minlength: {
+                        param: 2,
+                        depends: function(element){
+                            return $("#id_type_of_user").val() == "individual";
+                        },
+                    },*/
+
+                },
+                requested_username: {
+                    required: true,
+                    maxlength: 32,
+                    minlength: 3,
+                },
+                email_address: {
+                    required: true,
+                    email: true,
+                }
+            },
+            messages: {
+                surname: '{% trans "Please provide a Surname if you are an individual" %}',
+            },
+            highlight: function(label) {
+                //$(label).closest('.control-group').addClass('error');
+            },
+            onkeyup: false,
+
+        });
       });
 
     </script>

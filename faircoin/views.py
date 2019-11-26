@@ -84,7 +84,7 @@ def manage_faircoin_account(request, resource_id):
     pending_amount = 0
     for req in resource.owner().project_join_requests.all():
       #candidate_membership = resource.owner().candidate_membership(req.project.agent)
-      if req.pending_shares(): #candidate_membership:
+      if req.pending_shares() and req.project.agent.need_faircoins(): #candidate_membership:
         obj = req.payment_option()
         faircoin_account = resource.owner().faircoin_resource()
         shacct = req.project.shares_account_type()

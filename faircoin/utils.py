@@ -5,7 +5,7 @@ from decimal import Decimal
 from django.conf import settings
 
 url = "http://localhost:8069"
-timeout = 60
+timeout = 300
 logger = logging.getLogger('ocp')
 
 FAIRCOIN_DIVISOR = Decimal("100000000.00")

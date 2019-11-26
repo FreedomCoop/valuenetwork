@@ -99,7 +99,9 @@ def convert_price(amount, shunit, unit):
                     print "No UnitRatio with out_unit '"+str(shunit.gen_unit)+"' and in_unit: "+str(unit.gen_unit)+". Aborting..."
                     logger.info("No UnitRatio with out_unit '"+str(shunit.gen_unit)+"' and in_unit: "+str(unit.gen_unit)+". Aborting...")
                     raise ValidationError("Can't find the UnitRatio to convert the price to "+str(unit.gen_unit)+" from "+str(shunit))
+
             amount = round(price, 4)
+            print "Convert_price: ratio:"+str(ratio)+" price:"+str(price)+" shunit:"+str(shunit)+" unit:"+str(unit)+" amount:"+str(amount)
         else:
             print "Skip convert price, same unit: "+str(unit)
         return amount

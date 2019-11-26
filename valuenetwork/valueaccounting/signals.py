@@ -12,12 +12,12 @@ def create_notice_types(sender, **kwargs):
         NoticeType.create("valnet_distribution", _("New Distribution"), _("you have received a new income distribution"), default=0)
         NoticeType.create("valnet_payout_request", _("Payout Request"), _("you have received a new payout request"), default=0)
         NoticeType.create("work_membership_request", _("Freedom Coop Membership Request"), _("we have received a new membership request"), default=0)
-        NoticeType.create("work_join_request", _("Project Join Request"), _("we have received a new join request"), default=0)
-        NoticeType.create("work_new_account", _("Project New OCP Account"), _("a new OCP account details")) #, default=0)
+        NoticeType.create("work_join_request", _("Project Join Request"), _("we have received a new join request"), default=1)
+        NoticeType.create("work_new_account", _("Project New OCP Account"), _("a new OCP account details"), default=1)
         NoticeType.create("comment_membership_request", _("Comment in Freedom Coop Membership Request"), _("we have received a new comment in a membership request"), default=0)
-        NoticeType.create("comment_join_request", _("Comment in Project Join Request"), _("we have received a new comment in a join request")) #, default=1)
+        NoticeType.create("comment_join_request", _("Comment in Project Join Request"), _("we have received a new comment in a join request"), default=1)
         NoticeType.create("work_skill_suggestion", _("Skill suggestion"), _("we have received a new skill suggestion"), default=0)
-        print "created valueaccounting notice types"
+        print("created valueaccounting notice types")
     else:
-        print "Skipping creation of valueaccounting NoticeTypes as notification app not found"
+        print("Skipping creation of valueaccounting NoticeTypes as notification app not found")
 

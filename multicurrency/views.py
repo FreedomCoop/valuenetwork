@@ -48,6 +48,11 @@ def auth(request, agent_id):
         form = MulticurrencyAuthForm(request.POST)
         if form.is_valid():
             name = form.cleaned_data['loginname']
+            acs = MulticurrencyAuth.objects.filter(auth_user__iexact=name)
+            if acs:
+                messages.error(request, _("This login name already exists."))
+                return redirect('multicurrency_auth', agent_id=agent_id)
+
             password = form.cleaned_data['wallet_password']
             oauth = None
             connection = ChipChapAuthConnection.get()

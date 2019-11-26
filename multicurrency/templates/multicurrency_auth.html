@@ -52,7 +52,7 @@
             <div class="modal hide fade" id="create-chipchap-user" tabindex="-1" role="dialog" aria-labelledby="agent-label" aria-hidden="true">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                    <h3 id="agent-label">{% trans "Create New BotC-Wallet Account" %}</h3>
+                    <h3 id="agent-label">{% trans "Create new BotC-Wallet Account" %}</h3>
                 </div>
                 <div class="modal-body">
                     <form id="createForm" class="createMe" action="{% url 'multicurrency_createauth' agent_id=agent.id %}" method="POST" onsubmit="return validateRepassword()">

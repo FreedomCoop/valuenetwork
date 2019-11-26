@@ -19,7 +19,7 @@
 
 form.action-form {
     display: inline-block;
-    margin: 0;
+    margin: 0 0 0 10px;
     float: right;
 }
 
@@ -190,12 +190,12 @@ a.more-link {
                     {% if req.check_user_pass %}&nbsp; <span class="error">{{ req.check_user_pass }}</span>
                       {% if user_agent == req.agent %}<em class="error">{% trans "Please change your password now" %}:</em>
                         &nbsp; <a class="btn btn-primary" href="{% url "work_account_password" %}"
-                           style="display:inline; position:relative; top:-1px;" >Change Password</a>
+                           style="display:inline; position:relative; top:-1px;" >{% trans "Change Password" %}</a>
                       {% else %}<em>{% trans "This user has not verified the email yet and still has the initial random password." %}</em>
                         {% if user_agent is req.project.agent or user_agent in req.project.agent.managers %} {% if not messages %}
                           &nbsp; <a id="resend" class="btn btn-primary btn-mini"
                              href="{% url "resend_candidate_credentials" joinrequest_id=req.id %}"
-                             style="display:inline; position:relative; top:-1px;" >Resend Password</a> {% endif %}
+                             style="display:inline; position:relative; top:-1px;" >{% trans "Resend Password" %}</a> {% endif %}
                         {% endif %}
                       {% endif %}
                     {% elif not req.agent and user_agent in req.project.agent.managers %}
@@ -203,9 +203,18 @@ a.more-link {
                                    id="create-form{{ req.id }}"
                                    action="{% url "confirm_request" join_request_id=req.id %}"
                                    method="POST" >
-                               {% csrf_token %}
-                               <input type="submit" class="btn btn-mini btn-primary" name="submit" value='{% trans "Confirm Email" %}' /> <span class="help-text">{% trans "sends random pass and creates user+agent" %}</span>
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="feedback" />
+                                <input type="submit" class="btn btn-mini btn-primary" name="submit" value='{% trans "Confirm Email" %}' /> <span class="help-text">{% trans "sends random pass and creates user+agent" %}</span>
                              </form>
+                      &nbsp; <form class="action-form" style="display:none;"
+                                   id="delete-form{{ req.id }}"
+                                   action="{% url "delete_request" join_request_id=req.id %}"
+                                   method="POST" >
+                                {% csrf_token %}
+                                <input type="submit" class="btn btn-mini btn-danger" name="submit" value='{% trans "Delete Request" %}' />
+                             </form>
+
                     {% endif %}
                 </td>
             </tr>
@@ -310,11 +319,11 @@ a.more-link {
                             <input type="hidden" name="last_name" id="last_name" value="{{ req.surname }}" />
                             <input type="hidden" name="lang" id="lang" value="en" />
                             <input type="hidden" name="token" id="token" value="{{ req.payment_token }}" />
-                            <input type="submit" value="{% if req.payment_html %}{{ req.payment_html }}{% else %}{% trans "Pay your Shares" %}{% endif %}" class="btn btn-primary" />
-                        </form> <!-- <a href="{% url 'payment_url' paymode=req.payment_option.key join_request_id=req.id %}" target="ocp_pay" class="btn btn-primary">{% if req.payment_html %}{{ req.payment_html }}{% else %}{% trans "Pay your Shares" %}{% endif %}</a> -->
+                            <input type="submit" value="{% if req.payment_html %}{{ req.payment_html|safe }}{% else %}{% trans "Pay your Shares" %}{% endif %}" class="btn btn-primary" />
+                        </form> <!-- <a href="{% url 'payment_url' paymode=req.payment_option.key join_request_id=req.id %}" target="ocp_pay" class="btn btn-primary">{% if req.payment_html %}{{ req.payment_html|safe }}{% else %}{% trans "Pay your Shares" %}{% endif %}</a> -->
                     {% elif req.payment_html %}
                         <div id="payment_html">{{ req.payment_html|safe }}
-                            {% if req.agent.need_faircoins and not req.agent.faircoin_resource %} &nbsp;
+                            {% if req.project.agent.need_faircoins and not req.agent.faircoin_resource %} &nbsp;
                               <form
                                 style="display: inline;"
                                 action="{% url "request_faircoin_address" agent_id=req.agent.id %}"
@@ -418,7 +427,7 @@ a.more-link {
                         <b>{{ req.multiwallet_user }}</b> &nbsp;
                         <a href="#connect-botc-user" role="button" class="btn btn-primary btn-mini" data-toggle="modal">{% trans "Connect BotC-Wallet account" %}</a> &nbsp;
                     {% endif %}
-                    {% if not req.multiwallet_user %}
+                    {% if not req.multiwallet_user and not req.check_user_pass %}
                         <a href="#create-botc-user" role="button" class="btn btn-primary btn-mini" data-toggle="modal">{% trans "Create new BotC-Wallet account" %}</a>
 
                         <div class="modal hide fade" id="create-botc-user" tabindex="-1" role="dialog" aria-labelledby="agent-label" aria-hidden="true">

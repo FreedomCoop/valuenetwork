@@ -52,31 +52,41 @@ class MulticurrencyAuth(models.Model):
         #payform = None
         balobj = self.balance_obj()
         punit = jn_req.payment_unit()
-        if punit.abbrev in balobj:
-            saldo = balobj[punit.abbrev]
-            unit = punit.abbrev
-
-        if saldo:
-            pend = jn_req.payment_pending_to_pay()
-            if saldo < pend:
-                out_text = str(_("The balance in your wallet needs some more "))+unit
-            else:
-                out_text = '<b>'+str(_("You can pay the shares now!"))+'</b>'
-                if user and user.is_superuser:
-                    out_text += ' '+str(saldo)+" "+punit.symbol+" >= "+str(pend)+" "+punit.symbol
-                    if jn_req.payment_payed_amount():
-                        out_text += " ("+str(_("paid:"))+str(jn_req.payment_payed_amount())+")"
-                #out_text += "&nbsp; <a href='"+str()+"' class='btn btn-primary'>"+str(_("Transfer"))+" "+str(pend)+" "+punit.symbol+" "+str(_("to"))+" "+jn_req.project.agent.nick+"</a>"
-                reqdata = {
-                    'jnreq_id': jn_req.id,
-                    'auth_id': self.id,
-                    'amount': pend,
-                    'unit': unit,
-                }
-                #print reqdata
-                #payform = PaySharesForm(data=reqdata, initial=reqdata) #initial={'jnreq': jn_req, 'auth': self, 'amount': pend, 'unit': unit})
-        elif balobj:
-            out_text = _("Not enough balance in your wallet for the chosen currency:")+' <b>'+str(punit)+'</b>'
+        if not punit:
+            out_text = _("Error: payment unit not found! ")
         else:
-            out_text = _("Error retrieving balance: ")+str(balance['status'])
+            if not balobj:
+                out_text = _("Error: balance object not found! ")
+            else:
+                if punit.abbrev in balobj:
+                    saldo = balobj[punit.abbrev]
+                    unit = punit.abbrev
+                else:
+                    out_text = _("Error: not found unit in balance object! ")
+
+            if saldo:
+                pend = jn_req.payment_pending_to_pay()
+                if saldo < pend:
+                    out_text = str(_("The balance in your wallet needs some more "))+unit
+                else:
+                    out_text = '<b>'+str(_("You can pay the shares now!"))+'</b>'
+                    if user and user.is_superuser:
+                        out_text += ' '+str(saldo)+" "+punit.symbol+" >= "+str(pend)+" "+punit.symbol
+                        if jn_req.payment_payed_amount():
+                            out_text += " ("+str(_("paid:"))+str(jn_req.payment_payed_amount())+")"
+                    #out_text += "&nbsp; <a href='"+str()+"' class='btn btn-primary'>"+str(_("Transfer"))+" "+str(pend)+" "+punit.symbol+" "+str(_("to"))+" "+jn_req.project.agent.nick+"</a>"
+                    reqdata = {
+                        'jnreq_id': jn_req.id,
+                        'auth_id': self.id,
+                        'amount': pend,
+                        'unit': unit,
+                    }
+                    #print reqdata
+                    #payform = PaySharesForm(data=reqdata, initial=reqdata) #initial={'jnreq': jn_req, 'auth': self, 'amount': pend, 'unit': unit})
+            elif balobj:
+                out_text = _("Not enough balance in your wallet for the chosen currency:")+' <b>'+str(punit)+'</b>'
+            else:
+                out_text = _("Error retrieving your balance... ")
+                if user and user.is_superuser:
+                    out_text += "(punit: "+str(punit) #balance['status'])
         return out_text, reqdata

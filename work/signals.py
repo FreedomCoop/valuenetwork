@@ -68,8 +68,8 @@ def comment_notification(sender, comment=None, **kwargs):
                     pass
 
                 joinrequest_url= "https://" + domain +\
-                    "/work/project-feedback/" + str(comment.content_object.project.agent.id) +\
-                    "/" + str(comment.content_object.id) + "/"
+                    "/work/agent/" + str(comment.content_object.project.agent.id) +\
+                    "/feedback/" + str(comment.content_object.id) + "/"
                 #logger.debug("Ready to send comment notification at jr_url: "+str(joinrequest_url))
                 notification.send(
                     users,

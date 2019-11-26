@@ -4,6 +4,7 @@
 from django.db import models, connection
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
+from django.contrib import messages
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 
@@ -132,6 +133,11 @@ class Project(models.Model):
     joining_style = models.CharField(_('joining style'),
         max_length=12, choices=JOINING_STYLE_CHOICES,
         default="autojoin")
+    auto_create_pass = models.BooleanField(_('auto create users'),
+        #null=True,
+        #verbose_name=_("auto create user+agents and confirm email"),
+        default=False
+    )
     visibility = models.CharField(_('visibility'),
         max_length=12, choices=VISIBILITY_CHOICES,
         default="FCmembers")
@@ -820,15 +826,15 @@ class JoinRequest(models.Model):
                     if not balance or not amount:
                       txt = "<span class='error'>"+txt+"</span>"
 
-                    amtopay = "<br>Amount to pay: <b> "+str(round(amount, 8))+" ƒ "
+                    amtopay = u"<br>Amount to pay: <b> "+str(round(amount, 8))+u" ƒ "
                     amispay = self.payment_payed_amount()
                     if amispay > 0:
                       if amopend:
-                        amtopay += "- "+str(amispay)+" ƒ payed = "+str(round(amopend, 8))+' ƒ pending'
+                        amtopay += "- "+str(amispay)+u" ƒ payed = "+str(round(amopend, 8))+u' ƒ pending'
                       else:
-                        amtopay += " (payed "+str(amispay)+" ƒ)"
+                        amtopay += " (payed "+str(amispay)+u" ƒ)"
                     amtopay += "</b>"
-                    return obj['html']+str(amtopay)+"<br>"+txt
+                    return obj['html']+amtopay+"<br>"+txt
 
                   else:
                     # don't need internal faircoin
@@ -1316,7 +1322,7 @@ class JoinRequest(models.Model):
         return ex
 
 
-    def update_payment_status(self, status=None, gateref=None, notes=None):
+    def update_payment_status(self, status=None, gateref=None, notes=None, request=None):
         account_type = self.payment_account_type()
         balance = 0
         amount = self.payment_amount()
@@ -1617,7 +1623,8 @@ class JoinRequest(models.Model):
                                             rs.save()
                                             print "Transfered new shares to the agent's shares account: "+str(self.pending_shares())+" "+str(rs)
                                             loger.info("Transfered new shares to the agent's shares account: "+str(self.pending_shares())+" "+str(rs))
-                                            #messages.info(request, "Transfered new shares to the agent's shares account: "+str(amount)+" "+str(rs))
+                                            if request:
+                                                messages.info(request, "Transfered new shares to the agent's shares account: "+str(self.pending_shares())+" "+str(rs))
                           else: # not pending_shares and not share events
                             date = agshac.created_date
                             print "No pending shares and no events related shares. REPAIR! total_shares:"+str(self.total_shares())+" date:"+str(date)
@@ -1814,14 +1821,17 @@ class JoinRequest(models.Model):
 
         at = None
         password = None
+        name = self.name
         if self.type_of_user == 'individual':
             at = get_object_or_404(AgentType, party_type='individual', is_context=False)
+            if self.surname:
+                name += u' '+self.surname
         elif self.type_of_user == 'collective':
             at = get_object_or_404(AgentType, party_type='team', is_context=True)
         else:
             raise ValidationError("The 'type_of_user' field is not understood for this request: "+str(self))
 
-        reqdata = {'name':self.name,
+        reqdata = {'name':name,
                    'email':self.email_address,
                    'nick':self.requested_username,
                    'password':randpass,
@@ -1896,18 +1906,87 @@ class JoinRequest(models.Model):
                         #users = User.objects.filter(is_staff=True)
                         if users:
                             site_name = project.agent.nick #get_site_name(request)
-                            notification.send_now(
-                                users,
-                                "work_new_account",
-                                {"name": name,
-                                "username": username,
-                                "password": password,
-                                "site_name": site_name,
-                                "context_agent": project.agent,
-                                "request_host": request.get_host(),
-                                "current_site": request.get_host(),
-                                }
-                            )
+                            try:
+                                notification.send_now(
+                                    users,
+                                    "work_new_account",
+                                    {"name": name,
+                                    "username": username,
+                                    "password": password,
+                                    "site_name": site_name,
+                                    "context_agent": project.agent,
+                                    "request_host": request.get_host(),
+                                    "current_site": request.get_host(),
+                                    }
+                                )
+                            except:
+                                if request:
+                                    messages.error(request, _("Email failed! The destination address seems not real (or there's another email error): ")+str(email))
+                                loger.error("Email failed! The destination address seems not real (or there's another email error): "+str(email))
+
+                                aa.delete()
+                                self.agent = None
+                                self.save()
+                                au.delete()
+                                comm.delete()
+                                coms = Comment.objects.filter(object_pk=self.id)
+                                if coms:
+                                    for com in coms:
+                                        pass #print "delete other comment? "+str(com)
+                                        #com.delete()
+                                if agent.user():
+                                    if agent.user().user:
+                                        print "x Deleted user: "+str(agent.user().user)
+                                        if request and request.user.is_staff:
+                                            messages.info(request, "x Deleted user: "+str(agent.user().user))
+                                        agent.user().user.delete()
+                                    else:
+                                        print "there's no user? "+str(agent.user())
+                                else:
+                                    usrs = User.objects.filter(email=email)
+                                    if usrs:
+                                        if len(usrs) > 1:
+                                            print("WARN! There are multiple User's with the email: "+str(email)+" usrs:"+str(usrs))
+                                            if request and request.user.is_staff:
+                                                messages.info(request, "WARN! There are multiple User's with the email: "+str(email))
+                                            for us in usrs:
+                                                if us.username == self.requested_username:
+                                                    #import pdb; pdb.set_trace()
+                                                    if not hasattr(us, 'agent') or not us.agent:
+                                                        print("DELETED user "+str(us))
+                                                        if request and request.user.is_staff:
+                                                            messages.info(request, "x Deleted one of the users: "+str(us))
+                                                        us.delete()
+                                                    else:
+                                                        print("WARNING! the user has an agent? "+str(us.agent))
+                                                else:
+                                                    print("SKIP, User with same wrong email but different username: "+str(us))
+                                                    if request:
+                                                        messages.info(request, "SKIP! User with same wrong email but different username: "+str(us))
+                                        else:
+                                            usr = usrs[0]
+                                            print("Delete this user? "+str(usr))
+                                            if not hasattr(usr, 'agent') or not usr.agent:
+                                                print("DELETED User "+str(usr))
+                                                if request and request.user.is_staff:
+                                                    messages.info(request, "x Deleted User: "+str(usr))
+                                                usr.delete()
+                                    else:
+                                        print("There's no User with such email? ")
+
+                                if agent.is_deletable():
+                                    print "x Deleted agent: "+str(agent)
+                                    if request and request.user.is_staff:
+                                        messages.info(request, "x Deleted Agent: "+str(agent))
+                                    agent.delete()
+                                else:
+                                    if request:
+                                        messages.warning(request, _("The agent can't be deleted! ")+str(agent))
+
+                                    raise ValidationError("agent cant be deleted: "+str(agent))
+
+                                return None
+
                         else:
                             raise ValidationError("There are no users to send the work_new_account details? "+str(username))
                     else:
@@ -1954,7 +2033,7 @@ class JoinRequest(models.Model):
             elif reqs:
                 return False
             else:
-                raise ValidationError("This join_request is wrong! id:"+str(self.id)+" req:"+str(self)+" pro:"+str(self.project)+" name:"+str(self.requested_username))
+                raise ValidationError("This join_request is wrong! req:"+str(self.id)+" requested_username:"+str(self.requested_username)+" name:"+str(self.name)+" email:"+str(self.email_address)+" date:"+str(self.request_date)+" pro:"+str(self.project))
 
 
 class NewFeature(models.Model):
@@ -3107,16 +3186,24 @@ def create_unit_types(**kwargs):
 
 
     genrec = Artwork_Type.objects.get(clas="Record")
-    ocprecs = Ocp_Record_Type.objects.filter(clas='ocp_record')
+    ocprecs = Artwork_Type.objects.filter(clas='ocp_record')
+    if not ocprecs:
+        ocprecs = Artwork_Type.objects.filter(name='OCP Record')
+        print "- found OCP Record as an Artwork_Type by name"
+
     if ocprecs:
         ocprec = ocprecs[0]
     else:
-        ocprec, c = Ocp_Record_Type.objects.get_or_create(
+        ocprec, c = Artwork_Type.objects.get_or_create(
             name="OCP Record",
             clas="ocp_record",
             parent=genrec)
         if c:
-            print "- created Ocp_Record_Type: "+str(ocprec)
+            print "- created Artwork_Type: "+str(ocprec)
+    ocprec.clas = 'ocp_record'
+    ocprec.name = "OCP Record"
+    ocprec.parent = genrec
+    ocprec.save()
 
 
     ocpexts = Ocp_Record_Type.objects.filter(clas='ocp_exchange')
@@ -3229,7 +3316,7 @@ def create_unit_types(**kwargs):
     gen_fairout.exchange_type = extfairet
     gen_fairout.save()
 
-    gen_receives = Ocp_Record_Type.objects.filter(name__icontains="Receive gift")
+    gen_receives = Ocp_Record_Type.objects.filter(name__contains="Receive gift")
     if gen_receives:
         if len(gen_receives) > 1:
             print "WARNING: There is more than one gen_receives: "+str(gen_receives)
@@ -3460,19 +3547,69 @@ def create_unit_types(**kwargs):
         cash.general_unit_type = gen_euro_typ
         cash.save()
 
+
+
+    print "- "+str(digi_rt)+" FV's: "+str([fv.facet_value.value+', ' for fv in digi_rt.facets.all()])
+    print "- "+str(cash_rt)+" FV's: "+str([fv.facet_value.value+', ' for fv in cash_rt.facets.all()])
+
+    # euro digi FV
+    for fv in digi_rt.facets.all():
+        if not fv.facet_value == fiatfv and not fv.facet_value == fvmoney:
+            print "- deleted: "+str(fv)
+            fv.delete()
+    digi_rtfv, created = ResourceTypeFacetValue.objects.get_or_create(
+        resource_type=digi_rt,
+        facet_value=fiatfv)
+    if created:
+        print "- created ResourceTypeFacetValue: "+str(digi_rtfv)
+
+    digi_rtfv, created = ResourceTypeFacetValue.objects.get_or_create(
+        resource_type=digi_rt,
+        facet_value=fvmoney)
+    if created:
+        print "- created ResourceTypeFacetValue: "+str(digi_rtfv)
+
+    # euro cash FV
+    for fv in cash_rt.facets.all():
+        if not fv.facet_value == fiatfv and not fv.facet_value == fvmoney:
+            print "- deleted: "+str(fv)
+            fv.delete()
+    cash_rtfv, created = ResourceTypeFacetValue.objects.get_or_create(
+        resource_type=cash_rt,
+        facet_value=fiatfv)
+    if created:
+        print "- created ResourceTypeFacetValue: "+str(cash_rtfv)
+
+    cash_rtfv, created = ResourceTypeFacetValue.objects.get_or_create(
+        resource_type=cash_rt,
+        facet_value=fvmoney)
+    if created:
+        print "- created ResourceTypeFacetValue: "+str(cash_rtfv)
+
+
+
     # Check UnitRatio eur-fair
-    urs = UnitRatio.objects.filter(in_unit=fair, out_unit=euro)
+    urs = UnitRatio.objects.filter(in_unit=euro, out_unit=fair)
     if not urs:
-        urs = UnitRatio.objects.filter(in_unit=euro, out_unit=fair)
+        urs = UnitRatio.objects.filter(in_unit=fair, out_unit=euro)
     if not urs:
         ur, c = UnitRatio.objects.get_or_create(
-            in_unit=fair,
-            out_unit=euro,
+            in_unit=euro,
+            out_unit=fair,
             rate=Decimal('1.2')
         )
         if c:
             print "- created UnitRatio: "+str(ur)
             #loger.info("- created UnitRatio: "+str(ur))
+    elif len(urs) == 1:
+        ur = urs[0]
+    else:
+        print("x More than one UnitRatio with euro and fair? "+str(urs))
+        loger.warning("x More than one UnitRatio with euro and fair? "+str(urs))
+    ur.in_unit = euro
+    ur.out_unit = fair
+    ur.rate = Decimal('1.2')
+    ur.save()
 
 
 
@@ -3652,11 +3789,11 @@ def create_unit_types(**kwargs):
     fdc_share.ocp_unit = ocp_share
     fdc_share.save()
 
-    ocp_share_rts = EconomicResourceType.objects.filter(name='Share')
+    ocp_share_rts = EconomicResourceType.objects.filter(name='FreedomCoop Share')
     if not ocp_share_rts:
         ocp_share_rts = EconomicResourceType.objects.filter(name='Membership Share')
     if not ocp_share_rts:
-        ocp_share_rts = EconomicResourceType.objects.filter(name='FreedomCoop Share')
+        ocp_share_rts = EconomicResourceType.objects.filter(name='Share')
     if ocp_share_rts:
         if len(ocp_share_rts) > 1:
             raise ValidationError("There's more than one 'FreedomCoop Share' ?? "+str(ocp_share_rts))
@@ -3670,6 +3807,7 @@ def create_unit_types(**kwargs):
     share_rt.unit = ocp_share
     share_rt.inventory_rule = 'yes'
     share_rt.behavior = 'other'
+    share_rt.context_agent = fdc_ag
     if not share_rt.price_per_unit:
         print "- Added first FdC share price to 30 eur"
         share_rt.price_per_unit = 30
@@ -3937,7 +4075,7 @@ def check_new_rt_price(rt=None, **kwargs):
 
 
     if not sht == rt:
-        print ":: rt is not the share_type of the project? "
+        print ":: rt is not the share_type of the project? rt:"+str(rt)+" <> "+str(sht)+" pro:"+str(pro)+" rt.ca:"+str(rt.context_agent)
         return
     #exs = rt.context_agent.exchanges.all()
     for ex in exs:

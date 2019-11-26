@@ -13,6 +13,9 @@
             </a>
             <ul class="dropdown-menu">
                 {% if user.is_staff or user.is_superuser %}
+                    {% if user.is_superuser %}
+                        <li><a href="/admin/"><i class="icon-wrench"></i> {% trans 'DB Admin' %}</a></li>
+                    {% endif %}
                     <li><a href="{% url "start" %}"><i class="icon-wrench"></i> {% trans 'Coop Admin App' %}</a></li>
                     <li class="divider"></li>
                 {% endif %}

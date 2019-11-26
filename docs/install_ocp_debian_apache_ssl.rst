@@ -1,21 +1,24 @@
 This is a howto for installing ocp in a debian/ubuntu system.
 
+The ocp still runs on Python2 but the electrumfair wallet runs on Python3. We better create a 'ocp' linux user with py2 for the app and a 'wallet' linux user with py3 for the wallet.
+
 - Install dependencies in the system: ::
 
     sudo apt-get install virtualenv git libjpeg-dev zlib1g-dev build-essential
-    sudo apt-get install python-setuptools python2.7-dev python-imaging python-qt4
+    sudo apt-get install python-setuptools python2.7-dev python-pil python-qt4
 
-- Install electrum-fair and daemon dependencies in the system: ::
+- Install electrumfair and daemon dependencies in the system (python3): ::
 
-    sudo pip install https://electrum.fair-coin.org/download/Electrum-fair-2.3.3.tar.gz
+    sudo apt-get install python3-setuptools python3-pyqt5 python3-pip
+    sudo pip3 install https://download.faircoin.world/electrum/ElectrumFair-3.0.5.tar.gz
     sudo pip install jsonrpclib
 
-- Create an electrum-fair wallet: ::
+- Create an electrumfair wallet (as 'wallet' user or root): ::
 
-    electrum-fair create
+    electrumfair create
 
 This gives you seed to keep in safe place, and ask for password to encript the wallet.
-All the electrum-fair data will be created in /home/user/.electrum-fair/ directory.
+All the electrumfair data will be created in /home/user/.electrumfair/ directory.
 Be carefull if you already have an electrum-fair wallet installed with the same user.
 
 - Download from github and copy daemon sample files: ::

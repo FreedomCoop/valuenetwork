@@ -2,7 +2,7 @@ We have ocp running with django 1.8.13 and sqlite3. We want to migrate to postge
 
 - install system dependencies: ::
 
-    sudo apt-get install python-psycopg2 libpq-dev
+    sudo apt-get install postgresql python-psycopg2 libpq-dev python-dev
 
 - install psycopg2 in your virtualenv: ::
 
@@ -10,7 +10,24 @@ We have ocp running with django 1.8.13 and sqlite3. We want to migrate to postge
     source ../env/bin/activate
     pip install psycopg2
 
-- Dump db: ::
+    ./manage.py check
+
+- create db role: ::
+
+    sudo su postgres
+    psql -l
+    psql template1
+
+    CREATE USER ocp WITH PASSWORD 'putthedbpasswordhere';
+    CREATE DATABASE ocpdb;
+    GRANT ALL PRIVILEGES ON DATABASE ocpdb to ocp;
+    ALTER DATABASE ocpdb OWNER TO ocp;
+    ALTER ROLE ocp WITH CREATEDB;
+
+    Ctrl+d (to exit 'template1')
+    Ctrl+d (to exit postgres user)
+
+- Dump old db: ::
 
     ./manage.py dumpdata --exclude contenttypes.contenttype --exclude sessions.session --exclude auth.permission --exclude account --exclude corsheaders.corsmodel --indent=4 > valnet.json
 
@@ -23,20 +40,24 @@ We have ocp running with django 1.8.13 and sqlite3. We want to migrate to postge
         #    "NAME": "valuenetwork.sqlite",
         # ADD THIS INSTEAD:
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'db_name',                      
+            'NAME': 'db_name',
             'USER': 'db_user',
             'PASSWORD': 'db_user_password',
             'HOST': '',
             'PORT': 'db_port_number',
-        }    
+        }
     }
+
+- If you've a backup dump: ::
+
+    psql ocpdb < dumpfilename.sql
 
 - Create postgreSQL db: ::
 
     ./manage.py makemigrations
     ./manage.py makemigrations account
     ./manage.py migrate
- 
+
 - truncate some tables (delete all the data, but not the tables). From the db user do: ::
 
     psql

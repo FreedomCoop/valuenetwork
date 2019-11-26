@@ -973,7 +973,7 @@ class Unit(Artwork):	# Create own ID's
     	verbose_name_plural= _(u'o- Units')
 
     def __str__(self):
-        if self.ocp_unit:
+        if hasattr(self, 'ocp_unit') and self.ocp_unit:
             return self.name+' <'
         else:
             return self.unit_type.name+': '+self.name

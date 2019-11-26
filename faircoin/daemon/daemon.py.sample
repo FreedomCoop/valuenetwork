@@ -27,7 +27,9 @@ password = config.get('electrum', 'password')
 
 stopping = False
 
-logging.basicConfig(level=logging.DEBUG,format='%(asctime)s %(levelname)s %(message)s')
+logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
+
+lock = False
 
 def do_stop(password):
     global stopping
@@ -102,44 +104,59 @@ def get_address_history(address):
 
 # make a transfer from an adress of the wallet
 def make_transaction_from_address(address_origin, address_end, amount, minus_fee=False):
-    logging.debug("Trying broadcast transaction. Minus fee: %s\n       Origin : %s\n       End    : %s\n       Amount : %s" %(minus_fee, address_origin, address_end, amount))
+    global lock
+    if lock: return
+    lock = True 
+    logging.info("Trying broadcast transaction. Minus fee: %s\n       Origin : %s\n       End    : %s\n       Amount : %s" %(minus_fee, address_origin, address_end, amount))
     # Validate inputs
     if not is_valid(address_end):
         logging.error("The address %s is not a valid faircoin address" %address_end)
+        lock = False
         return False
     if not is_mine(address_origin):
         logging.error("The address %s does not belong to this wallet" %address_origin)
+        lock = False
         return False
     if amount > 0:
         if minus_fee:
             fee = estimate_fee(address_origin, address_end, amount)
-            logging.debug("Estimated fee: %s" %fee)
+            logging.info("Estimated fee: %s" %fee)
             if not fee:
-                 logging.error("Insufficient funds")
-                 return "ERROR: Insufficient funds"
+                 logging.warning("Insufficient funds. Retrying with 0.1 Fairs less")
+                 fee = estimate_fee(address_origin, address_end, amount - 10000000 )
+                 if not fee:
+                     logging.error("insuficient funds!")
+                     lock = False
+                     return False 
             tx = build_tx(address_origin, address_end, amount - fee)
         else:
             tx = build_tx(address_origin, address_end, amount)
     else:
         logging.error("Amount negative: %d" %(amount) )
         return False
-
     if not tx:
         msg = ("ERROR: Can not build the tx")
         logging.error(msg)
+        lock = False
         if not minus_fee:
-            logging.warning("Trying to resend the tx substracting the fee.")
-            msg = make_transaction_from_address(address_origin, address_end, amount, True)
-        return msg
+            logging.warning("Trying build tx minus fee")
+            tx_out, tx_state = make_transaction_from_address(address_origin, address_end, amount, True)
+        else:
+            logging.warning("Insufficient funds. Retrying with 0.01 Fairs less")
+            tx_out, tx_state = make_transaction_from_address(address_origin, address_end, amount - 1000000, True)
+        lock = False
+        return tx_out, tx_state
     # Broadcast tx
     rec_tx_state, rec_tx_out = network.broadcast(tx, 30)
     if rec_tx_state:
         logging.info("SUCCESS. The transaction %s has been broadcasted." %rec_tx_out)
+        lock = False
         return rec_tx_out, rec_tx_state
     else:
         msg = ("ERROR: can not send %s fair to address %s\n%s" %(amount, address_end, rec_tx_out))
         logging.error(msg)
-        return msg
+        lock = False
+        return False
 
 def build_tx(origin, destination, amount):
     inputs = [origin]
@@ -153,14 +170,13 @@ def build_tx(origin, destination, amount):
         return False
     except Exception as e:
         logging.error("Can not build the tx: %s" %e)
-        return e
+        return False
     wallet.sign_transaction(tx, password)
     return tx
 
 def estimate_fee(origin, destination, amount):
-    logging.debug("estimate_fee")
-    logging.debug("origin: %s" %origin)
-    qty = amount - 1000000 # Reduce the amount because fails to build if is the max amount. Limit the minimum capable to send due to negative amount and max due to the size limit on fee
+    logging.debug("estimate_fee origin: %s" %origin)
+    qty = amount - 5000000 # Reduce the amount because fails to build if is the max amount. Limit the minimum capable to send due to negative amount and max due to the size limit on fee
     tx = build_tx(origin, destination, qty)
     if tx:
         return config.estimate_fee(tx.estimated_size())
@@ -238,9 +254,9 @@ if __name__ == '__main__':
 
     # wait until connected
     while network.is_connecting():
-        time.sleep(0.1)
+        time.sleep(0.5)
     if not network.is_connected():
-        print("Can not connect with a electrum server")
+        logging.error("Can not connect with an electrumfair server")
         sys.exit(1)
 
     storage = electrumfair.WalletStorage(wallet_path)
@@ -250,7 +266,8 @@ if __name__ == '__main__':
     wallet = electrumfair.Wallet(storage)
     wallet.start_threads(network)
     cmd_wallet = electrumfair.commands.Commands(config, wallet, network)
-
+    # wait for wallet initialization before start accepting requests
+    time.sleep(100)
     # server thread
     from jsonrpclib.SimpleJSONRPCServer import SimpleJSONRPCServer
     server = SimpleJSONRPCServer(( my_host, my_port))
@@ -272,6 +289,7 @@ if __name__ == '__main__':
     server.register_function(get_unused_addresses,'get_unused_addresses')
     server.register_function(get_address_index,'get_address_index')
     server.socket.settimeout(1)
+    logging.info("JSON-RPC server initialized and listening")
 
     while not stopping:
         try:

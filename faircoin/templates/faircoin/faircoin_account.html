@@ -253,33 +253,36 @@
                             {% trans "This means"  %}: <b>{{ share_price }} ƒ</b>
                         <!-- {% trans "As soon as you have this amount here in your Faircoin account at OCP, you'll see below the <b>button to pay your shares</b>, click on it and you'll become a full member of" %} {{ project.agent.name }}. -->
 
-                        {% if can_pay %}
-                          {% if project.agent.faircoin_resource.faircoin_address.is_mine %}
-                            <form
-                                class="pay_for_shares"
-                                id="sharePaymentForm"
-                                action="{% url "share_payment" agent_id=agent.id %}"
-                                method="POST" >
-                                {% csrf_token %}
-                                <input type="hidden" name="join_request" value="{{ jn_req.id }}">
-                                <button style="display: inline;"  class="btn btn-primary" title="Pay for shares" >
-                                    {% trans "Pay your shares with" %} {{ share_price }} ƒ
-                                </button>
-                            </form>
-                          {% else %}
-                            <br/><b class="error">{% trans "The project's faircoin address is not of this wallet?" %}</b>
-                          {% endif %}
+                        {% if jn_req.check_user_pass %}
+                            <br/><b class="error">{% trans "You need to change your initial random password!" %}</b>
+                            &nbsp; <a class="btn btn-primary" href="{% url "work_account_password" %}"
+                            style="display:inline; position:relative; top:-1px;" >{% trans "Change Password" %}</a>
                         {% else %}
-                            <br/>
-                            <p><em><b>
-                            {% blocktrans %}
-                                Your FairCoin account balance of {{ confirmed_balance }} ƒ
-                                is too low to pay {{ share_price }} ƒ now.<br>
-                                If you transfer <span class="error">{{ pending_amount }} ƒ</span> into your account, you'll see here the button to pay your shares.
-                            {% endblocktrans %}
-                            </em></b></p>
-                            {% if not project.agent.faircoin_resource.faircoin_address.is_mine %}
-                                <p><b class="error">{% trans "The project's faircoin address is not of this wallet?" %}</b></p>
+                            {% if project.agent.faircoin_resource.faircoin_address.is_mine %}
+                                {% if can_pay %}
+                                    <form
+                                        class="pay_for_shares"
+                                        id="sharePaymentForm"
+                                        action="{% url "share_payment" agent_id=agent.id %}"
+                                        method="POST" >
+                                        {% csrf_token %}
+                                        <input type="hidden" name="join_request" value="{{ jn_req.id }}">
+                                        <button style="display: inline;"  class="btn btn-primary" title="Pay for shares" >
+                                            {% trans "Pay your shares with" %} {{ share_price }} ƒ
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <br/>
+                                    <p><em><b>
+                                    {% blocktrans %}
+                                        Your FairCoin account balance of {{ confirmed_balance }} ƒ
+                                        is too low to pay {{ share_price }} ƒ now.<br>
+                                        If you transfer <span class="error">{{ pending_amount }} ƒ</span> into your account, you'll see here the button to pay your shares.
+                                    {% endblocktrans %}
+                                    </em></b></p>
+                                {% endif %}
+                            {% else %}
+                                <br/><b class="error">{% trans "The project's faircoin address is not of this wallet?" %}</b>
                             {% endif %}
                         {% endif %}
                     </div>

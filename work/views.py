@@ -719,6 +719,7 @@ def membership_discussion(request, membership_request_id):
                     print "- created JoinRequest for FdC migration: "+str(jn_req)
                     loger.info("- created JoinRequest for FdC migration: "+str(jn_req))
                 jn_req.created_date = mbr_req.request_date
+                jn_req.request_date = mbr_req.request_date
                 jn_req.state = mbr_req.state
 
 
@@ -1512,7 +1513,8 @@ def run_fdc_scripts(request, agent):
         raise ValidationError("This is only intended for Freedom Coop agent migration")
     fdc = agent
     if not hasattr(fdc, 'project'): return
-    print "............ start run_fdc_scripts ............."
+    #print "............ start run_fdc_scripts ............."
+    loger.info("............ start run_fdc_scripts ("+str(agent)+") .............")
     acctyp = fdc.project.shares_account_type()
     shrtyp = fdc.project.shares_type()
     oldshr = EconomicResourceType.objects.membership_share()
@@ -1699,8 +1701,8 @@ def run_fdc_scripts(request, agent):
                             )
                             if created:
                                 #print "- Created new association as FdC candidate (no shares found): "+str(agas)
-                                loger.info("- Created new association as FdC candidate (no shares found): "+str(agas))
-                                messages.info(request, "- Created new association as FdC candidate (no shares found): "+str(agas))
+                                loger.info("- Created new association as FdC candidate (no shares found): "+str(agas.is_associate.nick))
+                                messages.info(request, "- Created new association as FdC candidate (no shares found): "+str(agas.is_associate.nick))
                             req.state = 'new'
                             req.save()
                         elif req.state == 'declined':
@@ -1789,7 +1791,8 @@ def run_fdc_scripts(request, agent):
     if pend and request.user.agent.agent in fdc.managers():
         messages.error(request, "Membership Requests pending to MIGRATE to the new generic JoinRequest system: <b>"+str(pend)+"</b>", extra_tags='safe')
 
-    print "............ end run_fdc_scripts ............."
+    #print "............ end run_fdc_scripts ............."
+    loger.info("............ end run_fdc_scripts ("+str(agent)+") .............")
 
 
 
@@ -1911,7 +1914,8 @@ def members_agent(request, agent_id):
     if not user_agent or not user_agent.is_participant: # or not agent in user_agent.related_all_agents(): # or not user_agent.is_active_freedom_coop_member:
         return render(request, 'work/no_permission.html')
 
-    print "--------- start members_agent ----------"
+    print "--------- start members_agent ("+str(agent)+") ----------"
+    loger.info("--------- start members_agent ("+str(agent)+") ----------")
     if agent.nick == "Freedom Coop": run_fdc_scripts(request, agent)
 
     user_is_agent = False
@@ -1969,14 +1973,16 @@ def members_agent(request, agent_id):
             #agn_form = WorkAgentCreateForm(instance=agent, data=request.POST)
             if agn_form.is_valid() and pro_form.is_valid():
                 project = pro_form.save(commit=False)
+                prodata = pro_form.cleaned_data
                 agent = agn_form.save(commit=False)
                 project.agent = agent
+                if not prodata["auto_create_pass"]:
+                    project.auto_create_pass = False
                 project.save()
                 data = agn_form.cleaned_data
                 nick = data['nick']
                 name = data['name']
                 agent.is_context = True
-                prodata = pro_form.cleaned_data
                 #print "- pro data: "+str(prodata)
                 #print "- form nick "+str(nick)
                 #print "- form name "+str(name)
@@ -2000,6 +2006,7 @@ def members_agent(request, agent_id):
                         rs.save()
                     else:
                         print "- ERROR, resource with strange name? "+str(rs)
+                        loger.warning("- ERROR, resource with strange name? "+str(rs))
 
             rss = EconomicResource.objects.filter(identifier__icontains=' '+oldnick)
             if rss:
@@ -2012,6 +2019,7 @@ def members_agent(request, agent_id):
                         rs.save()
                     else:
                         print "- ERROR, resource with strange name? "+str(rs)
+                        loger.warning("- ERROR, resource with strange name? "+str(rs))
         agent.name = name
         agent.nick = nick
         agent.save()
@@ -2091,7 +2099,7 @@ def members_agent(request, agent_id):
     elif agent.is_context_agent():
         try:
           fobi_name = get_object_or_404(FormEntry, slug=agent.project.fobi_slug)
-          entries = agent.project.join_requests.filter(agent__isnull=True, state='new')
+          entries = agent.project.join_requests.filter(agent__isnull=True, state='new').order_by('request_date')
         except:
           entries = []
 
@@ -2171,17 +2179,19 @@ def members_agent(request, agent_id):
     if hasattr(agent, 'project') and agent.project.is_moderated():
         if not agent.email and user_agent in agent.managers():
             messages.error(request, _("Please provide an email for the project to use as a remitent for the moderated joining process notifications!"))
+        proshacct = agent.project.shares_account_type()
         for ass in has_associations:
             ag = ass.is_associate
             ag.jn_reqs = ag.project_join_requests.filter(project=agent.project)
             ag.oldshares = ag.owned_shares(agent)
             ag.newshares = 0
-            acc = ag.owned_shares_accounts(agent.project.shares_account_type())
+            acc = ag.owned_shares_accounts(proshacct)
             if acc:
                 ag.newshares = int(acc[0].price_per_unit)
 
 
-    print "--------- end members_agent ----------"
+    print "--------- end members_agent ("+str(agent)+") ----------"
+    loger.info("--------- end members_agent ("+str(agent)+") ----------")
 
     return render(request, "work/members_agent.html", {
         "agent": agent,
@@ -2404,6 +2414,7 @@ def change_your_project(request, agent_id):
 
 @login_required
 def create_user_accounts(request, agent, project=None):
+    loger.info("------ create_user_accounts (start) ------")
     auto_resource = ''
     user_agent = get_agent(request)
     user_is_agent = False
@@ -2504,10 +2515,12 @@ def create_user_accounts(request, agent, project=None):
         else:
           pass # no project
 
+    loger.info("------ create_user_accounts (end) ------")
     return auto_resource
 
 
 def check_duplicate_agents(request, agent):
+    loger.info("------ start check_duplicate_agents ("+str(agent)+") ------")
     repair_duplicate_agents(request, agent)
     ags = agent.all_has_associates()
     user_agent = request.user.agent.agent
@@ -2584,6 +2597,7 @@ def check_duplicate_agents(request, agent):
                                 print "Error: The found duplicated AgentAssociation is active, not deleted! "+str(aa)
                                 loger.warning("Error: The found duplicated AgentAssociation is active, not deleted! "+str(aa))
 
+        loger.info("------ end check_duplicate_agents ("+str(agent)+") ------")
         if copis: #len(copis) > 1:
             return copis
     return None
@@ -2619,9 +2633,12 @@ def repair_duplicate_agents(request, agent):
                     if len(res): #len(txt) > 0 and not txt == '>': # and not str(met) in tps:
                         its = []
                         for rs in res:
-                            its.append(str(rs.id))
+                            txt = u''+str(rs.id)
+                            if att == "is_associate_of":
+                                txt += u" to "+rs.has_associate.nick+" ("+str(rs.state)+")"
+                            its.append(txt)
                         its = ', '.join(its)
-                        tps.append('- <em>'+att+'</em>: '+str(len(res))+' - ids('+str([str(rs.id) for rs in res])+')') #+str(txt)+' Res:')
+                        tps.append('- <em>'+att+'</em>: '+str(len(res))+' - ids['+its+']') #+str(txt)+' Res:')
                         obs += len(res)
                 except:
                     #if not att[0] == '_' and len(txt) > 1:
@@ -2949,12 +2966,23 @@ def joinaproject_request(request, form_slug = False):
 
 
                     event_type = EventType.objects.get(relationship="todo")
-                    join_url = get_url_starter(request) + "/work/project-feedback/" + str(jn_req.project.agent.id) +"/"+str(jn_req.id)
+                    join_url = get_url_starter(request) + "/work/agent/" + str(jn_req.project.agent.id) +"/feedback/"+str(jn_req.id)
                     context_agent = jn_req.project.agent
 
-                    if jn_req.payment_url() or jn_req.multiwallet_user(): # its a credit card payment (or botc multiwallet), create the user and the agent
+                    if jn_req.payment_url() or jn_req.multiwallet_user() or jn_req.project.auto_create_pass: # its a credit card payment (or botc multiwallet), create the user and the agent
 
                         password = jn_req.create_useragent_randompass(request or None)
+                        if not password:
+
+                            join_form.add_error('email_address', "Seems like the address don't exist?")
+                            return render(request, "work/joinaproject_request.html", {
+                                "help": get_help("work_join_request"),
+                                "join_form": join_form,
+                                "fobi_form": fobi_form,
+                                "project": project,
+                                #"post": escapejs(json.dumps(request.POST)),
+                            })
+
                         description = "Check the automatically created Agent and User for the Join Request of "
                         description += name+' '
                         description += "with random password: "+password
@@ -3553,8 +3581,8 @@ def join_requests(request, agent_id):
         pass
     else:
         raise ValidationError("User not allowed to see this page.")
-    print "-------------- start join_requests ----------------"
-    loger.debug("-------------- start join_requests ----------------")
+    print "-------------- start join_requests ("+str(agent)+") (user:"+str(user_agent)+") ----------------"
+    loger.debug("-------------- start join_requests ("+str(agent)+") (user:"+str(user_agent)+") ----------------")
     state = "new"
     state_form = RequestStateForm(
         initial={"state": "new",},
@@ -3609,7 +3637,7 @@ def join_requests(request, agent_id):
                 req.possible_agent = EconomicAgent.objects.get(nick=req.requested_username)
               except:
                 req.possible_agent = False
-            if req.fobi_data and req.fobi_data.pk:
+            if hasattr(req, 'fobi_data') and hasattr(req.fobi_data, 'pk'):
               req.entries = SavedFormDataEntry.objects.filter(pk=req.fobi_data.pk).select_related('form_entry')
               entry = req.entries[0]
               req.data = json.loads(entry.saved_data)
@@ -3748,8 +3776,8 @@ def join_requests(request, agent_id):
     if project.is_moderated() and not agent.email:
         messages.error(request, _("Please provide an email for the \"{0}\" project to use as a remitent for the moderated joining process notifications!").format(agent.name))
 
-    print "-------------- end join_requests ----------------"
-    loger.debug("-------------- end join_requests ----------------")
+    print "-------------- end join_requests ("+str(agent)+") (user:"+str(user_agent)+") ----------------"
+    loger.debug("-------------- end join_requests ("+str(agent)+") (user:"+str(user_agent)+") ----------------")
 
     return render(request, "work/join_requests.html", {
         "help": get_help("join_requests"),
@@ -3829,8 +3857,17 @@ def delete_request(request, join_request_id):
       pass # delete user and agent?
     mbr_req.delete()
 
-    return HttpResponseRedirect('/%s/%s/%s/'
-        % ('work/agent', mbr_req.project.agent.id, 'join-requests'))
+    if 'next' in request.POST and request.POST['next']:
+        slug = request.POST['next']
+        if slug == 'project':
+            slug = ''
+        if slug == 'feedback':
+            slug = 'feedback/'+str(jn_req.id)
+    else:
+        slug = 'join-requests'
+
+    return HttpResponseRedirect('/%s/%s/%s'
+        % ('work/agent', mbr_req.project.agent.id, slug))
 
 @login_required
 def delete_request_agent_and_user(request, join_request_id):
@@ -3874,9 +3911,20 @@ def confirm_request(request, join_request_id):
     user_agent = get_agent(request)
     if not user_agent in jn_req.project.agent.managers():
         raise ValidationError("You don't have permission to do this !!!")
+
     jn_req.create_useragent_randompass(request)
-    return HttpResponseRedirect('/%s/%s/%s/'
-        % ('work/agent', jn_req.project.agent.id, 'join-requests'))
+
+    if 'next' in request.POST and request.POST['next']:
+        slug = request.POST['next']
+        if slug == 'project':
+            slug = ''
+        if slug == 'feedback':
+            slug = 'feedback/'+str(jn_req.id)
+    else:
+        slug = 'join-requests'
+
+    return HttpResponseRedirect('/%s/%s/%s'
+        % ('work/agent', jn_req.project.agent.id, slug))
 
 @login_required
 def accept_request(request, join_request_id):
@@ -3907,8 +3955,9 @@ def accept_request(request, join_request_id):
     association.save()
     messages.info(request, "Modified agent association to 'active': "+str(association))
 
-    return HttpResponseRedirect('/%s/%s/%s/'
-        % ('work/project-feedback', mbr_req.project.agent.id, join_request_id))
+    return redirect('project_feedback', agent_id=mbr_req.project.agent.id, join_request_id=join_request_id)
+    #HttpResponseRedirect('/%s/%s/%s/'
+    #    % ('work/project-feedback', mbr_req.project.agent.id, join_request_id))
 
 @login_required
 def update_share_payment(request, join_request_id):
@@ -3930,7 +3979,7 @@ def update_share_payment(request, join_request_id):
         if not next:
             next = "project_feedback"
         if status:
-            jn_req.update_payment_status(status, gateref, notes)
+            jn_req.update_payment_status(status, gateref, notes, request)
         else:
             raise ValidationError("Missing status ("+str(status)+") !") # or gateway reference ("+str(gateref)+") !")
     else:
@@ -4230,8 +4279,12 @@ def project_feedback(request, agent_id, join_request_id):
             if auth and jn_req.pending_shares():
 
                 out_text, reqdata = auth.pay_shares_html(jn_req, request.user)
-                pay_form = PaySharesForm(initial=reqdata)
-
+                if reqdata:
+                    if 'url_w2w' in settings.MULTICURRENCY:
+                        pay_form = PaySharesForm(initial=reqdata)
+                    else:
+                        out_text += " &nbsp; &nbsp; <div style='display: inline-block;'><input type='button' class='btn btn-primary' value='Pay the shares (coming soon)' disabled='disabled'> "
+                        out_text += "<br>(meanwhile pay from <a href='https://wallet.bankofthecommons.coop' target='_blank'>https://wallet.bankofthecommons.coop</a>)</div>"
             else:
                 wallet_form = MulticurrencyAuthCreateForm(initial={
                     'username': walletuser,
@@ -4284,7 +4337,10 @@ def validate_nick(request):
             username = nick
             try:
                 user = User.objects.get(username=username)
-                error = "Username already taken"
+                if user.agent.agent.id == int(agent_id):
+                    pass
+                else:
+                    error = "Username already taken" #+str(user.agent.agent)
             except User.DoesNotExist:
                 pass
             if not error:
@@ -4330,6 +4386,41 @@ def validate_username(request):
                 error = val(username)
             except ValidationError:
                 error = "Error: May only contain letters, numbers, and @/./+/-/_ characters."
+    if error:
+        answer = error
+    response = simplejson.dumps(answer, ensure_ascii=False)
+    return HttpResponse(response, content_type="text/json-comment-filtered")
+
+
+def validate_name(request):
+    answer = True
+    error = ""
+    form = ValidateNameForm(request.POST)
+    if form.is_valid():
+        data = form.cleaned_data
+        agid = data["agent_id"] or None
+        name = data["name"] #values[0]
+        surname = data["surname"] or None
+        typeofuser = data["typeofuser"]
+        if typeofuser == 'individual':
+            if surname:
+                ags = EconomicAgent.objects.filter(name__iexact=name+' '+surname)
+            else:
+                ags = EconomicAgent.objects.filter(name__iexact=name)
+            if agid:
+                ags = ags.exclude(id=int(agid))
+            if ags:
+                if surname:
+                    error = "Name and Surname already known. Do you want to differentiate anyhow?"
+                else:
+                    error = "Name of individual already known. Do you want to differentiate anyhow?"
+        else:
+            ags = EconomicAgent.objects.filter(name__iexact=name)
+            if agid:
+                ags = ags.exclude(id=agid)
+            if ags:
+                error = "Name of collective already known. Do you want to differentiate anyhow?"
+    #import pdb; pdb.set_trace()
     if error:
         answer = error
     response = simplejson.dumps(answer, ensure_ascii=False)
@@ -7032,7 +7123,7 @@ def create_project_shares(request, agent_id):
     else:
         share_rt, created = EconomicResourceType.objects.get_or_create(
             name=nome+' Share',
-            unit=ocp_each,
+            unit=ocpboc_share,
             inventory_rule='yes',
             behavior='other'
         )
@@ -7041,10 +7132,11 @@ def create_project_shares(request, agent_id):
             loger.info("- created EconomicResourceType: '"+nome+" Share'")
             messages.info(request, "- created EconomicResourceType: '"+nome+" Share'")
     share_rt.name = nome+" Share"
-    if share_rt.unit and not share_rt.unit == ocpboc_share:
-        print "- CHANGED share_rt.unit from "+str(share_rt.unit)+" to "+str(ocpboc_share)
-        loger.info("- CHANGED share_rt.unit from "+str(share_rt.unit)+" to "+str(ocpboc_share))
-        messages.info(request, "- CHANGED share_rt.unit from "+str(share_rt.unit)+" to "+str(ocpboc_share))
+    if hasattr(share_rt, 'unit'):
+        if not share_rt.unit == ocpboc_share:
+            print "- CHANGED share_rt.unit from "+str(share_rt.unit)+" to "+str(ocpboc_share)
+            loger.info("- CHANGED share_rt.unit from "+str(share_rt.unit)+" to "+str(ocpboc_share))
+            messages.info(request, "- CHANGED share_rt.unit from "+str(share_rt.unit)+" to "+str(ocpboc_share))
     share_rt.unit = ocpboc_share #ocp_each
     share_rt.inventory_rule = 'yes'
     share_rt.behavior = 'other'

@@ -16,6 +16,8 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost'] # Set the allowed host domains list at local_settings.py
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",

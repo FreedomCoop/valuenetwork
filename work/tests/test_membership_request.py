@@ -117,6 +117,7 @@ class MembershipRequestTestCase(LiveServerTestCase):
         captcha = CaptchaStore.objects.get(hashkey=CaptchaStore.generate_key())
 
         s.find_element_by_id("id_name").send_keys("test_name01")
+        s.find_element_by_id("id_surname").send_keys("test_surname01")
         s.find_element_by_id("id_requested_username").send_keys("test_user01")
         s.find_element_by_id("id_email_address").send_keys("test_name01@example.com")
         s.find_element_by_id("id_description").send_keys("This is a test user.")
