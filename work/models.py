@@ -207,6 +207,9 @@ class Project(models.Model):
             else:
                 print "ERROR: The at: "+str(at)+" has no 'ocp_artwork_type' !"
                 loger.error("ERROR: The at: "+str(at)+" has no 'ocp_artwork_type' !")
+        else:
+            print("ERROR: The project has no shares_account_type? pro:"+str(self.agent.nick))
+            loger.error("ERROR: The project has no shares_account_type? pro:"+str(self.agent.nick))
         return st
 
     def share_types(self):
@@ -4066,9 +4069,15 @@ def check_new_rt_price(rt=None, **kwargs):
                 if jr.exchange:
                     #print " : : ex:"+str(jr.exchange)
                     exs.append(jr.exchange)
+    else:
+        print("check_new_rt_price: No rt.context_agent?? rt:"+str(rt))
+        loger.error("check_new_rt_price: No rt.context_agent?? rt:"+str(rt))
 
     if pro:
         sht = pro.shares_type()
+    else:
+        print("check_new_rt_price: No Project?? rt:"+str(rt))
+        loger.error("check_new_rt_price: No Project?? rt:"+str(rt))
 
     print "check_new_rt_price: rt:"+str(rt.id)+" "+str(rt)+", price_per_unit:"+str(rt.price_per_unit)+" coms:"+str(len(coms))+" evts:"+str(len(evts))+" ca:"+str(rt.context_agent)+" sht:"+str(sht)
     loger.info("check_new_rt_price... rt:"+str(rt.id)+" "+str(rt)+", price_per_unit:"+str(rt.price_per_unit)+" coms:"+str(len(coms))+" evts:"+str(len(evts))+" ca:"+str(rt.context_agent)+" sht:"+str(sht))
