@@ -393,7 +393,7 @@ hr {
                     </th>
                     {% for tt in total_transfers %}
                       {% if tt.name %}
-                        <td>&nbsp; + {{ tt.income }} {{ tt.abbr }}<br/>{% if tt.incommit %}(+{{ tt.incommit }} {{ tt.abbr }}){% else %}&nbsp;{% endif %}</td>
+                        <td>&nbsp; + {{ tt.income }} {{ tt.abbr }}<br/>{% if tt.incommit %}({{ tt.incommit }} {{ tt.abbr }}){% else %}&nbsp;{% endif %}</td>
                       {% endif %}
                     {% endfor %}
                   </tr>
@@ -403,7 +403,7 @@ hr {
                     </th>
                     {% for tt in total_transfers %}
                       {% if tt.name %}
-                          <td>&nbsp; - {{ tt.outgo }} {{ tt.abbr }}<br/>{% if tt.outcommit %}(-{{ tt.outcommit }} {{ tt.abbr }}){% else %}&nbsp;{% endif %}</td>
+                          <td>&nbsp; - {{ tt.outgo }} {{ tt.abbr }}<br/>{% if tt.outcommit %}({{ tt.outcommit }} {{ tt.abbr }}){% else %}&nbsp;{% endif %}</td>
                       {% endif %}
                     {% endfor %}
                   </tr>

@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 
-from decimal import Decimal
+import decimal # import Decimal
 from django.utils.translation import ugettext_lazy as _
 
 from easy_thumbnails.fields import ThumbnailerImageField
@@ -684,6 +684,25 @@ class JoinRequest(models.Model):
                         answer = username
         return answer
 
+    def multiwallet_auth(self): # not used yet, is for checking payments via botc-wallet (which requires auth) but still not works so step back to blockchain.com json service.
+        auth = None
+        if self.project.agent.need_multicurrency() and self.agent:
+            if 'multicurrency' in settings.INSTALLED_APPS:
+                from multicurrency.models import MulticurrencyAuth
+                try:
+                    oauths = MulticurrencyAuth.objects.filter(agent=self.agent)
+                except MulticurrencyAuth.DoesNotExist:
+                    raise PermissionDenied
+                if len(oauths) > 1:
+                    print("More than one oauth for this agent! return only the first. Agent:"+str(self.agent))
+                    loger.warning("More than one oauth for this agent! return only the first. Agent:"+str(self.agent))
+                if oauths:
+                    auth = oauths[0]
+                else:
+                    print("Not found any oauth for agent: "+str(self.agent))
+                    loger.error("Not found any oauth for agent: "+str(self.agent))
+        return auth
+
     def payment_option(self):
         answer = {}
         data2 = None
@@ -722,8 +741,10 @@ class JoinRequest(models.Model):
         requnit = self.payment_unit()
         amount = price
         if not requnit == unit and price:
-            from work.utils import convert_price
-            amount = convert_price(price, unit, requnit)
+            from work.utils import convert_price, remove_exponent
+            amount, ratio = convert_price(price, unit, requnit, self)
+            self.ratio = ratio
+            amount = remove_exponent(amount)
         if not amount == price:
             pass #print "Changed the price!"
         return amount
@@ -738,10 +759,24 @@ class JoinRequest(models.Model):
         return txt
 
     def total_price(self):
-        return round(Decimal(self.payment_amount() * self.share_price()), 8)
+        #decimal.getcontext().prec = settings.CRYPTO_DECIMALS
+        shtype = self.project.shares_type()
+        shunit = shtype.unit_of_price
+        shprice = shtype.price_per_unit
+        unit = self.payment_unit()
+        amount = amountpay = self.payment_amount() * shprice
+        if not unit == shunit and amount: #unit.abbr == 'fair':
+            #amountpay = round(decimal.Decimal(self.payment_amount() * self.share_price()), 10)
+            from work.utils import convert_price, remove_exponent
+            amountpay, ratio = convert_price(amount, shunit, unit, self)
+            self.ratio = ratio
+            amountpay = remove_exponent(amountpay)
+        return amountpay
 
     def show_total_price(self):
-        txt = str(self.payment_amount() * self.share_price())+' '+self.show_payment_unit()
+        txt = str(self.total_price())+' '+self.show_payment_unit()
+        if self.is_flexprice():
+            txt = u'\u2248 '+txt
         return txt
 
     def payment_url(self):
@@ -793,8 +828,8 @@ class JoinRequest(models.Model):
                     addr = self.agent.faircoin_address()
                     wallet = WALLET
                     price = faircoin_utils.share_price_in_fairs(self)
-                    amount = Decimal(self.pending_shares() * price)
-                    amopend = Decimal(self.payment_pending_amount())
+                    amount = decimal.Decimal(self.pending_shares() * price)
+                    amopend = decimal.Decimal(self.payment_pending_amount())
                     netfee = faircoin_utils.network_fee_fairs()
 
                     if fairrs:
@@ -805,10 +840,10 @@ class JoinRequest(models.Model):
                             if is_wallet_address:
                               balance = fairrs.faircoin_address.balance()
                               if balance != None:
-                                if round(balance, 8) < round(amopend, 8):
+                                if round(balance, settings.CRYPTO_DECIMALS) < round(amopend, settings.CRYPTO_DECIMALS):
                                     txt = '<b>'+str(_("Your ocp faircoin balance is not enough to pay this shares, still missing: %(f)s <br/>"
                                                       +" You can send them to your account %(ac)s and then pay the shares") %
-                                                      {'f':"<span class='error'>"+str(round(Decimal(amopend - balance), 8))+" fair</span>", 'ac':' </b> '+addr+' <b> '})
+                                                      {'f':"<span class='error'>"+str(round(decimal.Decimal(amopend - balance), settings.CRYPTO_DECIMALS))+" fair</span>", 'ac':' </b> '+addr+' <b> '})
                                 elif amopend:
                                     txt = '<b>'+str(_("Your actual faircoin balance is enough. You can pay the shares now!"))
                                     txt += "</b> &nbsp;<a href='"+str(reverse('manage_faircoin_account', args=(fairrs.id,)))
@@ -829,11 +864,11 @@ class JoinRequest(models.Model):
                     if not balance or not amount:
                       txt = "<span class='error'>"+txt+"</span>"
 
-                    amtopay = u"<br>Amount to pay: <b> "+str(round(amount, 8))+u" ƒ "
+                    amtopay = u"<br>Amount to pay: <b> "+str(round(amount, settings.CRYPTO_DECIMALS))+u" ƒ "
                     amispay = self.payment_payed_amount()
                     if amispay > 0:
                       if amopend:
-                        amtopay += "- "+str(amispay)+u" ƒ payed = "+str(round(amopend, 8))+u' ƒ pending'
+                        amtopay += "- "+str(amispay)+u" ƒ payed = "+str(round(amopend, settings.CRYPTO_DECIMALS))+u' ƒ pending'
                       else:
                         amtopay += " (payed "+str(amispay)+u" ƒ)"
                     amtopay += "</b>"
@@ -900,21 +935,33 @@ class JoinRequest(models.Model):
         shunit = shtype.unit_of_price
         amount2 = shtype.price_per_unit * self.pending_shares()
         amountpay = amount2
-        from work.utils import convert_price
-        if not shunit == unit and amount2: #unit.abbr == 'fair':
-            amountpay = convert_price(amount2, shunit, unit)
+        if hasattr(self, 'pending_amount'):
+            amountpay = self.pending_amount
+            print("Using CACHED pending_amount!! "+str(amountpay))
+            loger.info("Using CACHED pending_amount!! "+str(amountpay))
+        else:
+            from work.utils import convert_price
+            if not shunit == unit and amount2: #unit.abbr == 'fair':
+                amountpay, ratio = convert_price(amount2, shunit, unit, self)
+                self.ratio = ratio
+                self.pending_amount = amountpay
 
         amispay = self.payment_payed_amount()
         pendamo = amountpay
         if amispay > 0 and amountpay:
-            pendamo = Decimal(amountpay) - amispay
+            pendamo = decimal.Decimal(amountpay) - amispay
         if pendamo < 0:
             pendamo = 0
-        return round(pendamo, 8)
+        return round(pendamo, settings.CRYPTO_DECIMALS)
 
     def payment_pending_to_pay(self):
-        return self.pending_shares() * self.share_price()
+        return round((self.pending_shares() * self.share_price()), settings.CRYPTO_DECIMALS)
 
+    def is_flexprice(self):
+        unit = self.payment_unit()
+        if unit.abbrev in settings.CRYPTOS:
+            return True
+        return False
 
     def payment_account_type(self):
         account_type = None
@@ -1129,7 +1176,7 @@ class JoinRequest(models.Model):
                         for an in ancs:
                             if an.clas == 'fiat_economy':
                                 recs.append(rec)
-                    elif payopt['key'] == 'btc':
+                    elif payopt['key'] in settings.CRYPTOS:
                         for an in ancs:
                             if an.clas == 'crypto_economy':
                                 recs.append(rec)
@@ -1155,6 +1202,7 @@ class JoinRequest(models.Model):
             raise ValidationError("not rt or not rt.ocp_artwork_type : "+str(rt))
         else: # no payopt
             raise ValidationError("no payment option key? "+str(payopt))
+        #et.crypto = self.crypto
         return et
 
 
@@ -1220,10 +1268,8 @@ class JoinRequest(models.Model):
             if not ex.use_case == et.use_case:
                 print "- CHANGE exchange USE_CASE ? from "+str(ex.use_case)+" to "+str(et.use_case)
                 loger.info("- CHANGE exchange USE_CASE ? from "+str(ex.use_case)+" to "+str(et.use_case))
-            if ex.name:
-                if not ex.name == et.name:
-                    print "- exchange with a custom name! REPAIRED to et.name, for ex:"+str(ex.name)
-                    ex.name = et.name
+
+            ex.name = ag.nick+' '+et.name
             ex.use_case = et.use_case
             ex.context_agent = pro
 
@@ -1325,7 +1371,7 @@ class JoinRequest(models.Model):
         return ex
 
 
-    def update_payment_status(self, status=None, gateref=None, notes=None, request=None):
+    def update_payment_status(self, status=None, gateref=None, notes=None, request=None, realamount=None, txid=None):
         account_type = self.payment_account_type()
         balance = 0
         amount = self.payment_amount()
@@ -1338,25 +1384,33 @@ class JoinRequest(models.Model):
         amount2 = shtype.price_per_unit * self.pending_shares()
 
         amountpay = amount2
-        from work.utils import convert_price
-        if not shunit == unit and amount2: #unit.abbr == 'fair':
-            amountpay = convert_price(amount2, shunit, unit)
-        if not amountpay:
-            amountpay = convert_price(amount, shunit, unit)
-
-        if amount2 and status == 'pending':
-          if not amount == amountpay:
-            print "Repair amount! "+str(amount)+" -> "+str(amount2)+" -> "+str(amountpay)
-            loger.info("Repair amount! "+str(amount)+" -> "+str(amount2)+" -> "+str(amountpay))
-            #raise ValidationError("Can't deal yet with partial payments... "+str(amount)+" <> "+str(amount2)+" amountpay:"+str(amountpay))
-            #amount = amountpay
-        elif not amount2 and status == 'complete':
-            print "No pending shares but something is missing, recheck! "+str(self)
 
         pendamo = self.payment_pending_amount()
-        if not pendamo == amountpay:
-            print "WARN diferent amountpay:"+str(amountpay)+" and pendamo:"+str(pendamo)+" ...which is better? jr:"+str(self.id)
-            loger.info("WARN diferent amountpay:"+str(amountpay)+" and pendamo:"+str(pendamo)+" ...which is better? jr:"+str(self.id))
+
+        if not txid:
+            from work.utils import convert_price
+            if not shunit == unit and amount2: #unit.abbr == 'fair':
+                amountpay, ratio = convert_price(amount2, shunit, unit, self)
+                self.ratio = ratio
+            if not amountpay:
+                amountpay, ratio = convert_price(amount, shunit, unit, self)
+                self.ratio = ratio
+
+            if amount2 and status == 'pending':
+              if not amount == amountpay:
+                print "Repair amount! "+str(amount)+" -> "+str(amount2)+" -> "+str(amountpay)
+                loger.info("Repair amount! "+str(amount)+" -> "+str(amount2)+" -> "+str(amountpay))
+                #raise ValidationError("Can't deal yet with partial payments... "+str(amount)+" <> "+str(amount2)+" amountpay:"+str(amountpay))
+                #amount = amountpay
+            elif not amount2 and status == 'complete':
+                print("No pending shares but something is missing, recheck! "+str(self))
+                loger.info("No pending shares but something is missing, recheck! "+str(self))
+
+            if not pendamo == amountpay:
+                print "WARN diferent amountpay:"+str(amountpay)+" and pendamo:"+str(pendamo)+" ...which is better? jr:"+str(self.id)
+                loger.info("WARN diferent amountpay:"+str(amountpay)+" and pendamo:"+str(pendamo)+" ...which is better? jr:"+str(self.id))
+        if realamount:
+            amountpay = realamount
 
         if status:
             if self.agent:
@@ -1398,6 +1452,7 @@ class JoinRequest(models.Model):
                     xfer_pay.notes += str(datetime.date.today())+' '+str(self.payment_gateway())+': '+status+'. '
                     xfer_pay.save()
 
+                msg = ''
                 if amount and xfer_pay:
                     evts = xfer_pay.events.all()
                     coms = xfer_pay.commitments.all()
@@ -1416,6 +1471,8 @@ class JoinRequest(models.Model):
         #       C O M P L E T E
 
                         if len(evts):
+                            if txid:
+                                raise ValidationError("complete with txid a xfer_pay with existent events?? evts:"+str(evts))
                             print ("The payment transfer already has events! "+str(len(evts)))
                             loger.warning("The payment transfer already has events! "+str(len(evts)))
                             for evt in evts:
@@ -1441,6 +1498,36 @@ class JoinRequest(models.Model):
                                 else:
                                     event_res = self.agent.faircoin_resource()
                                     event_res2 = self.project.agent.faircoin_resource()
+                            elif self.is_flexprice:
+                                if txid:
+                                    if 'multicurrency' in settings.INSTALLED_APPS:
+                                        from multicurrency.models import BlockchainTransaction
+                                    else:
+                                        raise ValidationError("Can't manage blockchain txs without the multicurrency app installed!")
+                                    if realamount:
+                                        amountpay = decimal.Decimal(realamount)
+                                        gateref = txid
+                                        if commit_pay:
+                                            if not commit_pay.quantity == amountpay:
+                                                print("Changed quantity of the payment commit_pay for the real amount! "+str(commit_pay.quantity)+" -> "+str(amountpay))
+                                                loger.info("Changed quantity of the payment commit_pay for the real amount! "+str(commit_pay.quantity)+" -> "+str(amountpay))
+                                            commit_pay.quantity = amountpay
+                                            commit_pay.save()
+                                        if commit_pay2 and not commit_pay2 == commit_pay:
+                                            if not commit_pay2.quantity == amountpay:
+                                                print("Changed quantity of the payment commit_pay2 for the real amount! "+str(commit_pay2.quantity)+" -> "+str(amountpay))
+                                                loger.info("Changed quantity of the payment commit_pay2 for the real amount! "+str(commit_pay2.quantity)+" -> "+str(amountpay))
+                                            commit_pay2.quantity = amountpay
+                                            commit_pay2.save()
+                                    else:
+                                        print("Update payment for is_flexprice without the real_amount! "+str(self))
+                                        loger.error("Update payment for is_flexprice without the real_amount! "+str(self))
+                                        return False
+                                else:
+                                    print("Update payment for is_flexprice without a txid! "+str(self))
+                                    loger.error("Update payment for is_flexprice without a txid! "+str(self))
+                                    return False
+
                             evt, created = EconomicEvent.objects.get_or_create(
                                 event_type = et_give,
                                 event_date = datetime.date.today(),
@@ -1465,6 +1552,20 @@ class JoinRequest(models.Model):
                             if created:
                                 print " created Event: "+str(evt)
                                 loger.info(" created Event: "+str(evt))
+
+                            if txid:
+                                tx, created = BlockchainTransaction.objects.get_or_create(
+                                    tx_hash = txid,
+                                    event = evt)
+                                if created:
+                                    print("- created BlockchainTransaction: "+str(tx))
+                                    loger.info("- created BlockchainTransaction: "+str(tx))
+                                msg = tx.update_data(realamount) #, self.multiwallet_auth())
+                                if not msg == '':
+                                    if evt.id:
+                                        evt.delete()
+                                    messages.error(request, msg, extra_tags='safe')
+                                    return False
 
 
                             evt2, created = EconomicEvent.objects.get_or_create(
@@ -1492,6 +1593,20 @@ class JoinRequest(models.Model):
                                 print " created Event2: "+str(evt2)
                                 loger.info(" created Event2: "+str(evt2))
 
+                            if txid:
+                                tx, created = BlockchainTransaction.objects.get_or_create(
+                                    tx_hash = txid,
+                                    event = evt2)
+                                if created:
+                                    print("- created BlockchainTransaction: "+str(tx))
+                                    loger.info("- created BlockchainTransaction: "+str(tx))
+                                msg = tx.update_data(realamount) #, self.multiwallet_auth())
+                                if not msg == '':
+                                    if evt2.id:
+                                        evt2.delete()
+                                    messages.error(request, msg)
+                                    return False
+
                         if xfer_share:
                             evts = xfer_share.events.all()
                             coms = xfer_share.commitments.all()
@@ -1507,6 +1622,7 @@ class JoinRequest(models.Model):
                         else:
                             print "ERROR: Can't find xfer_share!! "+str(self)
                             loger.error("ERROR: Can't find xfer_share!! "+str(self))
+                            messages.error(request, "ERROR: Can't find xfer_share!! "+str(self))
 
                         # create commitments for shares
                         if not commit_share and self.pending_shares() and not evts:
@@ -1558,7 +1674,7 @@ class JoinRequest(models.Model):
 
 
                         # create share events
-                        if not evts:
+                        if not evts and msg == '':
                           if self.pending_shares():
                             sh_evt, created = EconomicEvent.objects.get_or_create(
                                 event_type = et_give,
@@ -1622,12 +1738,12 @@ class JoinRequest(models.Model):
                                                 rs.notes += note
                                             else:
                                                 rs.notes = note
-                                            rs.price_per_unit += self.pending_shares() # update the price_per_unit with payment amount
+                                            rs.price_per_unit += sh_evt.quantity # update the price_per_unit with payment amount
                                             rs.save()
-                                            print "Transfered new shares to the agent's shares account: "+str(self.pending_shares())+" "+str(rs)
-                                            loger.info("Transfered new shares to the agent's shares account: "+str(self.pending_shares())+" "+str(rs))
+                                            print "Transfered new shares to the agent's shares account: "+str(sh_evt.quantity)+" "+str(rs)
+                                            loger.info("Transfered new shares to the agent's shares account: "+str(sh_evt.quantity)+" "+str(rs))
                                             if request:
-                                                messages.info(request, "Transfered new shares to the agent's shares account: "+str(self.pending_shares())+" "+str(rs))
+                                                messages.info(request, "Transfered new shares to the agent's shares account: "+str(sh_evt.quantity)+" "+str(rs))
                           else: # not pending_shares and not share events
                             date = agshac.created_date
                             print "No pending shares and no events related shares. REPAIR! total_shares:"+str(self.total_shares())+" date:"+str(date)
@@ -3599,7 +3715,7 @@ def create_unit_types(**kwargs):
         ur, c = UnitRatio.objects.get_or_create(
             in_unit=euro,
             out_unit=fair,
-            rate=Decimal('1.2')
+            rate=decimal.Decimal('1.2')
         )
         if c:
             print "- created UnitRatio: "+str(ur)
@@ -3611,7 +3727,7 @@ def create_unit_types(**kwargs):
         loger.warning("x More than one UnitRatio with euro and fair? "+str(urs))
     ur.in_unit = euro
     ur.out_unit = fair
-    ur.rate = Decimal('1.2')
+    ur.rate = decimal.Decimal('1.2')
     ur.save()
 
 

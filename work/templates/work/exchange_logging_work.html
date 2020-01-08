@@ -255,11 +255,12 @@ h3.trtheading {
                         </p>
                         <p>
                             {% trans "Total" %}: <b>{{ req.show_total_price }}</b>
-                            {% if req.payment_pending_amount %} &nbsp;
-                                {% if req.payment_pending_amount == req.total_price %}
+                            {% with req.payment_pending_amount as pendamo %}
+                            {% if pendamo %} &nbsp;
+                                {% if pendamo|lower == req.total_price|lower %}
                                     <b class="error">{% trans "pending" %}</b>
                                 {% else %}
-                                    {% trans "Pending" %}: <b class="error">{{ req.payment_pending_amount }}
+                                    {% trans "Pending" %}: <b class="error">{{ pendamo }}
                                     {{ req.show_payment_unit }}</b>
                                 {% endif %}
                                 {% if req.agent.faircoin_resource and request.user.agent.agent in req.agent.managers %}
@@ -268,6 +269,7 @@ h3.trtheading {
                                         {% trans "Faircoin account" %}</a>
                                 {% endif %}
                             {% endif %}
+                            {% endwith %}
                         </p>
                     {% endif %}
 
@@ -359,7 +361,7 @@ h3.trtheading {
                                   {% if slot.total_unit.symbol %}{{ slot.total_unit.symbol }}{% else %}{{ slot.total_unit.abbrev }}{% endif %}
                                 {% endif %}
                                 {% if exchange.join_request.payment_pending_amount and not slot.is_share %} &nbsp; &nbsp;
-                                  <b class="error">{% trans "Pending:" %} {{ exchange.join_request.payment_pending_amount }}
+                                  <b class="error">{% trans "Pending:" %} {% if exchange.join_request.is_flexprice %} ≈ {% endif %}{{ exchange.join_request.payment_pending_amount }}
                                   {{ exchange.join_request.show_payment_unit }}
                                   </b>
                                 {% endif %}
@@ -684,6 +686,7 @@ h3.trtheading {
                                             <div class="ce"><span class="complete">&#9679;</span> <span class="event-label">{% trans "Transfer" %}: </span>
                                                 {{ evt|show_name:context_agent|safe }} {% if request.user.is_superuser %}&nbsp; <em>(tx:{{ xfer.id }} ev:{{ evt.id }})</em>{% endif %}
                                                 {% if evt.faircoin_transaction %}&nbsp; <b><a href="{{ evt.faircoin_transaction.chain_link }}" target="_blank">FairTx</a></b>{% endif %}
+                                                {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}+ {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
                                                 {% if logger or evt.created_by == request.user or evt.to_agent == agent or evt.to_agent in agent.managed_projects %}
                                                   {% if logger and not exchange.join_request and not exchange.join_request.agent == agent %}
                                                     <a href="#xferModal{{ evt.id }}" role="button" class="btn btn-info btn-mini" data-toggle="modal">
@@ -774,6 +777,7 @@ h3.trtheading {
                                         <span class="event-label">{% trans "Transfer" %}:</span>
                                         {{ evt|show_name:context_agent|safe }} {% if request.user.is_superuser %}&nbsp; <em>(tx:{{ xfer.id }} ev:{{ evt.id }})</em>{% endif %}
                                         {% if evt.faircoin_transaction %}&nbsp; <b><a href="{{ evt.faircoin_transaction.chain_link }}" target="_blank">FairTx</a></b>{% endif %}
+                                        {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}+ {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
                                         {% if logger or evt.created_by == request.user or evt.to_agent == agent or evt.to_agent in agent.managed_projects %}
                                           {% if logger and not exchange.join_request and not exchange.join_request.agent == agent %}
                                             <a href="#xferModal{{ evt.id }}" role="button" class="btn btn-info btn-mini" data-toggle="modal">
@@ -911,7 +915,7 @@ h3.trtheading {
                                   {% if slot.total_unit.symbol %}{{ slot.total_unit.symbol }}{% else %}{{ slot.total_unit.abbrev }}{% endif %}
                                 {% endif %}
                                 {% if exchange.join_request.payment_pending_amount and not slot.is_share %} &nbsp; &nbsp;
-                                  <b class="error">{% trans "Pending:" %} {{ exchange.join_request.payment_pending_amount }}
+                                  <b class="error">{% trans "Pending:" %} {% if exchange.join_request.is_flexprice %} ≈ {% endif %}{{ exchange.join_request.payment_pending_amount }}
                                   {{ exchange.join_request.show_payment_unit }}
                                   </b>
                                 {% endif %}
@@ -1236,6 +1240,7 @@ h3.trtheading {
                                             <div class="ce"><span class="complete">&#9679;</span> <span class="event-label">{% trans "Transfer" %}: </span>
                                                 {{ evt|show_name:context_agent|safe }} {% if request.user.is_superuser %}&nbsp; <em>(tx:{{ xfer.id }} ev:{{ evt.id }})</em>{% endif %}
                                                 {% if evt.faircoin_transaction %}&nbsp; <b><a href="{{ evt.faircoin_transaction.chain_link }}" target="_blank">FairTx</a></b>{% endif %}
+                                                {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}+ {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
                                                 {% if logger or evt.created_by == request.user or evt.from_agent == agent or evt.from_agent in agent.managed_projects %}
                                                   {% if logger and not exchange.join_request %}
                                                     <a href="#xferModal{{ evt.id }}" role="button" class="btn btn-info btn-mini" data-toggle="modal">
@@ -1326,6 +1331,7 @@ h3.trtheading {
                                         <span class="event-label">{% trans "Transfer" %}: </span>
                                         {{ evt|show_name:context_agent|safe }} {% if request.user.is_superuser %}<em>(tx:{{ xfer.id }} ev:{{ evt.id }} co:{{ evt.commitment.id }})</em>{% endif %}
                                         {% if evt.faircoin_transaction %}&nbsp; <b><a href="{{ evt.faircoin_transaction.chain_link }}" target="_blank">FairTx</a></b>{% endif %}
+                                        {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}+ {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
                                         {% if logger or evt.created_by == request.user or evt.from_agent == agent or evt.from_agent in agent.managed_projects  %}
                                           {% if logger and not exchange.join_request and not exchange.join_request.agent == agent %}
                                             <a href="#xferModal{{ evt.id }}" role="button" class="btn btn-info btn-mini" data-toggle="modal">

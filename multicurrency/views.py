@@ -72,9 +72,10 @@ def auth(request, agent_id):
             except:
                 messages.error(
                     request, _('Something was wrong saving your data.'))
-            messages.success(
-                request,
-                _('Your BotC-Wallet user has been succesfully authenticated.'))
+            if oauth:
+                messages.success(
+                    request,
+                    _('Your BotC-Wallet user has been succesfully authenticated.'))
 
             for req in agent.project_join_requests.all():
                 if req.project.agent.need_multicurrency():

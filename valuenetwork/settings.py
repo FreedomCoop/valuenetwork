@@ -250,6 +250,9 @@ MULTICURRENCY = {} #Fill the dict in local_settings.py with private data.
 # payment gateways settings
 PAYMENT_GATEWAYS = {} # Fill the object in local_settings.py with custom gateways data by project
 
+CRYPTOS = () # Fill the list in local_settings.py with flexible price crypto units
+CRYPTO_DECIMALS = 9
+
 
 PINAX_NOTIFICATIONS_QUEUE_ALL = True
 PINAX_NOTIFICATIONS_BACKENDS = [

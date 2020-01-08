@@ -45,6 +45,12 @@ class ChipChapAuthConnection(object):
                 self.logger.error("WARN: Multiwallet without W2W permissions! Can't let users pay the shares...")
             else:
                 self.url_w2w = cdata['url_w2w']
+            if not "url_ticker" in cdata:
+                self.url_ticker = None
+                print("WARN: Multicurrency without Ticker! Can't process crypto prices (except faircoin)")
+                self.logger.error("WARN: Multicurrency without Ticker! Can't process crypto prices (except faircoin)")
+            else:
+                self.url_ticker = cdata['url_ticker']
         else:
             self.able_to_connect = False
             self.logger.critical("Invalid configuration data to connect.")
@@ -198,3 +204,4 @@ class ChipChapAuthConnection(object):
             self.logger.critical("Payment w2w request have returned "
                                  + error + " status code. Error: " + msg)
             raise ChipChapAuthError('Error ' + error, msg)
+

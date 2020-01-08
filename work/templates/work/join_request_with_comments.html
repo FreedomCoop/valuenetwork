@@ -87,7 +87,19 @@ a.more-link {
 
 {% block body_base %}
     <div class="container">
-        {% include "_messages.html" %}
+        {% if messages %}
+            {% regroup messages|dictsort:"tags" by tags as messags %}
+            {% for message in messags %}
+                <div class="alert fade in alert-{{ message.grouper }}">
+                    <a class="close" href="#" data-dismiss="alert">×</a>
+                        {% for messa in message.list|dictsort:"message" %}
+                          {% ifchanged messa.message %}
+                            <p{% if message.grouper %} class="{{ message.grouper }}"{% endif %}>{% if 'safe' in messa.extra_tags %}{{ messa|safe }}{% else %}{{ messa }}{% endif %}</p>
+                          {% endifchanged %}
+                        {% endfor %}
+                </div>
+            {% endfor %}
+        {% endif %}
     <div>
         <legend>
           {% if user_agent in jn_req.project.agent.managers or user_agent == jn_req.project.agent %}
@@ -280,6 +292,12 @@ a.more-link {
                               action="{% url "update_share_payment" join_request_id=req.id %}"
                               method="POST" >
                             {% csrf_token %}
+                            {% if req.payment_pending_amount and req.is_flexprice %}
+                                <label class="control-label required-field" for="real_amount">{{ req.payment_unit.abbrev|upper }} {% trans "Received Amount" %}:</label>
+                                <input type="text" id="real_amount" name="real_amount" required=""><br>
+                                <label class="control-label required-field" for="tx_id">{{ req.payment_unit.abbrev|upper }} {% trans "Transaction Hash" %}:</label>
+                                <input type="text" id="tx_id" name="tx_id" required=""><br>
+                            {% endif %}
                             <input type="hidden" name="status" value="complete">
                             <input type="submit" class="btn btn-mini btn-primary" name="submit" value='{% trans "Set as Complete" %}' {% if req.check_user_pass %}disabled="disabled"{% endif %} />
                             <br/><span class="help-text" style="font-size:0.8em">
@@ -340,7 +358,14 @@ a.more-link {
                     {% else %}
                         <span class="error">{% trans "ERROR: request without a payment option!" %}</span>
                     {% endif %}
-
+                    {% if req.payment_pending_amount and req.ratio %}
+                      {% with req.payment_unit as uni %}
+                        ({% if req.is_flexprice %}≈ {% endif %}{{ req.payment_pending_amount }} {{ uni.abbrev.upper }} {% trans "at exchange rate" %}:
+                        {{ req.ratio }} {{ req.project.shares_type.unit_of_price.symbol }}/{% if uni.symbol %}{{ uni.symbol }}{% else %}{{ uni.abbrev }}{% endif %})
+                      {% endwith %}
+                    {% else %}
+                        ({{ req.payment_pending_amount }} {{ req.payment_unit.abbrev.upper }})
+                    {% endif %}
                   {% endif %}
                 </td>
               </tr>
@@ -367,7 +392,7 @@ a.more-link {
                         &nbsp; {% trans "Related exchange" %}: <b><a href="{% url "exchange_logging_work" context_agent_id=agent.id exchange_type_id=0 exchange_id=req.exchange.id %}">
                               {{ req.exchange|show_name:user_agent|safe }}</a></b> <span class="{{ req.exchange.status }}">{{ req.exchange.status|title }}</span>
                         {% if user_agent in req.project.agent.managers or user_agent == req.project.agent %}
-                          {% if not req.project.agent.need_faircoins and not req.exchange.status == 'complete' %} &nbsp; &nbsp;
+                          {% if not req.project.agent.need_faircoins and not req.exchange.status == 'complete' and not req.is_flexprice %} &nbsp; &nbsp;
                             <form
                                   class="action-form"
                                   id="status-form{{ req.id }}"

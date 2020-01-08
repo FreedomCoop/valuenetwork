@@ -356,7 +356,7 @@ def share_payment(request, agent_id):
             raise ValidationError("Can't find the candidate share's account of type: "+str(pro_agent.shares_account_type()))
       if not wallet:
             messages.error(request, 'Sorry, payment with faircoin is not available now. Try later.')
-      elif round(Decimal(share_price), 8) <= round(balance, 8):
+      elif round(Decimal(share_price), settings.CRYPTO_DECIMALS) <= round(balance, settings.CRYPTO_DECIMALS):
         #pay_to_id = settings.SEND_MEMBERSHIP_PAYMENT_TO
         pay_to_agent = pro_agent #EconomicAgent.objects.get(nick=pay_to_id)
         pay_to_account = pay_to_agent.faircoin_resource()
@@ -3632,11 +3632,12 @@ def join_requests(request, agent_id):
         csrf_token_field = '<input type="hidden" name="csrfmiddlewaretoken" value="'+csrf_token+'"> '
 
         for req in requests:
-            if not req.agent and req.requested_username:
-              try:
-                req.possible_agent = EconomicAgent.objects.get(nick=req.requested_username)
-              except:
-                req.possible_agent = False
+            req.possible_agent = False
+            if not hasattr(req, 'agent') and req.requested_username:
+                try:
+                    req.possible_agent = EconomicAgent.objects.get(nick=req.requested_username)
+                except:
+                    pass
             if hasattr(req, 'fobi_data') and hasattr(req.fobi_data, 'pk'):
               req.entries = SavedFormDataEntry.objects.filter(pk=req.fobi_data.pk).select_related('form_entry')
               entry = req.entries[0]
@@ -3975,11 +3976,13 @@ def update_share_payment(request, join_request_id):
         status = request.POST.get("status")
         gateref = request.POST.get("reference")
         notes = request.POST.get("notes")
+        realamount = request.POST.get("real_amount")
+        txid = request.POST.get("tx_id")
         next = request.POST.get("next")
         if not next:
             next = "project_feedback"
         if status:
-            jn_req.update_payment_status(status, gateref, notes, request)
+            jn_req.update_payment_status(status, gateref, notes, request, realamount, txid)
         else:
             raise ValidationError("Missing status ("+str(status)+") !") # or gateway reference ("+str(gateref)+") !")
     else:
@@ -5633,7 +5636,7 @@ def exchanges_all(request, agent_id): #all types of exchanges for one context ag
                             to['income'] = (to['income']*1) + (transfer.value()*1)
                         else:
                             to['income'] = (to['income']*1) + (transfer.quantity()*1)
-                      for com in transfer.commitments.all():
+                      for com in transfer.commitments.all_give():
                         if com.unfilled_quantity() > 0:
                           if uv:
                             to['incommit'] = (to['incommit']*1) + (transfer.value()*1)
@@ -5644,10 +5647,10 @@ def exchanges_all(request, agent_id): #all types of exchanges for one context ag
                       sign = '>'
                       if transfer.events.all():
                         if uv:
-                            to['outgo'] = (to['outgo']*1) + (transfer.value()*1)
+                            to['outgo'] = (to['outgo']*1) + (transfer.actual_value()*1)
                         else:
-                            to['outgo'] = (to['outgo']*1) + (transfer.quantity()*1)
-                      for com in transfer.commitments.all():
+                            to['outgo'] = (to['outgo']*1) + (transfer.actual_quantity()*1)
+                      for com in transfer.commitments.all_give():
                         if com.unfilled_quantity() > 0:
                           if uv:
                             to['outcommit'] = (to['outcommit']*1) + (transfer.value()*1)
@@ -5682,7 +5685,7 @@ def exchanges_all(request, agent_id): #all types of exchanges for one context ag
                                 if sign == '>':
                                   ttr['outgo'] = (ttr['outgo']*1) + (transfer.quantity()*1)
                                 #ttr['balance'] = (ttr['income']*1) - (ttr['outgo']*1)
-                              for com in transfer.commitments.all():
+                              for com in transfer.commitments.all_give():
                                 if com.unfilled_quantity() > 0:
                                   if sign == '<':
                                     ttr['incommit'] = (ttr['incommit']*1) + (com.unfilled_quantity()*1)
@@ -5762,7 +5765,24 @@ def exchanges_all(request, agent_id): #all types of exchanges for one context ag
         #    unit = Unit.objects.get(id=to['unit'])
         #    print ":: unit:"+str(unit)
 
-        to['balance'] = str(to['balance'])
+        if not isinstance(to['balance'], str):
+            to['balance'] = remove_exponent(to['balance'])
+        if not isinstance(to['balnote'], str):
+            to['balnote'] = remove_exponent(to['balnote'])
+        to['income'] = remove_exponent(to['income'])
+        to['incommit'] = remove_exponent(to['incommit'])
+        if to['incommit']:
+            if to['abbr'] in settings.CRYPTOS:
+                to['incommit'] = (u'\u2248 ')+str(to['incommit'])
+            else:
+                to['incommit'] = '+'+str(to['incommit'])
+        to['outgo'] = remove_exponent(to['outgo'])
+        to['outcommit'] = remove_exponent(to['outcommit'])
+        if to['outcommit']:
+            if to['abbr'] in settings.CRYPTOS:
+                to['outcommit'] = (u'\u2248 ')+str(to['outcommit'])
+            else:
+                to['outcommit'] = '-'+str(to['outcommit'])
 
         # change shares names for shorter version
         if to['name'] and shr_pros:
@@ -7669,7 +7689,7 @@ def create_shares_exchange_types(request, agent_id):
                 slug = 'fair'
                 nome = 'Fair'
                 title = 'Faircoin'
-            elif ob == 'btc' or ob == 'eth':
+            elif ob in settings.CRYPTOS:
                 slug = 'crypto'
                 nome = 'Crypto'
                 title = 'Cryptocoins'

@@ -11,6 +11,10 @@ from decimal import Decimal
 
 FAIRCOIN_DIVISOR = Decimal("100000000.00")
 
+FC2_DATE = date(2017, 7, 18) # launch of FairCoin 2.0
+FC1_TX_URL = "https://chain.fair-coin.org/tx/"
+FC2_TX_URL = "https://chain.fair.to/transaction?transaction="
+
 WALLET = faircoin_utils.is_connected()
 
 class FaircoinAddress(models.Model):
@@ -81,7 +85,7 @@ class FaircoinTransaction(models.Model):
     minus_fee = models.BooleanField('Substract fee to total', default=False)
 
     def is_old_blockchain(self):
-        fc2_launch_date = date(2017, 7, 18)
+        fc2_launch_date = FC2_DATE
         if self.event.event_date < fc2_launch_date:
             return True
         else:
@@ -90,7 +94,7 @@ class FaircoinTransaction(models.Model):
     def chain_link(self):
         if self.tx_hash:
             if self.is_old_blockchain():
-                return "https://chain.fair-coin.org/tx/"+str(self.tx_hash)
+                return FC1_TX_URL+str(self.tx_hash)
             else:
-                return "https://chain.fair.to/transaction?transaction="+str(self.tx_hash)
+                return FC2_TX_URL+str(self.tx_hash)
 
