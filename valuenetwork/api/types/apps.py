@@ -49,4 +49,6 @@ class ApiTypesAppConfig(AppConfig):
         types.OrganizationClassification = OrganizationClassification
         from valuenetwork.api.types.AgentResourceClassification import AgentResourceClassification
         types.AgentResourceClassification = AgentResourceClassification
+        from valuenetwork.api.types.UseFairCoin import UseFairCoin
+        types.UseFairCoin = UseFairCoin
         super(ApiTypesAppConfig, self).ready()

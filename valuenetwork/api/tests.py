@@ -996,6 +996,48 @@ class APITest(TestCase):
 ######################### SAMPLE QUERIES #####################
 
 '''
+# usefaircoin
+
+query($token: String) {
+  viewer(token: $token) {
+    ufc(id:1) {
+      id
+      title
+      tagline
+      description
+      address
+      hours
+      phone
+      website
+      twitter
+      faircoinAddress
+      lat
+      lng
+      image
+    }
+  }
+}
+
+query($token: String) {
+  viewer(token: $token) {
+    allUfcs {
+      id
+      title
+      tagline
+      description
+      address
+      hours
+      phone
+      website
+      twitter
+      faircoinAddress
+      lat
+      lng
+      image
+    }
+  }
+}
+
 # agent data
 
 # user agent is authorized to create objects within that scope

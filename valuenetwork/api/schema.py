@@ -9,6 +9,7 @@ from django.core.exceptions import PermissionDenied
 from graphene_django.debug import DjangoDebug
 from django.conf import settings
 
+import valuenetwork.api.schemas.UseFairCoin
 import valuenetwork.api.schemas.Auth
 import valuenetwork.api.schemas.Agent
 import valuenetwork.api.schemas.AgentRelationship
@@ -35,6 +36,7 @@ from valuenetwork.api.schemas.helpers import hash_password
 
 
 class ViewerQuery(
+    valuenetwork.api.schemas.UseFairCoin.Query,
     valuenetwork.api.schemas.Agent.Query,
     valuenetwork.api.schemas.AgentRelationship.Query,
     valuenetwork.api.schemas.AgentRelationshipRole.Query,
