@@ -27,7 +27,7 @@ from account.utils import random_token
 
 class Account(models.Model):
     
-    user = models.OneToOneField(User, related_name="account", verbose_name=_("user"))
+    user = models.OneToOneField(User, related_name="account", verbose_name=_("user"), on_delete=models.CASCADE)
     timezone = TimeZoneField(_("timezone"))
     language = models.CharField(_("language"),
         max_length=10,
@@ -127,7 +127,7 @@ class SignupCode(models.Model):
     code = models.CharField(max_length=64, unique=True)
     max_uses = models.PositiveIntegerField(default=0)
     expiry = models.DateTimeField(null=True, blank=True)
-    inviter = models.ForeignKey(User, null=True, blank=True)
+    inviter = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
     email = models.EmailField(blank=True)
     notes = models.TextField(blank=True)
     sent = models.DateTimeField(null=True, blank=True)
@@ -221,8 +221,8 @@ class SignupCode(models.Model):
 
 class SignupCodeResult(models.Model):
     
-    signup_code = models.ForeignKey(SignupCode)
-    user = models.ForeignKey(User)
+    signup_code = models.ForeignKey(SignupCode, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(default=datetime.datetime.now)
     
     def save(self, **kwargs):
@@ -232,7 +232,7 @@ class SignupCodeResult(models.Model):
 
 class EmailAddress(models.Model):
     
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     email = models.EmailField(unique=settings.ACCOUNT_EMAIL_UNIQUE)
     verified = models.BooleanField(default=False)
     primary = models.BooleanField(default=False)
@@ -285,7 +285,7 @@ class EmailAddress(models.Model):
 
 class EmailConfirmation(models.Model):
     
-    email_address = models.ForeignKey(EmailAddress)
+    email_address = models.ForeignKey(EmailAddress, on_delete=models.CASCADE)
     created = models.DateTimeField(default=timezone.now)
     sent = models.DateTimeField(null=True)
     key = models.CharField(max_length=64, unique=True)

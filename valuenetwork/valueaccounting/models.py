@@ -244,7 +244,7 @@ class Facet(models.Model):
 
 class FacetValue(models.Model):
     facet = models.ForeignKey(Facet,
-        verbose_name=_('facet'), related_name='values')
+        verbose_name=_('facet'), related_name='values', on_delete=models.CASCADE)
     value = models.CharField(_('value'), max_length=32)
     description = models.TextField(_('description'), blank=True, null=True)
 
@@ -357,7 +357,7 @@ class AgentTypeManager(models.Manager):
 
 class AgentType(models.Model):
     name = models.CharField(_('name'), max_length=128)
-    parent = models.ForeignKey('self', blank=True, null=True,
+    parent = models.ForeignKey('self', blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('parent'), related_name='sub_agents', editable=False)
     party_type = models.CharField(_('party type'),
         max_length=12, choices=SIZE_CHOICES,
@@ -493,7 +493,7 @@ class EconomicAgent(models.Model):
         help_text=_("Must be unique, and no more than 32 characters"))
     url = models.CharField(_('url'), max_length=255, blank=True)
     agent_type = models.ForeignKey(AgentType,
-        verbose_name=_('agent type'), related_name='agents')
+        verbose_name=_('agent type'), related_name='agents', on_delete=models.CASCADE)
     description = models.TextField(_('description'), blank=True, null=True)
     address = models.CharField(_('address'), max_length=255, blank=True)
     email = models.EmailField(_('email address'), max_length=96, blank=True, null=True)
@@ -512,14 +512,14 @@ class EconomicAgent(models.Model):
     photo_url = models.CharField(_('photo url'), max_length=255, blank=True)
     unit_of_claim_value = models.ForeignKey(Unit, blank=True, null=True,
         verbose_name=_('unit used in claims'), related_name="agents",
-        help_text=_('For a context agent, the unit of all claims'))
+        help_text=_('For a context agent, the unit of all claims'), on_delete=models.SET_NULL)
     is_context = models.BooleanField(_('is context'), default=False)
     slug = models.SlugField(_("Page name"), editable=False)
     created_date = models.DateField(_('created date'), default=datetime.date.today)
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='agents_created', blank=True, null=True, editable=False)
+        related_name='agents_created', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='agents_changed', blank=True, null=True, editable=False)
+        related_name='agents_changed', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_date = models.DateField(auto_now=True, blank=True, null=True, editable=False)
     objects = AgentManager()
 
@@ -823,6 +823,9 @@ class EconomicAgent(models.Model):
     def my_user(self):
         users = self.users.all()
         if users:
+            if len(users) > 1:
+                loger.error("The agent has more than one user? ag:"+str(self.id)+" users:"+str(users))
+                raise ValidationError("The agent has more than one user? ag:"+str(self.id)+" users:"+str(users))
             return users[0].user
         return None
 
@@ -2176,8 +2179,8 @@ class EconomicAgent(models.Model):
 
 class AgentUser(models.Model):
     agent = models.ForeignKey(EconomicAgent,
-        verbose_name=_('agent'), related_name='users')
-    user = models.OneToOneField(User,
+        verbose_name=_('agent'), related_name='users', on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE,
         verbose_name=_('user'), related_name='agent')
 
 
@@ -2300,11 +2303,11 @@ RELATIONSHIP_STATE_CHOICES = (
 
 class AgentAssociation(models.Model):
     is_associate = models.ForeignKey(EconomicAgent,
-        verbose_name=_('is associate of'), related_name='is_associate_of')
+        verbose_name=_('is associate of'), related_name='is_associate_of', on_delete=models.CASCADE)
     has_associate = models.ForeignKey(EconomicAgent,
-        verbose_name=_('has associate'), related_name='has_associates')
+        verbose_name=_('has associate'), related_name='has_associates', on_delete=models.CASCADE)
     association_type = models.ForeignKey(AgentAssociationType,
-        verbose_name=_('association type'), related_name='associations')
+        verbose_name=_('association type'), related_name='associations', on_delete=models.CASCADE)
     description = models.TextField(_('description'), blank=True, null=True)
     state = models.CharField(_('state'),
         max_length=12, choices=RELATIONSHIP_STATE_CHOICES,
@@ -2796,16 +2799,16 @@ class EconomicResourceType(models.Model):
     name = models.CharField(_('name'), max_length=128, unique=True)
     #version = models.CharField(_('version'), max_length=32, blank=True)
     parent = models.ForeignKey('self', blank=True, null=True,
-        verbose_name=_('parent'), related_name='children')
+        verbose_name=_('parent'), related_name='children', on_delete=models.SET_NULL)
     resource_class = models.ForeignKey(ResourceClass, blank=True, null=True,
-        verbose_name=_('resource class'), related_name='resource_types')
-    unit = models.ForeignKey(Unit, blank=True, null=True,
+        verbose_name=_('resource class'), related_name='resource_types', on_delete=models.SET_NULL)
+    unit = models.ForeignKey(Unit, blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('unit'), related_name="resource_units",
         help_text=_('if this resource has different units of use and inventory, this is the unit of inventory'))
-    unit_of_use = models.ForeignKey(Unit, blank=True, null=True,
+    unit_of_use = models.ForeignKey(Unit, blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('unit of use'), related_name="units_of_use",
         help_text=_('if this resource has different units of use and inventory, this is the unit of use'))
-    unit_of_value = models.ForeignKey(Unit, blank=True, null=True,
+    unit_of_value = models.ForeignKey(Unit, blank=True, null=True, on_delete=models.SET_NULL,
         limit_choices_to={'unit_type': 'value'},
         verbose_name=_('unit of value'), related_name="resource_type_value_units", editable=False)
     value_per_unit = models.DecimalField(_('value per unit'), max_digits=8, decimal_places=2,
@@ -2814,7 +2817,7 @@ class EconomicResourceType(models.Model):
         default=Decimal("0.00"), editable=False)
     price_per_unit = models.DecimalField(_('price per unit'), max_digits=8, decimal_places=2,
         default=Decimal("0.00"))
-    unit_of_price = models.ForeignKey(Unit, blank=True, null=True,
+    unit_of_price = models.ForeignKey(Unit, blank=True, null=True, on_delete=models.SET_NULL,
         limit_choices_to={'unit_type': 'value'},
         verbose_name=_('unit of price'), related_name="resource_type_price_units")
     substitutable = models.BooleanField(_('substitutable'), default=True,
@@ -2828,19 +2831,19 @@ class EconomicResourceType(models.Model):
     photo_url = models.CharField(_('photo url'), max_length=255, blank=True)
     url = models.CharField(_('url'), max_length=255, blank=True)
     description = models.TextField(_('description'), blank=True, null=True)
-    accounting_reference = models.ForeignKey(AccountingReference, blank=True, null=True,
+    accounting_reference = models.ForeignKey(AccountingReference, blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('accounting reference'), related_name="resource_types",
         help_text=_('optional reference to an external account'))
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='resource_types_created', blank=True, null=True, editable=False)
+        related_name='resource_types_created', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='resource_types_changed', blank=True, null=True, editable=False)
+        related_name='resource_types_changed', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     created_date = models.DateField(auto_now_add=True, blank=True, null=True, editable=False)
     changed_date = models.DateField(auto_now=True, blank=True, null=True, editable=False)
     slug = models.SlugField(_("Page name"), editable=False)
 
     context_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         limit_choices_to={"is_context": True,},
         verbose_name=_('context agent'), related_name='context_resource_types')
 
@@ -3711,7 +3714,7 @@ class ResourceTypeList(models.Model):
     name = models.CharField(_('name'), max_length=128)
     description = models.TextField(_('description'), blank=True, null=True)
     context_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         limit_choices_to={"is_context": True,},
         verbose_name=_('context agent'), related_name='lists')
 
@@ -3744,9 +3747,9 @@ class ResourceTypeList(models.Model):
 
 class ResourceTypeListElement(models.Model):
     resource_type_list = models.ForeignKey(ResourceTypeList,
-        verbose_name=_('resource type list'), related_name='list_elements')
+        verbose_name=_('resource type list'), related_name='list_elements', on_delete=models.CASCADE)
     resource_type = models.ForeignKey(EconomicResourceType,
-        verbose_name=_('resource type'), related_name='lists')
+        verbose_name=_('resource type'), related_name='lists', on_delete=models.CASCADE)
     default_quantity = models.DecimalField(_('default quantity'), max_digits=8, decimal_places=2,
         default=Decimal("1.0"))
 
@@ -3760,9 +3763,9 @@ class ResourceTypeListElement(models.Model):
 
 class ResourceTypeFacetValue(models.Model):
     resource_type = models.ForeignKey(EconomicResourceType,
-        verbose_name=_('resource type'), related_name='facets')
+        verbose_name=_('resource type'), related_name='facets', on_delete=models.CASCADE)
     facet_value = models.ForeignKey(FacetValue,
-        verbose_name=_('facet value'), related_name='resource_types')
+        verbose_name=_('facet value'), related_name='resource_types', on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('resource_type', 'facet_value')
@@ -3816,7 +3819,7 @@ class ProcessPattern(models.Model):
     name = models.CharField(_('name'), max_length=32)
 
     context_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         limit_choices_to={"is_context": True,},
         verbose_name=_('context agent'), related_name='process_patterns')
 
@@ -4119,11 +4122,11 @@ class ProcessPattern(models.Model):
 
 
 class PatternFacetValue(models.Model):
-    pattern = models.ForeignKey(ProcessPattern,
+    pattern = models.ForeignKey(ProcessPattern, on_delete=models.CASCADE,
         verbose_name=_('pattern'), related_name='facets')
-    facet_value = models.ForeignKey(FacetValue,
+    facet_value = models.ForeignKey(FacetValue, on_delete=models.CASCADE,
         verbose_name=_('facet value'), related_name='patterns')
-    event_type = models.ForeignKey(EventType,
+    event_type = models.ForeignKey(EventType, on_delete=models.CASCADE,
         verbose_name=_('event type'), related_name='patterns',
         help_text=_('consumed means gone, used means re-usable'))
 
@@ -4280,9 +4283,9 @@ def create_event_types(**kwargs):
 #post_migrate.connect(create_event_types, sender=ValueAccountingAppConfig)
 
 class UseCaseEventType(models.Model):
-    use_case = models.ForeignKey(UseCase,
+    use_case = models.ForeignKey(UseCase, on_delete=models.CASCADE,
         verbose_name=_('use case'), related_name='event_types')
-    event_type = models.ForeignKey(EventType,
+    event_type = models.ForeignKey(EventType, on_delete=models.CASCADE,
         verbose_name=_('event type'), related_name='use_cases')
 
     def __unicode__(self):
@@ -4377,9 +4380,9 @@ def create_usecase_eventtypes(**kwargs):
 
 class PatternUseCase(models.Model):
     pattern = models.ForeignKey(ProcessPattern,
-        verbose_name=_('pattern'), related_name='use_cases')
+        verbose_name=_('pattern'), related_name='use_cases', on_delete=models.CASCADE)
     use_case = models.ForeignKey(UseCase,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('use case'), related_name='patterns')
 
     def __unicode__(self):
@@ -4429,18 +4432,18 @@ class Order(models.Model):
     name = models.CharField(_('name'), max_length=255, blank=True,
         help_text=_("appended to process labels for Work orders"))
     receiver = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="purchase_orders", verbose_name=_('receiver'))
     provider = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="sales_orders", verbose_name=_('provider'))
     order_date = models.DateField(_('order date'), default=datetime.date.today)
     due_date = models.DateField(_('due date'))
     description = models.TextField(_('description'), null=True, blank=True)
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='orders_created', blank=True, null=True)
+        related_name='orders_created', blank=True, null=True, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='orders_changed', blank=True, null=True)
+        related_name='orders_changed', blank=True, null=True, on_delete=models.SET_NULL)
     created_date = models.DateField(auto_now_add=True, blank=True, null=True, editable=False)
     changed_date = models.DateField(auto_now=True, blank=True, null=True, editable=False)
 
@@ -5045,13 +5048,13 @@ class ProcessTypeManager(models.Manager):
 
 class ProcessType(models.Model):
     name = models.CharField(_('name'), max_length=128)
-    parent = models.ForeignKey('self', blank=True, null=True,
+    parent = models.ForeignKey('self', blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('parent'), related_name='sub_process_types', editable=False)
     process_pattern = models.ForeignKey(ProcessPattern,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('process pattern'), related_name='process_types')
     context_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         limit_choices_to={"is_context": True,},
         verbose_name=_('context agent'), related_name='process_types')
     description = models.TextField(_('description'), blank=True, null=True)
@@ -5059,9 +5062,9 @@ class ProcessType(models.Model):
     estimated_duration = models.IntegerField(_('estimated duration'),
         default=0, help_text=_("in minutes, e.g. 3 hours = 180"))
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='process_types_created', blank=True, null=True, editable=False)
+        related_name='process_types_created', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='process_types_changed', blank=True, null=True, editable=False)
+        related_name='process_types_changed', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     created_date = models.DateField(auto_now_add=True, blank=True, null=True, editable=False)
     changed_date = models.DateField(auto_now=True, blank=True, null=True, editable=False)
     slug = models.SlugField(_("Page name"), editable=False)
@@ -5392,14 +5395,14 @@ class ProcessType(models.Model):
 
 
 class ResourceTypeSpecialPrice(models.Model):
-    resource_type = models.ForeignKey(EconomicResourceType,
+    resource_type = models.ForeignKey(EconomicResourceType, on_delete=models.CASCADE,
         verbose_name=_('resource type'), related_name='prices')
     identifier = models.CharField(_('identifier'), max_length=128)
     description = models.TextField(_('description'), blank=True, null=True)
     price_per_unit = models.DecimalField(_('price per unit'), max_digits=8, decimal_places=2,
         default=Decimal("0.00"))
     stage = models.ForeignKey(ProcessType, related_name="price_at_stage",
-        verbose_name=_('stage'), blank=True, null=True)
+        verbose_name=_('stage'), blank=True, null=True, on_delete=models.SET_NULL)
 
 
 class ExchangeTypeManager(models.Manager):
@@ -5433,19 +5436,19 @@ class ExchangeTypeManager(models.Manager):
 class ExchangeType(models.Model):
     name = models.CharField(_('name'), max_length=128)
     use_case = models.ForeignKey(UseCase,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('use case'), related_name='exchange_types')
     description = models.TextField(_('description'), blank=True, null=True)
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='exchange_types_created', blank=True, null=True, editable=False)
+        related_name='exchange_types_created', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='exchange_types_changed', blank=True, null=True, editable=False)
+        related_name='exchange_types_changed', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     created_date = models.DateField(auto_now_add=True, blank=True, null=True, editable=False)
     changed_date = models.DateField(auto_now=True, blank=True, null=True, editable=False)
     slug = models.SlugField(_("Page name"), editable=False)
 
     context_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         limit_choices_to={"is_context": True,},
         verbose_name=_('context agent'), related_name='exchange_types')
 
@@ -5553,24 +5556,24 @@ class EconomicResourceManager(models.Manager):
 
 class EconomicResource(models.Model):
     resource_type = models.ForeignKey(EconomicResourceType,
-        verbose_name=_('resource type'), related_name='resources')
+        verbose_name=_('resource type'), related_name='resources', on_delete=models.CASCADE)
     identifier = models.CharField(_('identifier'), blank=True, max_length=128)
     independent_demand = models.ForeignKey(Order,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="dependent_resources", verbose_name=_('independent demand'))
     order_item = models.ForeignKey("Commitment",
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="stream_resources", verbose_name=_('order item'))
     stage = models.ForeignKey(ProcessType, related_name="resources_at_stage",
-        verbose_name=_('stage'), blank=True, null=True)
+        verbose_name=_('stage'), blank=True, null=True, on_delete=models.SET_NULL)
     exchange_stage = models.ForeignKey(ExchangeType, related_name="resources_at_exchange_stage",
-        verbose_name=_('exchange stage'), blank=True, null=True)
+        verbose_name=_('exchange stage'), blank=True, null=True, on_delete=models.SET_NULL)
     state = models.ForeignKey(ResourceState, related_name="resources_at_state",
-        verbose_name=_('state'), blank=True, null=True)
+        verbose_name=_('state'), blank=True, null=True, on_delete=models.SET_NULL)
     url = models.CharField(_('url'), max_length=255, blank=True)
     #todo: remove author, in the meantime, don't use it
     author = models.ForeignKey(EconomicAgent, related_name="authored_resources",
-        verbose_name=_('author'), blank=True, null=True)
+        verbose_name=_('author'), blank=True, null=True, on_delete=models.SET_NULL)
     quantity = models.DecimalField(_('quantity'), max_digits=8, decimal_places=2,
         default=Decimal("0.00"))
     quality = models.DecimalField(_('quality'), max_digits=3, decimal_places=0,
@@ -5582,7 +5585,7 @@ class EconomicResource(models.Model):
     access_rules = models.TextField(_('access rules'), blank=True, null=True)
     current_location = models.ForeignKey(Location,
         verbose_name=_('current location'), related_name='resources_at_location',
-        blank=True, null=True)
+        blank=True, null=True, on_delete=models.SET_NULL)
     value_per_unit = models.DecimalField(_('value per unit'), max_digits=8, decimal_places=2,
         default=Decimal("0.00"))
     value_per_unit_of_use = models.DecimalField(_('value per unit of use'), max_digits=8, decimal_places=2,
@@ -5591,9 +5594,9 @@ class EconomicResource(models.Model):
         default=Decimal("0.00"))
     created_date = models.DateField(_('created date'), default=datetime.date.today)
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='resources_created', blank=True, null=True, editable=False)
+        related_name='resources_created', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='resources_changed', blank=True, null=True, editable=False)
+        related_name='resources_changed', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_date = models.DateField(auto_now=True, blank=True, null=True, editable=False)
 
     objects = EconomicResourceManager()
@@ -7146,29 +7149,29 @@ class EconomicResource(models.Model):
 
 
 class AgentResourceType(models.Model):
-    agent = models.ForeignKey(EconomicAgent,
+    agent = models.ForeignKey(EconomicAgent, on_delete=models.CASCADE,
         verbose_name=_('agent'), related_name='resource_types')
-    resource_type = models.ForeignKey(EconomicResourceType,
+    resource_type = models.ForeignKey(EconomicResourceType, on_delete=models.CASCADE,
         verbose_name=_('resource type'), related_name='agents')
     score = models.DecimalField(_('score'), max_digits=8, decimal_places=2,
         default=Decimal("0.0"),
         help_text=_("the quantity of contributions of this resource type from this agent"))
-    event_type = models.ForeignKey(EventType,
+    event_type = models.ForeignKey(EventType, on_delete=models.CASCADE,
         verbose_name=_('event type'), related_name='agent_resource_types')
     lead_time = models.IntegerField(_('lead time'),
         default=0, help_text=_("in days"))
     value = models.DecimalField(_('value'), max_digits=8, decimal_places=2,
         default=Decimal("0.0"))
-    unit_of_value = models.ForeignKey(Unit, blank=True, null=True,
+    unit_of_value = models.ForeignKey(Unit, blank=True, null=True, on_delete=models.SET_NULL,
         limit_choices_to={'unit_type': 'value'},
         verbose_name=_('unit of value'), related_name="agent_resource_value_units")
     value_per_unit = models.DecimalField(_('value per unit'), max_digits=8, decimal_places=2,
         default=Decimal("0.0"))
     description = models.TextField(_('description'), null=True, blank=True)
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='arts_created', blank=True, null=True, editable=False)
+        related_name='arts_created', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='arts_changed', blank=True, null=True, editable=False)
+        related_name='arts_changed', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     created_date = models.DateField(auto_now_add=True, blank=True, null=True, editable=False)
     changed_date = models.DateField(auto_now=True, blank=True, null=True, editable=False)
 
@@ -7260,11 +7263,11 @@ class AgentResourceRoleType(models.Model):
 
 
 class AgentResourceRole(models.Model):
-    agent = models.ForeignKey(EconomicAgent,
+    agent = models.ForeignKey(EconomicAgent, on_delete=models.CASCADE,
         verbose_name=_('agent'), related_name='agent_resource_roles')
-    resource = models.ForeignKey(EconomicResource,
+    resource = models.ForeignKey(EconomicResource, on_delete=models.CASCADE,
         verbose_name=_('resource'), related_name='agent_resource_roles')
-    role = models.ForeignKey(AgentResourceRoleType,
+    role = models.ForeignKey(AgentResourceRoleType, on_delete=models.CASCADE,
         verbose_name=_('role'), related_name='agent_resource_roles')
     is_contact = models.BooleanField(_('is contact'), default=False)
     owner_percentage = models.IntegerField(_('owner percentage'), null=True)
@@ -7275,24 +7278,24 @@ class AgentResourceRole(models.Model):
 
 #todo: rename to CommitmentType
 class ProcessTypeResourceType(models.Model):
-    process_type = models.ForeignKey(ProcessType,
+    process_type = models.ForeignKey(ProcessType, on_delete=models.CASCADE,
         verbose_name=_('process type'), related_name='resource_types')
-    resource_type = models.ForeignKey(EconomicResourceType,
+    resource_type = models.ForeignKey(EconomicResourceType, on_delete=models.CASCADE,
         verbose_name=_('resource type'), related_name='process_types')
-    event_type = models.ForeignKey(EventType,
+    event_type = models.ForeignKey(EventType, on_delete=models.CASCADE,
         verbose_name=_('event type'), related_name='process_resource_types')
     stage = models.ForeignKey(ProcessType, related_name="commitmenttypes_at_stage",
-        verbose_name=_('stage'), blank=True, null=True)
+        verbose_name=_('stage'), blank=True, null=True, on_delete=models.SET_NULL)
     state = models.ForeignKey(ResourceState, related_name="commitmenttypes_at_state",
-        verbose_name=_('state'), blank=True, null=True)
+        verbose_name=_('state'), blank=True, null=True, on_delete=models.SET_NULL)
     quantity = models.DecimalField(_('quantity'), max_digits=8, decimal_places=2, default=Decimal('0.00'))
-    unit_of_quantity = models.ForeignKey(Unit, blank=True, null=True,
+    unit_of_quantity = models.ForeignKey(Unit, blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('unit'), related_name="process_resource_qty_units")
     description = models.TextField(_('description'), null=True, blank=True)
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='ptrts_created', blank=True, null=True, editable=False)
+        related_name='ptrts_created', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='ptrts_changed', blank=True, null=True, editable=False)
+        related_name='ptrts_changed', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     created_date = models.DateField(auto_now_add=True, blank=True, null=True, editable=False)
     changed_date = models.DateField(auto_now=True, blank=True, null=True, editable=False)
 
@@ -7502,21 +7505,21 @@ class ProcessManager(models.Manager):
 
 class Process(models.Model):
     name = models.CharField(_('name'), max_length=128)
-    parent = models.ForeignKey('self', blank=True, null=True,
+    parent = models.ForeignKey('self', blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('parent'), related_name='sub_processes', editable=False)
     process_pattern = models.ForeignKey(ProcessPattern,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('process pattern'), related_name='processes')
     process_type = models.ForeignKey(ProcessType,
         blank=True, null=True,
         verbose_name=_('process type'), related_name='processes',
         on_delete=models.SET_NULL)
     context_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         limit_choices_to={"is_context": True,},
         verbose_name=_('context agent'), related_name='processes')
     plan = models.ForeignKey(Order,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('plan'), related_name='processes')
     url = models.CharField(_('url'), max_length=255, blank=True)
     start_date = models.DateField(_('start date'))
@@ -7525,9 +7528,9 @@ class Process(models.Model):
     finished = models.BooleanField(_('finished'), default=False)
     notes = models.TextField(_('notes'), blank=True)
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='processes_created', blank=True, null=True, editable=False)
+        related_name='processes_created', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='processes_changed', blank=True, null=True, editable=False)
+        related_name='processes_changed', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     created_date = models.DateField(auto_now_add=True, blank=True, null=True, editable=False)
     changed_date = models.DateField(auto_now=True, blank=True, null=True, editable=False)
     slug = models.SlugField(_("Page name"), editable=False)
@@ -8624,7 +8627,7 @@ class TransferType(models.Model):
     name = models.CharField(_('name'), max_length=128)
     sequence = models.IntegerField(_('sequence'), default=0)
     exchange_type = models.ForeignKey(ExchangeType,
-        verbose_name=_('exchange type'), related_name='transfer_types')
+        verbose_name=_('exchange type'), related_name='transfer_types', on_delete=models.CASCADE)
     description = models.TextField(_('description'), blank=True, null=True)
     is_contribution = models.BooleanField(_('is contribution'), default=False)
     is_to_distribute = models.BooleanField(_('is to distribute'), default=False)
@@ -8634,15 +8637,15 @@ class TransferType(models.Model):
     give_agent_is_context = models.BooleanField(_('give agent is context'), default=False)
     receive_agent_is_context = models.BooleanField(_('receive agent is context'), default=False)
     give_agent_association_type = models.ForeignKey(AgentAssociationType,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('give agent association type'), related_name='transfer_types_give')
     receive_agent_association_type = models.ForeignKey(AgentAssociationType,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('receive agent association type'), related_name='transfer_types_receive')
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='transfer_types_created', blank=True, null=True, editable=False)
+        related_name='transfer_types_created', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='transfer_types_changed', blank=True, null=True, editable=False)
+        related_name='transfer_types_changed', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     created_date = models.DateField(auto_now_add=True, blank=True, null=True, editable=False)
     changed_date = models.DateField(auto_now=True, blank=True, null=True, editable=False)
     inherit_types = models.BooleanField(_('inherit resource types'), default=False)
@@ -8867,9 +8870,9 @@ class TransferType(models.Model):
 
 class TransferTypeFacetValue(models.Model):
     transfer_type = models.ForeignKey(TransferType,
-        verbose_name=_('transfer type'), related_name='facet_values')
+        verbose_name=_('transfer type'), related_name='facet_values', on_delete=models.CASCADE)
     facet_value = models.ForeignKey(FacetValue,
-        verbose_name=_('facet value'), related_name='transfer_types')
+        verbose_name=_('facet value'), related_name='transfer_types', on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('transfer_type', 'facet_value')
@@ -8979,34 +8982,34 @@ class ExchangeManager(models.Manager):
 class Exchange(models.Model):
     name = models.CharField(_('name'), blank=True, max_length=128)
     process_pattern = models.ForeignKey(ProcessPattern,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('pattern'), related_name='exchanges')
     use_case = models.ForeignKey(UseCase,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('use case'), related_name='exchanges')
     exchange_type = models.ForeignKey(ExchangeType,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('exchange type'), related_name='exchanges')
     context_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         limit_choices_to={"is_context": True,},
         verbose_name=_('context agent'), related_name='exchanges')
     url = models.CharField(_('url'), max_length=255, blank=True, null=True)
     start_date = models.DateField(_('start date'))
     notes = models.TextField(_('notes'), blank=True)
     supplier = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="exchanges_as_supplier", verbose_name=_('supplier'))
     customer = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="exchanges_as_customer", verbose_name=_('customer'))
     order = models.ForeignKey(Order,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="exchanges", verbose_name=_('order'))
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='exchanges_created', blank=True, null=True, editable=False)
+        related_name='exchanges_created', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='exchanges_changed', blank=True, null=True, editable=False)
+        related_name='exchanges_changed', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     created_date = models.DateField(auto_now_add=True, blank=True, null=True, editable=False)
     changed_date = models.DateField(auto_now=True, blank=True, null=True, editable=False)
     slug = models.SlugField(_("Page name"), editable=False)
@@ -9868,21 +9871,21 @@ class Exchange(models.Model):
 class Transfer(models.Model):
     name = models.CharField(_('name'), blank=True, max_length=128)
     transfer_type = models.ForeignKey(TransferType,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('transfer type'), related_name='transfers')
     exchange = models.ForeignKey(Exchange,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('exchange'), related_name='transfers')
     context_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         limit_choices_to={"is_context": True,},
         verbose_name=_('context agent'), related_name='transfers')
     transfer_date = models.DateField(_('transfer date'))
     notes = models.TextField(_('notes'), blank=True)
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='transfers_created', blank=True, null=True, editable=False)
+        related_name='transfers_created', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='transfers_changed', blank=True, null=True, editable=False)
+        related_name='transfers_changed', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     created_date = models.DateField(auto_now_add=True, blank=True, null=True, editable=False)
     changed_date = models.DateField(auto_now=True, blank=True, null=True, editable=False)
     slug = models.SlugField(_("Page name"), editable=False)
@@ -10723,20 +10726,20 @@ class Feature(models.Model):
     #    blank=True, null=True,
     #    help_text=_("option selections will be limited to this category"),
     #    limit_choices_to=Q(applies_to='Anything') | Q(applies_to='EconomicResourceType'))
-    product = models.ForeignKey(EconomicResourceType,
+    product = models.ForeignKey(EconomicResourceType, on_delete=models.CASCADE,
         related_name="features", verbose_name=_('product'))
     process_type = models.ForeignKey(ProcessType,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('process type'), related_name='features')
-    event_type = models.ForeignKey(EventType,
+    event_type = models.ForeignKey(EventType, on_delete=models.CASCADE,
         verbose_name=_('event type'), related_name='features')
     quantity = models.DecimalField(_('quantity'), max_digits=8, decimal_places=2, default=Decimal('0.00'))
-    unit_of_quantity = models.ForeignKey(Unit, blank=True, null=True,
+    unit_of_quantity = models.ForeignKey(Unit, blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('unit'), related_name="feature_units")
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='features_created', blank=True, null=True, editable=False)
+        related_name='features_created', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='features_changed', blank=True, null=True, editable=False)
+        related_name='features_changed', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     created_date = models.DateField(auto_now_add=True, blank=True, null=True, editable=False)
     changed_date = models.DateField(auto_now=True, blank=True, null=True, editable=False)
 
@@ -10796,14 +10799,14 @@ class Feature(models.Model):
 
 
 class Option(models.Model):
-    feature = models.ForeignKey(Feature,
+    feature = models.ForeignKey(Feature, on_delete=models.CASCADE,
         related_name="options", verbose_name=_('feature'))
-    component = models.ForeignKey(EconomicResourceType,
+    component = models.ForeignKey(EconomicResourceType, on_delete=models.CASCADE,
         related_name="options", verbose_name=_('component'))
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='options_created', blank=True, null=True, editable=False)
+        related_name='options_created', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='options_changed', blank=True, null=True, editable=False)
+        related_name='options_changed', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     created_date = models.DateField(auto_now_add=True, blank=True, null=True, editable=False)
     changed_date = models.DateField(auto_now=True, blank=True, null=True, editable=False)
 
@@ -10893,68 +10896,68 @@ class CommitmentManager(models.Manager):
 
 class Commitment(models.Model):
     order = models.ForeignKey(Order,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="commitments", verbose_name=_('order'))
     independent_demand = models.ForeignKey(Order,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="dependent_commitments", verbose_name=_('independent demand'))
     order_item = models.ForeignKey("self",
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="stream_commitments", verbose_name=_('order item'))
-    event_type = models.ForeignKey(EventType,
+    event_type = models.ForeignKey(EventType, on_delete=models.CASCADE,
         related_name="commitments", verbose_name=_('event type'))
     stage = models.ForeignKey(ProcessType, related_name="commitments_at_stage",
-        verbose_name=_('stage'), blank=True, null=True)
+        verbose_name=_('stage'), blank=True, null=True, on_delete=models.SET_NULL)
     exchange_stage = models.ForeignKey(ExchangeType, related_name="commitments_at_exchange_stage",
-        verbose_name=_('exchange stage'), blank=True, null=True)
+        verbose_name=_('exchange stage'), blank=True, null=True, on_delete=models.SET_NULL)
     state = models.ForeignKey(ResourceState, related_name="commitments_at_state",
-        verbose_name=_('state'), blank=True, null=True)
+        verbose_name=_('state'), blank=True, null=True, on_delete=models.SET_NULL)
     commitment_date = models.DateField(_('commitment date'), default=datetime.date.today)
     start_date = models.DateField(_('start date'), blank=True, null=True)
     due_date = models.DateField(_('due date'))
     finished = models.BooleanField(_('finished'), default=False)
     from_agent_type = models.ForeignKey(AgentType,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="given_commitments", verbose_name=_('from agent type'))
     from_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="given_commitments", verbose_name=_('from'))
     to_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="taken_commitments", verbose_name=_('to'))
     resource_type = models.ForeignKey(EconomicResourceType,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('resource type'), related_name='commitments')
     resource = models.ForeignKey(EconomicResource,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('resource'), related_name='commitments')
     process = models.ForeignKey(Process,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('process'), related_name='commitments')
     exchange = models.ForeignKey(Exchange,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('exchange'), related_name='commitments')
     transfer = models.ForeignKey(Transfer,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="commitments")
     context_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         limit_choices_to={"is_context": True,},
         verbose_name=_('context agent'), related_name='commitments')
     description = models.TextField(_('description'), null=True, blank=True)
     url = models.CharField(_('url'), max_length=255, blank=True)
     quantity = models.DecimalField(_('quantity'), max_digits=20, decimal_places=9)
-    unit_of_quantity = models.ForeignKey(Unit, blank=True, null=True,
+    unit_of_quantity = models.ForeignKey(Unit, blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('unit'), related_name="commitment_qty_units")
     quality = models.DecimalField(_('quality'), max_digits=3, decimal_places=0, default=Decimal("0"))
     value = models.DecimalField(_('value'), max_digits=8, decimal_places=2,
         default=Decimal("0.0"))
-    unit_of_value = models.ForeignKey(Unit, blank=True, null=True,
+    unit_of_value = models.ForeignKey(Unit, blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('unit of value'), related_name="commitment_value_units")
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='commitments_created', blank=True, null=True, editable=False)
+        related_name='commitments_created', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='commitments_changed', blank=True, null=True, editable=False)
+        related_name='commitments_changed', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     created_date = models.DateField(auto_now_add=True, blank=True, null=True, editable=False)
     changed_date = models.DateField(auto_now=True, blank=True, null=True, editable=False)
     slug = models.SlugField(_("Page name"), editable=False)
@@ -12281,9 +12284,9 @@ class Reciprocity(models.Model):
     and the other commitment can reciprocate many initiating commitments.
 
     """
-    initiating_commitment = models.ForeignKey(Commitment,
+    initiating_commitment = models.ForeignKey(Commitment, on_delete=models.CASCADE,
         related_name="initiated_commitments", verbose_name=_('initiating commitment'))
-    reciprocal_commitment = models.ForeignKey(Commitment,
+    reciprocal_commitment = models.ForeignKey(Commitment, on_delete=models.CASCADE,
         related_name="reciprocal_commitments", verbose_name=_('reciprocal commitment'))
     reciprocity_date = models.DateField(_('reciprocity date'), default=datetime.date.today)
 
@@ -12307,9 +12310,9 @@ class Reciprocity(models.Model):
 
 
 class SelectedOption(models.Model):
-    commitment = models.ForeignKey(Commitment,
+    commitment = models.ForeignKey(Commitment, on_delete=models.CASCADE,
         related_name="options", verbose_name=_('commitment'))
-    option = models.ForeignKey(Option,
+    option = models.ForeignKey(Option, on_delete=models.CASCADE,
         related_name="commitments", verbose_name=_('option'))
 
     class Meta:
@@ -12428,7 +12431,7 @@ PERCENTAGE_BEHAVIOR_CHOICES = (
 
 class ValueEquation(models.Model):
     name = models.CharField(_('name'), max_length=255, blank=True)
-    context_agent = models.ForeignKey(EconomicAgent,
+    context_agent = models.ForeignKey(EconomicAgent, on_delete=models.CASCADE,
         limit_choices_to={"is_context": True,},
         related_name="value_equations", verbose_name=_('context agent'))
     description = models.TextField(_('description'), null=True, blank=True)
@@ -12438,7 +12441,7 @@ class ValueEquation(models.Model):
     live = models.BooleanField(_('live'), default=False,
         help_text=_("Make this value equation available for use in real distributions."))
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='value_equations_created', blank=True, null=True)
+        related_name='value_equations_created', blank=True, null=True, on_delete=models.SET_NULL)
     created_date = models.DateField(auto_now_add=True, blank=True, null=True, editable=False)
 
     def __unicode__(self):
@@ -12742,23 +12745,23 @@ class DistributionManager(models.Manager):
 class Distribution(models.Model):
     name = models.CharField(_('name'), blank=True, max_length=128)
     process_pattern = models.ForeignKey(ProcessPattern,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('pattern'), related_name='distributions')
     context_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         limit_choices_to={"is_context": True,},
         verbose_name=_('context agent'), related_name='distributions')
     url = models.CharField(_('url'), max_length=255, blank=True, null=True)
     distribution_date = models.DateField(_('distribution date'))
     notes = models.TextField(_('notes'), blank=True)
     value_equation = models.ForeignKey(ValueEquation,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('value equation link'), related_name='distributions')
     value_equation_content = models.TextField(_('value equation formulas used'), null=True, blank=True)
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='distributions_created', blank=True, null=True, editable=False)
+        related_name='distributions_created', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='distributions_changed', blank=True, null=True, editable=False)
+        related_name='distributions_changed', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     created_date = models.DateField(auto_now_add=True, blank=True, null=True, editable=False)
     changed_date = models.DateField(auto_now=True, blank=True, null=True, editable=False)
     slug = models.SlugField(_("Page name"), editable=False)
@@ -12929,22 +12932,22 @@ class EconomicEventManager(models.Manager):
 )"""
 
 class EconomicEvent(models.Model):
-    event_type = models.ForeignKey(EventType,
+    event_type = models.ForeignKey(EventType, on_delete=models.CASCADE,
         related_name="events", verbose_name=_('event type'))
     event_date = models.DateField(_('event date'))
     from_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="given_events", verbose_name=_('from'))
     to_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="taken_events", verbose_name=_('to'))
-    resource_type = models.ForeignKey(EconomicResourceType,
+    resource_type = models.ForeignKey(EconomicResourceType, on_delete=models.CASCADE,
         verbose_name=_('resource type'), related_name='events')
     resource = models.ForeignKey(EconomicResource,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('resource'), related_name='events')
     exchange_stage = models.ForeignKey(ExchangeType, related_name="events_creating_exchange_stage",
-        verbose_name=_('exchange stage'), blank=True, null=True)
+        verbose_name=_('exchange stage'), blank=True, null=True, on_delete=models.SET_NULL)
     process = models.ForeignKey(Process,
         blank=True, null=True,
         verbose_name=_('process'), related_name='events',
@@ -12969,30 +12972,30 @@ class EconomicEvent(models.Model):
     url = models.CharField(_('url'), max_length=255, blank=True)
     description = models.TextField(_('description'), null=True, blank=True)
     quantity = models.DecimalField(_('quantity'), max_digits=20, decimal_places=9)
-    unit_of_quantity = models.ForeignKey(Unit, blank=True, null=True,
+    unit_of_quantity = models.ForeignKey(Unit, blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('unit'), related_name="event_qty_units")
     quality = models.DecimalField(_('quality'), max_digits=3, decimal_places=0, default=Decimal("0"))
     value = models.DecimalField(_('value'), max_digits=8, decimal_places=2,
         default=Decimal("0.0"))
-    unit_of_value = models.ForeignKey(Unit, blank=True, null=True,
+    unit_of_value = models.ForeignKey(Unit, blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('unit of value'), related_name="event_value_units")
     price = models.DecimalField(_('price'), max_digits=8, decimal_places=2,
         default=Decimal("0.0"))
-    unit_of_price = models.ForeignKey(Unit, blank=True, null=True,
+    unit_of_price = models.ForeignKey(Unit, blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('unit of price'), related_name="event_price_units")
     commitment = models.ForeignKey(Commitment, blank=True, null=True,
         verbose_name=_('fulfills commitment'), related_name="fulfillment_events",
         on_delete=models.SET_NULL)
     is_contribution = models.BooleanField(_('is contribution'), default=False)
     is_to_distribute = models.BooleanField(_('is to distribute'), default=False)
-    accounting_reference = models.ForeignKey(AccountingReference, blank=True, null=True,
+    accounting_reference = models.ForeignKey(AccountingReference, blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('accounting reference'), related_name="events",
         help_text=_('optional reference to an accounting grouping'))
     event_reference = models.CharField(_('reference'), max_length=128, blank=True, null=True)
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='events_created', blank=True, null=True, editable=False)
+        related_name='events_created', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='events_changed', blank=True, null=True, editable=False)
+        related_name='events_changed', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
 
     slug = models.SlugField(_("Page name"), editable=False)
 
@@ -14280,10 +14283,10 @@ class DistributionValueEquation(models.Model):
     '''
     distribution_date = models.DateField(_('distribution date'))
     exchange = models.ForeignKey(Exchange,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('exchange'), related_name='value_equation')
     value_equation_link = models.ForeignKey(ValueEquation,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('value equation link'), related_name='distributions_ve')
     value_equation_content = models.TextField(_('value equation formulas used'), null=True, blank=True)
 
@@ -14351,21 +14354,21 @@ FILTER_METHOD_CHOICES = (
 class ValueEquationBucket(models.Model):
     name = models.CharField(_('name'), max_length=32)
     sequence = models.IntegerField(_('sequence'), default=0)
-    value_equation = models.ForeignKey(ValueEquation,
+    value_equation = models.ForeignKey(ValueEquation, on_delete=models.CASCADE,
         verbose_name=_('value equation'), related_name='buckets')
     filter_method =  models.CharField(_('filter method'), null=True, blank=True,
         max_length=12, choices=FILTER_METHOD_CHOICES)
     percentage = models.DecimalField(_('bucket percentage'), max_digits=8, decimal_places=2, default=Decimal("0.0"))
     distribution_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="value_equation_buckets", verbose_name=_('distribution agent'))
     filter_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="value_equation_filter_buckets", verbose_name=_('filter agent'))
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='buckets_created', blank=True, null=True, editable=False)
+        related_name='buckets_created', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='buckets_changed', blank=True, null=True, editable=False)
+        related_name='buckets_changed', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     created_date = models.DateField(auto_now_add=True, blank=True, null=True, editable=False)
     changed_date = models.DateField(auto_now=True, blank=True, null=True, editable=False)
 
@@ -14697,9 +14700,9 @@ CLAIM_RULE_CHOICES = (
 )
 
 class ValueEquationBucketRule(models.Model):
-    value_equation_bucket = models.ForeignKey(ValueEquationBucket,
+    value_equation_bucket = models.ForeignKey(ValueEquationBucket, on_delete=models.CASCADE,
         verbose_name=_('value equation bucket'), related_name='bucket_rules')
-    event_type = models.ForeignKey(EventType,
+    event_type = models.ForeignKey(EventType, on_delete=models.CASCADE,
         related_name="bucket_rules", verbose_name=_('event type'))
     filter_rule = models.TextField(_('filter rule'), null=True, blank=True)
     #todo: thinking we can get rid of division_rule, see if we have requirement
@@ -14710,9 +14713,9 @@ class ValueEquationBucketRule(models.Model):
     claim_creation_equation = models.TextField(_('claim creation equation'),
         null=True, blank=True)
     created_by = models.ForeignKey(User, verbose_name=_('created by'),
-        related_name='rules_created', blank=True, null=True, editable=False)
+        related_name='rules_created', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     changed_by = models.ForeignKey(User, verbose_name=_('changed by'),
-        related_name='rules_changed', blank=True, null=True, editable=False)
+        related_name='rules_changed', blank=True, null=True, editable=False, on_delete=models.SET_NULL)
     created_date = models.DateField(auto_now_add=True, blank=True, null=True, editable=False)
     changed_date = models.DateField(auto_now=True, blank=True, null=True, editable=False)
 
@@ -14843,29 +14846,29 @@ class IncomeEventDistribution(models.Model):
     distribution_date = models.DateField(_('distribution date'))
     #next field obsolete
     distribution = models.ForeignKey(Exchange,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('distribution'), related_name='cash_receipts', default=None)
     distribution_ref = models.ForeignKey(Distribution,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('distribution'), related_name='income_events')
-    income_event = models.ForeignKey(EconomicEvent,
+    income_event = models.ForeignKey(EconomicEvent, on_delete=models.CASCADE,
         related_name="distributions", verbose_name=_('income event'))
     quantity = models.DecimalField(_('quantity'), max_digits=8, decimal_places=2,
         default=Decimal("0.0"))
-    unit_of_quantity = models.ForeignKey(Unit, blank=True, null=True,
+    unit_of_quantity = models.ForeignKey(Unit, blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('unit'), related_name="units")
 
 
 class Claim(models.Model):
     value_equation_bucket_rule = models.ForeignKey(ValueEquationBucketRule,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="claims", verbose_name=_('value equation bucket rule'))
     claim_date = models.DateField(_('claim date'))
     has_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="has_claims", verbose_name=_('has'))
     against_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="claims_against", verbose_name=_('against'))
     context_agent = models.ForeignKey(EconomicAgent,
         blank=True, null=True,
@@ -14874,7 +14877,7 @@ class Claim(models.Model):
         on_delete=models.SET_NULL)
     value = models.DecimalField(_('value'), max_digits=8, decimal_places=2,
         default=Decimal("0.0"))
-    unit_of_value = models.ForeignKey(Unit, blank=True, null=True,
+    unit_of_value = models.ForeignKey(Unit, blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('unit of value'), related_name="claim_value_units")
     original_value = models.DecimalField(_('original value'), max_digits=8, decimal_places=2,
         default=Decimal("0.0"))
@@ -14948,13 +14951,13 @@ EVENT_EFFECT_CHOICES = (
 
 class ClaimEvent(models.Model):
     event = models.ForeignKey(EconomicEvent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="claim_events", verbose_name=_('claim event'))
-    claim = models.ForeignKey(Claim,
+    claim = models.ForeignKey(Claim, on_delete=models.CASCADE,
         related_name="claim_events", verbose_name=_('claims'))
     claim_event_date = models.DateField(_('claim event date'), default=datetime.date.today)
     value = models.DecimalField(_('value'), max_digits=8, decimal_places=2)
-    unit_of_value = models.ForeignKey(Unit, blank=True, null=True,
+    unit_of_value = models.ForeignKey(Unit, blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('unit of value'), related_name="claim_event_value_units")
     event_effect = models.CharField(_('event effect'),
         max_length=12, choices=EVENT_EFFECT_CHOICES)
@@ -15024,15 +15027,15 @@ class EventSummary(object):
 #as soon as we also remove the value equation demo page, view, etc.
 class CachedEventSummary(models.Model):
     agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         related_name="cached_events", verbose_name=_('agent'))
     context_agent = models.ForeignKey(EconomicAgent,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('context agent'), related_name='context_cached_events')
     resource_type = models.ForeignKey(EconomicResourceType,
-        blank=True, null=True,
+        blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('resource type'), related_name='cached_events')
-    event_type = models.ForeignKey(EventType,
+    event_type = models.ForeignKey(EventType, on_delete=models.CASCADE,
         verbose_name=_('event type'), related_name='cached_events')
     resource_type_rate = models.DecimalField(_('resource type rate'), max_digits=8, decimal_places=2, default=Decimal("1.0"))
     importance = models.DecimalField(_('importance'), max_digits=3, decimal_places=0, default=Decimal("1"))

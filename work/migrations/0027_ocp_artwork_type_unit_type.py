@@ -16,6 +16,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='ocp_artwork_type',
             name='unit_type',
-            field=mptt.fields.TreeForeignKey(related_name='ocp_artwork_types', blank=True, to='general.Unit_Type', help_text='a related General Unit Type', null=True, verbose_name='general unit_type'),
+            field=mptt.fields.TreeForeignKey(related_name='ocp_artwork_types', blank=True, to='general.Unit_Type', help_text='a related General Unit Type', null=True, verbose_name='general unit_type', on_delete=models.SET_NULL),
         ),
     ]

@@ -97,7 +97,8 @@ class MembershipRequest(models.Model):
     agent = models.ForeignKey(EconomicAgent,
         verbose_name=_('agent'), related_name='membership_requests',
         blank=True, null=True,
-        help_text=_("this membership request became this EconomicAgent"))
+        help_text=_("this membership request became this EconomicAgent"),
+        on_delete=models.SET_NULL)
     state = models.CharField(_('state'),
         max_length=12, choices=REQUEST_STATE_CHOICES,
         default='new', editable=False)
@@ -674,7 +675,8 @@ class JoinRequest(models.Model):
 
                         headers = json.loads(entry.form_data_headers)
                         if not mkey in headers:
-                            print "Update fobi header! "+mkey+": "+username
+                            #print "Update fobi header! "+mkey+": "+username
+                            loger.warning("Update fobi header! "+mkey+": "+username)
                             for elm in entry.form_entry.formelemententry_set.all():
                                 pdata = json.loads(elm.plugin_data)
                                 if mkey == pdata['name']:
@@ -1410,6 +1412,10 @@ class JoinRequest(models.Model):
                 print "WARN diferent amountpay:"+str(amountpay)+" and pendamo:"+str(pendamo)+" ...which is better? jr:"+str(self.id)
                 loger.info("WARN diferent amountpay:"+str(amountpay)+" and pendamo:"+str(pendamo)+" ...which is better? jr:"+str(self.id))
         if realamount:
+            if isinstance(realamount, str) or isinstance(realamount, unicode):
+                if ',' in realamount:
+                    realamount = realamount.replace(',', '.')
+            realamount = decimal.Decimal(realamount)
             amountpay = realamount
 
         if status:
@@ -1505,7 +1511,9 @@ class JoinRequest(models.Model):
                                     else:
                                         raise ValidationError("Can't manage blockchain txs without the multicurrency app installed!")
                                     if realamount:
-                                        amountpay = decimal.Decimal(realamount)
+                                        if not isinstance(realamount, decimal.Decimal):
+                                            realamount = decimal.Decimal(realamount)
+                                        amountpay = realamount
                                         gateref = txid
                                         if commit_pay:
                                             if not commit_pay.quantity == amountpay:

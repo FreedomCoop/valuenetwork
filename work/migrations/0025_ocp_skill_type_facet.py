@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='ocp_skill_type',
             name='facet',
-            field=models.OneToOneField(related_name='ocp_skill_type', null=True, to='valueaccounting.Facet', blank=True, help_text='a related OCP Facet', verbose_name='ocp facet'),
+            field=models.OneToOneField(related_name='ocp_skill_type', null=True, to='valueaccounting.Facet', blank=True, help_text='a related OCP Facet', verbose_name='ocp facet', on_delete=models.SET_NULL),
         ),
     ]

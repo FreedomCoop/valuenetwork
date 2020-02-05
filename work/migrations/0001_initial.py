@@ -35,7 +35,7 @@ class Migration(migrations.Migration):
                 ('how_do_you_know_fc', models.TextField(verbose_name='How do you know Freedom Coop?', blank=True)),
                 ('known_member', models.TextField(verbose_name='Do you know any member already from FreedomCoop or FairCoop? If so, who?', blank=True)),
                 ('comments_and_questions', models.TextField(verbose_name='Comments and questions', blank=True)),
-                ('agent', models.ForeignKey(related_name='membership_requests', blank=True, to='valueaccounting.EconomicAgent', help_text='this membership request became this EconomicAgent', null=True, verbose_name='agent')),
+                ('agent', models.ForeignKey(related_name='membership_requests', blank=True, to='valueaccounting.EconomicAgent', help_text='this membership request became this EconomicAgent', null=True, verbose_name='agent', on_delete=models.SET_NULL)),
             ],
             options={
             },

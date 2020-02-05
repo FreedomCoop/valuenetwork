@@ -39,7 +39,7 @@ def formatAgentList(agent_list):
 class QuantityValue(models.Model):
     numeric_value = models.DecimalField(max_digits=8, decimal_places=2,
         default=Decimal("0.00"))
-    unit = models.ForeignKey(Unit, blank=True, null=True,
+    unit = models.ForeignKey(Unit, blank=True, null=True, on_delete=models.SET_NULL,
         related_name="quantity_value_units")
 
     class Meta:
@@ -88,7 +88,7 @@ class Fulfillment(models.Model):
         on_delete=models.DO_NOTHING)
     fulfills = models.ForeignKey(Commitment,
         related_name="fulfillments",
-        on_delete=models.DO_NOTHING) 
+        on_delete=models.DO_NOTHING)
     fulfilled_quantity = models.ForeignKey(QuantityValue,
         related_name="fulfillments",
         on_delete=models.DO_NOTHING)

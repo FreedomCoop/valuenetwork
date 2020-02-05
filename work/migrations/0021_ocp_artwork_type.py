@@ -17,13 +17,13 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Ocp_Artwork_Type',
             fields=[
-                ('artwork_type', models.OneToOneField(parent_link=True, primary_key=True, serialize=False, to='general.Artwork_Type')),
-                ('context_agent', models.ForeignKey(related_name='ocp_artwork_types', blank=True, to='valueaccounting.EconomicAgent', help_text='a related context EconomicAgent', null=True, verbose_name='context agent')),
-                ('facet', models.OneToOneField(related_name='ocp_artwork_type', null=True, to='valueaccounting.Facet', blank=True, help_text='a related OCP Facet', verbose_name='ocp facet')),
-                ('facet_value', models.ForeignKey(related_name='ocp_artwork_type', blank=True, to='valueaccounting.FacetValue', help_text='a related OCP FacetValue', null=True, verbose_name='ocp facet_value')),
-                ('material_type', mptt.fields.TreeForeignKey(related_name='ocp_artwork_types', blank=True, to='general.Material_Type', help_text='a related General Material Type', null=True, verbose_name='general material_type')),
-                ('nonmaterial_type', mptt.fields.TreeForeignKey(related_name='ocp_artwork_types', blank=True, to='general.Nonmaterial_Type', help_text='a related General Non-material Type', null=True, verbose_name='general nonmaterial_type')),
-                ('resource_type', models.OneToOneField(related_name='ocp_artwork_type', null=True, to='valueaccounting.EconomicResourceType', blank=True, help_text='a related OCP ResourceType', verbose_name='ocp resource_type')),
+                ('artwork_type', models.OneToOneField(parent_link=True, primary_key=True, serialize=False, to='general.Artwork_Type', on_delete=models.CASCADE)),
+                ('context_agent', models.ForeignKey(related_name='ocp_artwork_types', blank=True, to='valueaccounting.EconomicAgent', help_text='a related context EconomicAgent', null=True, verbose_name='context agent', on_delete=models.SET_NULL)),
+                ('facet', models.OneToOneField(related_name='ocp_artwork_type', null=True, to='valueaccounting.Facet', blank=True, help_text='a related OCP Facet', verbose_name='ocp facet', on_delete=models.SET_NULL)),
+                ('facet_value', models.ForeignKey(related_name='ocp_artwork_type', blank=True, to='valueaccounting.FacetValue', help_text='a related OCP FacetValue', null=True, verbose_name='ocp facet_value', on_delete=models.SET_NULL)),
+                ('material_type', mptt.fields.TreeForeignKey(related_name='ocp_artwork_types', blank=True, to='general.Material_Type', help_text='a related General Material Type', null=True, verbose_name='general material_type', on_delete=models.SET_NULL)),
+                ('nonmaterial_type', mptt.fields.TreeForeignKey(related_name='ocp_artwork_types', blank=True, to='general.Nonmaterial_Type', help_text='a related General Non-material Type', null=True, verbose_name='general nonmaterial_type', on_delete=models.SET_NULL)),
+                ('resource_type', models.OneToOneField(related_name='ocp_artwork_type', null=True, to='valueaccounting.EconomicResourceType', blank=True, help_text='a related OCP ResourceType', verbose_name='ocp resource_type', on_delete=models.SET_NULL)),
             ],
             options={
                 'verbose_name': 'Type of General Artwork/Resource',

@@ -110,11 +110,11 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='rel_human_jobs',
             name='job',
-            field=mptt.fields.TreeForeignKey(verbose_name='Job', to='general.Job'),
+            field=mptt.fields.TreeForeignKey(verbose_name='Job', to='general.Job', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='rel_human_jobs',
             name='relation',
-            field=mptt.fields.TreeForeignKey(related_name='hu_job+', verbose_name='relation', blank=True, to='general.Relation', null=True),
+            field=mptt.fields.TreeForeignKey(related_name='hu_job+', verbose_name='relation', blank=True, to='general.Relation', null=True, on_delete=models.SET_NULL),
         ),
     ]

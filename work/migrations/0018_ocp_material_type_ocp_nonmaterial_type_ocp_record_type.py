@@ -16,9 +16,9 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Ocp_Material_Type',
             fields=[
-                ('material_type', models.OneToOneField(parent_link=True, primary_key=True, serialize=False, to='general.Material_Type')),
-                ('facet_value', models.OneToOneField(related_name='ocp_material_type', null=True, to='valueaccounting.FacetValue', blank=True, help_text='a related OCP FacetValue', verbose_name='ocp facet_value')),
-                ('resource_type', models.OneToOneField(related_name='ocp_material_type', null=True, to='valueaccounting.EconomicResourceType', blank=True, help_text='a related OCP ResourceType', verbose_name='ocp resource_type')),
+                ('material_type', models.OneToOneField(parent_link=True, primary_key=True, serialize=False, to='general.Material_Type', on_delete=models.CASCADE)),
+                ('facet_value', models.OneToOneField(related_name='ocp_material_type', null=True, to='valueaccounting.FacetValue', blank=True, help_text='a related OCP FacetValue', verbose_name='ocp facet_value', on_delete=models.SET_NULL)),
+                ('resource_type', models.OneToOneField(related_name='ocp_material_type', null=True, to='valueaccounting.EconomicResourceType', blank=True, help_text='a related OCP ResourceType', verbose_name='ocp resource_type', on_delete=models.SET_NULL)),
             ],
             options={
                 'verbose_name': 'Type of General Material Resources',
@@ -29,9 +29,9 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Ocp_Nonmaterial_Type',
             fields=[
-                ('nonmaterial_type', models.OneToOneField(parent_link=True, primary_key=True, serialize=False, to='general.Nonmaterial_Type')),
-                ('facet_value', models.OneToOneField(related_name='ocp_nonmaterial_type', null=True, to='valueaccounting.FacetValue', blank=True, help_text='a related OCP FacetValue', verbose_name='ocp facet_value')),
-                ('resource_type', models.OneToOneField(related_name='ocp_nonmaterial_type', null=True, to='valueaccounting.EconomicResourceType', blank=True, help_text='a related OCP ResourceType', verbose_name='ocp resource_type')),
+                ('nonmaterial_type', models.OneToOneField(parent_link=True, primary_key=True, serialize=False, to='general.Nonmaterial_Type', on_delete=models.CASCADE)),
+                ('facet_value', models.OneToOneField(related_name='ocp_nonmaterial_type', null=True, to='valueaccounting.FacetValue', blank=True, help_text='a related OCP FacetValue', verbose_name='ocp facet_value', on_delete=models.SET_NULL)),
+                ('resource_type', models.OneToOneField(related_name='ocp_nonmaterial_type', null=True, to='valueaccounting.EconomicResourceType', blank=True, help_text='a related OCP ResourceType', verbose_name='ocp resource_type', on_delete=models.SET_NULL)),
             ],
             options={
                 'verbose_name': 'Type of General Non-material Resources',
@@ -42,8 +42,8 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Ocp_Record_Type',
             fields=[
-                ('record_type', models.OneToOneField(parent_link=True, primary_key=True, serialize=False, to='general.Record_Type')),
-                ('exchange_type', models.ForeignKey(related_name='ocp_record_types', verbose_name='ocp exchange type', blank=True, to='valueaccounting.ExchangeType', null=True)),
+                ('record_type', models.OneToOneField(parent_link=True, primary_key=True, serialize=False, to='general.Record_Type', on_delete=models.CASCADE)),
+                ('exchange_type', models.ForeignKey(related_name='ocp_record_types', verbose_name='ocp exchange type', blank=True, to='valueaccounting.ExchangeType', null=True, on_delete=models.SET_NULL)),
             ],
             options={
                 'verbose_name': 'Type of General Record',

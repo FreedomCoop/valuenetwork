@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='ocp_record_type',
             name='exchange_type',
-            field=models.OneToOneField(related_name='ocp_record_type', null=True, blank=True, to='valueaccounting.ExchangeType', verbose_name='ocp exchange type'),
+            field=models.OneToOneField(related_name='ocp_record_type', null=True, blank=True, to='valueaccounting.ExchangeType', verbose_name='ocp exchange type', on_delete=models.SET_NULL),
         ),
     ]

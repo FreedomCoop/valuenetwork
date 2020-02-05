@@ -24,8 +24,8 @@ class Migration(migrations.Migration):
                 ('email_address', models.EmailField(max_length=96, verbose_name='Email address')),
                 ('phone_number', models.CharField(max_length=32, null=True, verbose_name='Phone number', blank=True)),
                 ('address', models.CharField(max_length=255, null=True, verbose_name='Town/Region where you are based', blank=True)),
-                ('agent', models.ForeignKey(related_name='project_join_requests', blank=True, to='valueaccounting.EconomicAgent', help_text='this join request became this EconomicAgent', null=True, verbose_name='agent')),
-                ('project', models.ForeignKey(related_name='join_requests', verbose_name='project', to='work.Project', help_text='this join request is for joining this EconomicAgent')),
+                ('agent', models.ForeignKey(related_name='project_join_requests', blank=True, to='valueaccounting.EconomicAgent', help_text='this join request became this EconomicAgent', null=True, verbose_name='agent', on_delete=models.SET_NULL)),
+                ('project', models.ForeignKey(related_name='join_requests', verbose_name='project', to='work.Project', help_text='this join request is for joining this EconomicAgent', on_delete=models.CASCADE)),
             ],
         ),
     ]

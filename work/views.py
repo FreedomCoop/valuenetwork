@@ -1992,7 +1992,17 @@ def members_agent(request, agent_id):
                 #agent.url = data["url"]
             else:
                 pass # errors
-        if not nick == oldnick: # if changed the nick, rename resources
+        if not nick == oldnick: # if changed the nick, check user and rename resources
+            othe = User.objects.filter(username=nick)
+            usr = agent.my_user()
+            if usr:
+                if othe:
+                    messages.error(request, "There's another User with that username.")
+                    nick = oldnick
+                else:
+                    usr.username = nick
+                    usr.save()
+
             rss = EconomicResource.objects.filter(identifier__icontains=oldnick+' ')
             if rss:
                 for rs in rss:
@@ -4336,6 +4346,7 @@ def validate_nick(request):
                 error = "Nickname already taken"
         except EconomicAgent.DoesNotExist:
             pass
+
         if not error:
             username = nick
             try:

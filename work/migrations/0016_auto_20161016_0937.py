@@ -24,9 +24,9 @@ class Migration(migrations.Migration):
                 ('quarter', models.IntegerField(verbose_name='quarter')),
                 ('sequence', models.IntegerField(verbose_name='sequence')),
                 ('created_date', models.DateField(auto_now_add=True)),
-                ('created_by', models.ForeignKey(related_name='invoice_numbers_created', editable=False, to=settings.AUTH_USER_MODEL, verbose_name='created by')),
-                ('exchange', models.ForeignKey(related_name='invoice_numbers', verbose_name='exchange', blank=True, to='valueaccounting.Exchange', null=True)),
-                ('member', models.ForeignKey(related_name='invoice_numbers', verbose_name='member', to='valueaccounting.EconomicAgent')),
+                ('created_by', models.ForeignKey(related_name='invoice_numbers_created', editable=False, to=settings.AUTH_USER_MODEL, verbose_name='created by', on_delete=models.SET_NULL)),
+                ('exchange', models.ForeignKey(related_name='invoice_numbers', verbose_name='exchange', blank=True, to='valueaccounting.Exchange', null=True, on_delete=models.SET_NULL)),
+                ('member', models.ForeignKey(related_name='invoice_numbers', verbose_name='member', to='valueaccounting.EconomicAgent', on_delete=models.CASCADE)),
             ],
             options={
                 'ordering': ('-invoice_date',),

@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='agenttype',
             name='parent',
-            field=models.ForeignKey(related_name='sub_agents', blank=True, editable=False, to='valueaccounting.AgentType', null=True, verbose_name='parent'),
+            field=models.ForeignKey(related_name='sub_agents', blank=True, editable=False, to='valueaccounting.AgentType', null=True, verbose_name='parent', on_delete=models.SET_NULL),
             preserve_default=True,
         ),
     ]

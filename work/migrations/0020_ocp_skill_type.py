@@ -16,9 +16,9 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Ocp_Skill_Type',
             fields=[
-                ('job', models.OneToOneField(parent_link=True, primary_key=True, serialize=False, to='general.Job')),
-                ('facet_value', models.OneToOneField(related_name='ocp_skill_type', null=True, to='valueaccounting.FacetValue', blank=True, help_text='a related OCP FacetValue', verbose_name='ocp facet_value')),
-                ('resource_type', models.OneToOneField(related_name='ocp_skill_type', null=True, to='valueaccounting.EconomicResourceType', blank=True, help_text='a related OCP ResourceType', verbose_name='ocp resource_type')),
+                ('job', models.OneToOneField(parent_link=True, primary_key=True, serialize=False, to='general.Job', on_delete=models.CASCADE)),
+                ('facet_value', models.OneToOneField(related_name='ocp_skill_type', null=True, to='valueaccounting.FacetValue', blank=True, help_text='a related OCP FacetValue', verbose_name='ocp facet_value', on_delete=models.SET_NULL)),
+                ('resource_type', models.OneToOneField(related_name='ocp_skill_type', null=True, to='valueaccounting.EconomicResourceType', blank=True, help_text='a related OCP ResourceType', verbose_name='ocp resource_type', on_delete=models.SET_NULL)),
             ],
             options={
                 'verbose_name': 'Type of General Skill Resources',

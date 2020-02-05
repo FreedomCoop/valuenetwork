@@ -14,16 +14,16 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='economicresourcetype',
             name='context_agent',
-            field=models.ForeignKey(related_name='context_resource_types', verbose_name='context agent', blank=True, to='valueaccounting.EconomicAgent', null=True),
+            field=models.ForeignKey(related_name='context_resource_types', verbose_name='context agent', blank=True, to='valueaccounting.EconomicAgent', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AddField(
             model_name='exchangetype',
             name='context_agent',
-            field=models.ForeignKey(related_name='exchange_types', verbose_name='context agent', blank=True, to='valueaccounting.EconomicAgent', null=True),
+            field=models.ForeignKey(related_name='exchange_types', verbose_name='context agent', blank=True, to='valueaccounting.EconomicAgent', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AddField(
             model_name='processpattern',
             name='context_agent',
-            field=models.ForeignKey(related_name='process_patterns', verbose_name='context agent', blank=True, to='valueaccounting.EconomicAgent', null=True),
+            field=models.ForeignKey(related_name='process_patterns', verbose_name='context agent', blank=True, to='valueaccounting.EconomicAgent', null=True, on_delete=models.SET_NULL),
         ),
     ]

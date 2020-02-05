@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='ocp_record_type',
             name='ocp_skill_type',
-            field=mptt.fields.TreeForeignKey(related_name='ocp_record_types', blank=True, to='work.Ocp_Skill_Type', help_text='a related General Skill Type', null=True, verbose_name='general skill_type'),
+            field=mptt.fields.TreeForeignKey(related_name='ocp_record_types', blank=True, to='work.Ocp_Skill_Type', help_text='a related General Skill Type', null=True, verbose_name='general skill_type', on_delete=models.SET_NULL),
         ),
     ]

@@ -15,12 +15,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='joinrequest',
             name='fobi_data',
-            field=models.OneToOneField(related_name='join_request', null=True, to='fobi_contrib_plugins_form_handlers_db_store.SavedFormDataEntry', blank=True, help_text='this join request is linked to this custom form (fobi SavedFormDataEntry)', verbose_name='custom fobi id'),
+            field=models.OneToOneField(related_name='join_request', null=True, to='fobi_contrib_plugins_form_handlers_db_store.SavedFormDataEntry', blank=True, help_text='this join request is linked to this custom form (fobi SavedFormDataEntry)', verbose_name='custom fobi id', on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='joinrequest',
             name='project',
-            field=models.ForeignKey(related_name='join_requests', verbose_name='project', to='work.Project', help_text='this join request is for joining this Project'),
+            field=models.ForeignKey(related_name='join_requests', verbose_name='project', to='work.Project', help_text='this join request is for joining this Project', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='joinrequest',

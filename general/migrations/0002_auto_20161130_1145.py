@@ -217,12 +217,12 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='accountbank',
             name='company',
-            field=models.ForeignKey(verbose_name='Bank entity', blank=True, to='general.Company', null=True),
+            field=models.ForeignKey(verbose_name='Bank entity', blank=True, to='general.Company', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='accountbank',
             name='human',
-            field=models.ForeignKey(related_name='accountsBank', verbose_name='Owner human entity', to='general.Human'),
+            field=models.ForeignKey(related_name='accountsBank', verbose_name='Owner human entity', to='general.Human', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='accountbank',
@@ -232,7 +232,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='accountbank',
             name='unit',
-            field=models.ForeignKey(verbose_name='Unit (currency)', blank=True, to='general.Unit', null=True),
+            field=models.ForeignKey(verbose_name='Unit (currency)', blank=True, to='general.Unit', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='accountces',
@@ -242,12 +242,12 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='accountces',
             name='entity',
-            field=models.ForeignKey(verbose_name='Network of the account', to='general.Project'),
+            field=models.ForeignKey(verbose_name='Network of the account', to='general.Project', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='accountces',
             name='human',
-            field=models.ForeignKey(related_name='accountsCes', verbose_name='Owner human entity', to='general.Human'),
+            field=models.ForeignKey(related_name='accountsCes', verbose_name='Owner human entity', to='general.Human', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='accountces',
@@ -257,12 +257,12 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='accountces',
             name='unit',
-            field=models.ForeignKey(verbose_name='Unit (currency)', to='general.Unit'),
+            field=models.ForeignKey(verbose_name='Unit (currency)', to='general.Unit', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='accountcrypto',
             name='human',
-            field=models.ForeignKey(related_name='accountsCrypto', verbose_name='Owner human entity', to='general.Human'),
+            field=models.ForeignKey(related_name='accountsCrypto', verbose_name='Owner human entity', to='general.Human', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='accountcrypto',
@@ -272,12 +272,12 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='accountcrypto',
             name='unit',
-            field=models.ForeignKey(verbose_name='Unit (currency)', to='general.Unit'),
+            field=models.ForeignKey(verbose_name='Unit (currency)', to='general.Unit', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='address',
             name='address_type',
-            field=mptt.fields.TreeForeignKey(verbose_name='Type of address', blank=True, to='general.Address_Type', null=True),
+            field=mptt.fields.TreeForeignKey(verbose_name='Type of address', blank=True, to='general.Address_Type', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='address',
@@ -322,7 +322,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='address',
             name='region',
-            field=mptt.fields.TreeForeignKey(related_name='rel_addresses', verbose_name='Region', blank=True, to='general.Region', null=True),
+            field=mptt.fields.TreeForeignKey(related_name='rel_addresses', verbose_name='Region', blank=True, to='general.Region', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='address',
@@ -332,7 +332,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='address',
             name='size_unit',
-            field=models.ForeignKey(verbose_name='Unit of measure', blank=True, to='general.Unit', null=True),
+            field=models.ForeignKey(verbose_name='Unit of measure', blank=True, to='general.Unit', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='address',
@@ -342,7 +342,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='asset',
             name='human',
-            field=models.ForeignKey(verbose_name='Entity', to='general.Human'),
+            field=models.ForeignKey(verbose_name='Entity', to='general.Human', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='asset',
@@ -352,7 +352,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='company',
             name='company_type',
-            field=mptt.fields.TreeForeignKey(verbose_name='Type of company', blank=True, to='general.Company_Type', null=True),
+            field=mptt.fields.TreeForeignKey(verbose_name='Type of company', blank=True, to='general.Company_Type', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='company',
@@ -512,7 +512,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='material',
             name='material_type',
-            field=mptt.fields.TreeForeignKey(verbose_name='Type of physical artwork', blank=True, to='general.Material_Type', null=True),
+            field=mptt.fields.TreeForeignKey(verbose_name='Type of physical artwork', blank=True, to='general.Material_Type', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='material',
@@ -557,7 +557,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='nonmaterial',
             name='nonmaterial_type',
-            field=mptt.fields.TreeForeignKey(verbose_name='Type of non-material artwork', blank=True, to='general.Nonmaterial_Type', null=True),
+            field=mptt.fields.TreeForeignKey(verbose_name='Type of non-material artwork', blank=True, to='general.Nonmaterial_Type', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='nonmaterial',
@@ -602,12 +602,12 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='project',
             name='parent',
-            field=mptt.fields.TreeForeignKey(related_name='subprojects', verbose_name='Parent project', blank=True, to='general.Project', null=True),
+            field=mptt.fields.TreeForeignKey(related_name='subprojects', verbose_name='Parent project', blank=True, to='general.Project', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='project',
             name='project_type',
-            field=mptt.fields.TreeForeignKey(verbose_name='Type of project', blank=True, to='general.Project_Type', null=True),
+            field=mptt.fields.TreeForeignKey(verbose_name='Type of project', blank=True, to='general.Project_Type', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='project',
@@ -627,7 +627,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='record',
             name='record_type',
-            field=mptt.fields.TreeForeignKey(verbose_name='Type of Record', blank=True, to='general.Record_Type', null=True),
+            field=mptt.fields.TreeForeignKey(verbose_name='Type of Record', blank=True, to='general.Record_Type', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='region',
@@ -642,12 +642,12 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='region',
             name='region_type',
-            field=mptt.fields.TreeForeignKey(verbose_name='Type of region', blank=True, to='general.Region_Type', null=True),
+            field=mptt.fields.TreeForeignKey(verbose_name='Type of region', blank=True, to='general.Region_Type', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='rel_human_addresses',
             name='address',
-            field=models.ForeignKey(related_name='rel_human', verbose_name='Address', to='general.Address', help_text='Once choosed the address, save the profile to see the changes.'),
+            field=models.ForeignKey(related_name='rel_human', verbose_name='Address', to='general.Address', help_text='Once choosed the address, save the profile to see the changes.', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='rel_human_addresses',
@@ -657,142 +657,142 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='rel_human_addresses',
             name='relation',
-            field=mptt.fields.TreeForeignKey(related_name='hu_adr+', verbose_name='relation', blank=True, to='general.Relation', null=True),
+            field=mptt.fields.TreeForeignKey(related_name='hu_adr+', verbose_name='relation', blank=True, to='general.Relation', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='rel_human_companies',
             name='company',
-            field=models.ForeignKey(verbose_name='related Company', to='general.Company'),
+            field=models.ForeignKey(verbose_name='related Company', to='general.Company', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='rel_human_companies',
             name='relation',
-            field=mptt.fields.TreeForeignKey(related_name='hu_hum+', verbose_name='relation', blank=True, to='general.Relation', null=True),
+            field=mptt.fields.TreeForeignKey(related_name='hu_hum+', verbose_name='relation', blank=True, to='general.Relation', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='rel_human_materials',
             name='material',
-            field=models.ForeignKey(verbose_name='Material artwork', to='general.Material'),
+            field=models.ForeignKey(verbose_name='Material artwork', to='general.Material', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='rel_human_materials',
             name='relation',
-            field=mptt.fields.TreeForeignKey(related_name='hu_mat+', verbose_name='relation', blank=True, to='general.Relation', null=True),
+            field=mptt.fields.TreeForeignKey(related_name='hu_mat+', verbose_name='relation', blank=True, to='general.Relation', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='rel_human_nonmaterials',
             name='nonmaterial',
-            field=models.ForeignKey(verbose_name='Non-material artwork', to='general.Nonmaterial'),
+            field=models.ForeignKey(verbose_name='Non-material artwork', to='general.Nonmaterial', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='rel_human_nonmaterials',
             name='relation',
-            field=mptt.fields.TreeForeignKey(related_name='hu_non+', verbose_name='relation', blank=True, to='general.Relation', null=True),
+            field=mptt.fields.TreeForeignKey(related_name='hu_non+', verbose_name='relation', blank=True, to='general.Relation', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='rel_human_persons',
             name='person',
-            field=models.ForeignKey(related_name='rel_humans', verbose_name='Related person', to='general.Person'),
+            field=models.ForeignKey(related_name='rel_humans', verbose_name='Related person', to='general.Person', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='rel_human_persons',
             name='relation',
-            field=mptt.fields.TreeForeignKey(related_name='hu_hum+', verbose_name='relation', blank=True, to='general.Relation', null=True),
+            field=mptt.fields.TreeForeignKey(related_name='hu_hum+', verbose_name='relation', blank=True, to='general.Relation', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='rel_human_projects',
             name='project',
-            field=mptt.fields.TreeForeignKey(related_name='rel_humans', verbose_name='Related project', to='general.Project', help_text='Once choosed the project, save the profile to see the changes.'),
+            field=mptt.fields.TreeForeignKey(related_name='rel_humans', verbose_name='Related project', to='general.Project', help_text='Once choosed the project, save the profile to see the changes.', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='rel_human_projects',
             name='relation',
-            field=mptt.fields.TreeForeignKey(related_name='hu_hum+', verbose_name='relation', blank=True, to='general.Relation', null=True),
+            field=mptt.fields.TreeForeignKey(related_name='hu_hum+', verbose_name='relation', blank=True, to='general.Relation', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='rel_human_records',
             name='record',
-            field=models.ForeignKey(verbose_name='Record', to='general.Record'),
+            field=models.ForeignKey(verbose_name='Record', to='general.Record', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='rel_human_records',
             name='relation',
-            field=mptt.fields.TreeForeignKey(related_name='hu_rec+', verbose_name='relation', blank=True, to='general.Relation', null=True),
+            field=mptt.fields.TreeForeignKey(related_name='hu_rec+', verbose_name='relation', blank=True, to='general.Relation', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='rel_human_regions',
             name='region',
-            field=mptt.fields.TreeForeignKey(verbose_name='Region', to='general.Region'),
+            field=mptt.fields.TreeForeignKey(verbose_name='Region', to='general.Region', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='rel_human_regions',
             name='relation',
-            field=mptt.fields.TreeForeignKey(related_name='hu_reg+', verbose_name='relation', blank=True, to='general.Relation', null=True),
+            field=mptt.fields.TreeForeignKey(related_name='hu_reg+', verbose_name='relation', blank=True, to='general.Relation', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='rel_material_addresses',
             name='address',
-            field=models.ForeignKey(related_name='materials', verbose_name='related Address', to='general.Address'),
+            field=models.ForeignKey(related_name='materials', verbose_name='related Address', to='general.Address', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='rel_material_jobs',
             name='job',
-            field=models.ForeignKey(related_name='materials', verbose_name='related Arts/Jobs', to='general.Job'),
+            field=models.ForeignKey(related_name='materials', verbose_name='related Arts/Jobs', to='general.Job', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='rel_material_jobs',
             name='relation',
-            field=mptt.fields.TreeForeignKey(related_name='ma_job+', verbose_name='Relation', blank=True, to='general.Relation', null=True),
+            field=mptt.fields.TreeForeignKey(related_name='ma_job+', verbose_name='Relation', blank=True, to='general.Relation', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='rel_material_materials',
             name='material2',
-            field=models.ForeignKey(related_name='submaterials', verbose_name='related Material artworks', to='general.Material'),
+            field=models.ForeignKey(related_name='submaterials', verbose_name='related Material artworks', to='general.Material', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='rel_material_materials',
             name='relation',
-            field=mptt.fields.TreeForeignKey(related_name='ma_mat+', verbose_name='Relation', blank=True, to='general.Relation', null=True),
+            field=mptt.fields.TreeForeignKey(related_name='ma_mat+', verbose_name='Relation', blank=True, to='general.Relation', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='rel_material_nonmaterials',
             name='nonmaterial',
-            field=models.ForeignKey(verbose_name='related Non-material', to='general.Nonmaterial'),
+            field=models.ForeignKey(verbose_name='related Non-material', to='general.Nonmaterial', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='rel_material_records',
             name='record',
-            field=models.ForeignKey(verbose_name='related Record', to='general.Record'),
+            field=models.ForeignKey(verbose_name='related Record', to='general.Record', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='rel_nonmaterial_addresses',
             name='address',
-            field=models.ForeignKey(verbose_name='related Address', to='general.Address'),
+            field=models.ForeignKey(verbose_name='related Address', to='general.Address', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='rel_nonmaterial_jobs',
             name='job',
-            field=models.ForeignKey(related_name='nonmaterials', verbose_name='related Arts/Jobs', to='general.Job'),
+            field=models.ForeignKey(related_name='nonmaterials', verbose_name='related Arts/Jobs', to='general.Job', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='rel_nonmaterial_jobs',
             name='relation',
-            field=mptt.fields.TreeForeignKey(related_name='no_job+', verbose_name='Relation', blank=True, to='general.Relation', null=True),
+            field=mptt.fields.TreeForeignKey(related_name='no_job+', verbose_name='Relation', blank=True, to='general.Relation', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='rel_nonmaterial_nonmaterials',
             name='nonmaterial2',
-            field=models.ForeignKey(related_name='subnonmaterials', verbose_name='related Non-material Artworks', to='general.Nonmaterial'),
+            field=models.ForeignKey(related_name='subnonmaterials', verbose_name='related Non-material Artworks', to='general.Nonmaterial', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='rel_nonmaterial_nonmaterials',
             name='relation',
-            field=mptt.fields.TreeForeignKey(related_name='ma_mat+', verbose_name='Relation', blank=True, to='general.Relation', null=True),
+            field=mptt.fields.TreeForeignKey(related_name='ma_mat+', verbose_name='Relation', blank=True, to='general.Relation', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='rel_nonmaterial_records',
             name='record',
-            field=models.ForeignKey(verbose_name='related Record', to='general.Record'),
+            field=models.ForeignKey(verbose_name='related Record', to='general.Record', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='relation',
@@ -847,7 +847,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='unit',
             name='human',
-            field=models.ForeignKey(verbose_name='related Entity', blank=True, to='general.Human', null=True),
+            field=models.ForeignKey(verbose_name='related Entity', blank=True, to='general.Human', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='unit',
@@ -857,22 +857,22 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='unit',
             name='region',
-            field=mptt.fields.TreeForeignKey(verbose_name='related use Region', blank=True, to='general.Region', null=True),
+            field=mptt.fields.TreeForeignKey(verbose_name='related use Region', blank=True, to='general.Region', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='unit',
             name='unit_type',
-            field=mptt.fields.TreeForeignKey(verbose_name='Type of Unit', blank=True, to='general.Unit_Type', null=True),
+            field=mptt.fields.TreeForeignKey(verbose_name='Type of Unit', blank=True, to='general.Unit_Type', null=True, on_delete=models.SET_NULL),
         ),
         migrations.AlterField(
             model_name='unitratio',
             name='in_unit',
-            field=models.ForeignKey(related_name='ratio_in', verbose_name='in Unit', to='general.Unit'),
+            field=models.ForeignKey(related_name='ratio_in', verbose_name='in Unit', to='general.Unit', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='unitratio',
             name='out_unit',
-            field=models.ForeignKey(related_name='ratio_out', verbose_name='out Unit', to='general.Unit'),
+            field=models.ForeignKey(related_name='ratio_out', verbose_name='out Unit', to='general.Unit', on_delete=models.CASCADE),
         ),
         migrations.AlterField(
             model_name='unitratio',

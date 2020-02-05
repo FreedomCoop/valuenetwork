@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='skillsuggestion',
             name='resource_type',
-            field=models.ForeignKey(related_name='skill_suggestions', blank=True, to='valueaccounting.EconomicResourceType', help_text='this skill suggestion became this ResourceType', null=True, verbose_name='resource_type'),
+            field=models.ForeignKey(related_name='skill_suggestions', blank=True, to='valueaccounting.EconomicResourceType', help_text='this skill suggestion became this ResourceType', null=True, verbose_name='resource_type', on_delete=models.SET_NULL),
         ),
         migrations.AddField(
             model_name='skillsuggestion',
