@@ -8,17 +8,17 @@
             <li>
               {% url cl.opts|admin_urlname:'add' as add_url %}
               <a href="{% add_preserved_filters "/admin/general/person/add" is_popup %}" class="addlink">
-        {% trans "Persona"  %}
+        {% trans "Person"  %}
               </a>
             </li>
             <li>
              <a href="{% add_preserved_filters "/admin/general/project/add" is_popup %}" class="addlink">
-            {% trans "Projecte"  %}
+            {% trans "Project"  %}
               </a>
             </li>
             <li>
              <a href="{% add_preserved_filters "/admin/general/company/add" is_popup %}" class="addlink">
-             {% trans "Empresa"  %}
+             {% trans "Company"  %}
              </a>
             </li>
           {% endblock %}

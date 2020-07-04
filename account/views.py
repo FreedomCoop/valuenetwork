@@ -51,7 +51,7 @@ class SignupView(FormView):
         super(SignupView, self).__init__(*args, **kwargs)
 
     def get(self, *args, **kwargs):
-        if self.request.user.is_authenticated():
+        if self.request.user.is_authenticated:
             return redirect(default_redirect(self.request, settings.ACCOUNT_LOGIN_REDIRECT_URL))
         if not self.is_open():
             return self.closed()
@@ -238,7 +238,7 @@ class LoginView(FormView):
                         return redirect('project_login', form_slug=pro)
         #import pdb; pdb.set_trace()
 
-        if self.request.user.is_authenticated():
+        if self.request.user.is_authenticated:
             return redirect(self.get_success_url())
         return super(LoginView, self).get(*args, **kwargs)
 
@@ -293,14 +293,14 @@ class LogoutView(TemplateResponseMixin, View):
     redirect_field_name = "next"
 
     def get(self, *args, **kwargs):
-        if not self.request.user.is_authenticated():
+        if not self.request.user.is_authenticated:
             return redirect(self.get_redirect_url())
         ctx = self.get_context_data()
         return self.render_to_response(ctx)
 
     def post(self, *args, **kwargs):
         coop_worker = False
-        if self.request.user.is_authenticated():
+        if self.request.user.is_authenticated:
             user = self.request.user
             try:
                 agent = user.agent.agent
@@ -396,7 +396,7 @@ class ConfirmEmailView(TemplateResponseMixin, View):
         return ctx
 
     def get_redirect_url(self):
-        if self.request.user.is_authenticated():
+        if self.request.user.is_authenticated:
             if not settings.ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL:
                 return settings.ACCOUNT_LOGIN_REDIRECT_URL
             return settings.ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL
@@ -416,12 +416,12 @@ class ChangePasswordView(FormView):
     }
 
     def get(self, *args, **kwargs):
-        if not self.request.user.is_authenticated():
+        if not self.request.user.is_authenticated:
             return redirect("account_password_reset")
         return super(ChangePasswordView, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        if not self.request.user.is_authenticated():
+        if not self.request.user.is_authenticated:
             return HttpResponseForbidden()
         return super(ChangePasswordView, self).post(*args, **kwargs)
 
@@ -484,12 +484,12 @@ class WorkChangePasswordView(FormView):
     }
 
     def get(self, *args, **kwargs):
-        if not self.request.user.is_authenticated():
+        if not self.request.user.is_authenticated:
             return redirect("account_password_reset")
         return super(WorkChangePasswordView, self).get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        if not self.request.user.is_authenticated():
+        if not self.request.user.is_authenticated:
             return HttpResponseForbidden()
         return super(WorkChangePasswordView, self).post(*args, **kwargs)
 

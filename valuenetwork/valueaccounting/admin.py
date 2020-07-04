@@ -1,6 +1,7 @@
 from django.contrib import admin
 from valuenetwork.valueaccounting.models import *
 from valuenetwork.valueaccounting.actions import export_as_csv
+from modeltranslation.admin import TranslationAdmin
 
 admin.site.add_action(export_as_csv, 'export_selected objects')
 
@@ -103,7 +104,7 @@ class TransferInline(admin.TabularInline):
     fields = ('name', 'transfer_type', 'transfer_date')
 
 class TransferTypeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'sequence', 'exchange_type', )
+    list_display = ('id', 'name', 'sequence', 'exchange_type', )
     list_filter = ['exchange_type']
 
 admin.site.register(TransferType, TransferTypeAdmin)
@@ -197,8 +198,8 @@ class EconomicAgentContextAgentFilter(admin.SimpleListFilter):
             return queryset.filter(id__in=related_economic_agent_ids)
         return queryset
 
-class EconomicAgentAdmin(admin.ModelAdmin):
-    list_display = ('nick', 'name', 'agent_type', 'url', 'address', 'email', 'slug', 'created_date')
+class EconomicAgentAdmin(TranslationAdmin):
+    list_display = ('id', 'nick', 'name', 'agent_type', 'email', 'url', 'address', 'slug', 'created_date')
     list_filter = ('agent_type', EconomicAgentContextAgentFilter)
     search_fields = ['name', 'address']
     inlines = [ AgentUserInline, ]

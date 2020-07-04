@@ -1,13 +1,14 @@
 from django.http import HttpResponseRedirect
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
+from django.utils.deprecation import MiddlewareMixin
 from re import compile
 
 EXEMPT_URLS = [compile(settings.LOGIN_URL.lstrip('/'))]
 if hasattr(settings, 'LOGIN_EXEMPT_URLS'):
     EXEMPT_URLS += [compile(expr) for expr in settings.LOGIN_EXEMPT_URLS]
 
-class LoginRequiredMiddleware:
+class LoginRequiredMiddleware(MiddlewareMixin):
     """
     Middleware that requires a user to be authenticated to view any page other
     than LOGIN_URL. Exemptions to this requirement can optionally be specified
@@ -20,7 +21,7 @@ class LoginRequiredMiddleware:
     def process_request(self, request):
         assert hasattr(request, 'user'), "The Login Required middleware\
             requires authentication middleware to be installed. Edit your\
-            MIDDLEWARE_CLASSES setting to insert\
+            MIDDLEWARE setting to insert\
             'django.contrib.auth.middleware.AuthenticationMiddleware'. If that doesn't\
             work, ensure your TEMPLATE_CONTEXT_PROCESSORS setting includes\
             'django.core.context_processors.auth'."
@@ -29,7 +30,7 @@ class LoginRequiredMiddleware:
             # Ignore graph API URls, they manage their own auth internally
             return
 
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             if not request.user.is_staff:
                 if "accounting" in request.path_info or "api" in request.path_info:
                     return HttpResponseRedirect(settings.WORKER_LOGIN_REDIRECT_URL)

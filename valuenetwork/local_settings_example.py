@@ -76,6 +76,10 @@ DEFAULT_FROM_EMAIL = ""
 
 RANDOM_PASSWORD_LENGHT = 8
 
+CRYPTOS = ('btc', 'eth', 'fair')
+#CRYPTO_LAPSUS = 60 # for example, to forget the stored unit-ratio after 1 minute, set 60 seconds here
+#CRYPTO_DECIMALS = 9
+#DECIMALS = Decimal('0.000000000')
 
 # To accept payments for the shares of one project, define here the methods details
 
@@ -103,12 +107,14 @@ PAYMENT_GATEWAYS = {
         'faircoin': {
             'url':'',
             'html':'Please send the actual value in euros of your shares (converted to faircoin) to the FairCoin Address: <b>the faircoin address</b>',
-            'unit':'FAIR'
+            'unit':'FAIR',
+            'margin':0.0034 # the difference margin accepted between the payed amount and the calculated amount
         },
         #'btc': {
         #    'url':'',
         #    'html':'Btc Address: <b>the btc address</b>',
-        #    'unit':'BTC'
+        #    'unit':'BTC',
+        #    'margin':0.00000001
         #}
     }
 }
@@ -145,6 +151,7 @@ PROJECTS_LOGIN = {
         'html':_("<p>Place any html text for the custom login page.</p>"),
         'background_url':'img/project2_background.jpg',
         'css':'',
+        #'js':'',
         'services': [
             'faircoins',
             'tasks',

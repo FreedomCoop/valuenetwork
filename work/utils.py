@@ -3,6 +3,8 @@ from general.models import Artwork_Type, Job, UnitRatio
 from django.forms import ValidationError
 from django.conf import settings
 
+import datetime
+import pytz
 import decimal
 import requests
 import logging
@@ -88,8 +90,57 @@ def set_user_notification_by_type(user, notification_type="work_new_account", se
         sett.save()
     return sett
 
+def update_unitratio(in_unit, out_unit, ur=None):
+    ratio = None
+    if 'multicurrency' in settings.INSTALLED_APPS:
+        if 'url_ticker' in settings.MULTICURRENCY:
+            url = settings.MULTICURRENCY['url_ticker']+in_unit.abbrev
+            if out_unit.abbrev == 'fair':
+                unitstr = 'FAIRP'
+            else:
+                unitstr = out_unit.abbrev.upper()
+            key = unitstr+'x'+in_unit.abbrev.upper()
+            #print("KEY: "+key+" URL:"+url) #+" unitjson:"+str(unit.json))
+            deci = settings.CRYPTO_DECIMALS
 
-def convert_price(amount, shunit, unit, obj=None, deci=9):
+            ticker = requests.get(url)
+            if int(ticker.status_code) == 200:
+                json = ticker.json()
+                print("Retrieved the ticker JSON! "+str(json))
+                logger.info("Retrieved the ticker JSON! ") #+str(json))
+                if 'data' in json: #.status == "ok":
+                    if key in json['data']:
+                        decimal.getcontext().prec = deci
+                        ratio = decimal.Decimal(str(json['data'][key]))
+                        if not ur:
+                            ur, c = UnitRatio.objects.get_or_create(
+                                in_unit=in_unit.gen_unit,
+                                out_unit=out_unit.gen_unit
+                            )
+                            if c:
+                                print("- created UnitRatio: "+str(ur))
+                                logger.info("- created UnitRatio: "+str(ur))
+                        ur.rate = ratio
+                        #ur.changed_date = datetime.datetime.now()
+                        ur.save()
+                        print("- updated the UnitRatio: "+str(ur))
+                        logger.info("- updated the UnitRatio: "+str(ur))
+
+                    else:
+                        print("no key in ticker? "+key+" data:"+str(json['data']))
+                        logger.error("no key in ticker? "+key+" data:"+str(json['data']))
+                else:
+                    print("No ticker.data?? json:"+str(json))
+                    logger.error("No ticker.data?? json:"+str(json))
+            else:
+                error = str(ticker.status_code)
+                msg = ticker.text
+                print("Ticker request have returned "+error+" status code. Error: "+msg)
+                logger.error("Ticker request have returned "+error+" status code. Error: "+msg)
+    return ratio
+
+
+def convert_price(amount, shunit, unit, obj=None, deci=settings.DECIMALS):
     if not amount: raise ValidationError("Convert_price without amount? unit1:"+str(shunit)+" unit2:"+str(unit))
     if not shunit: raise ValidationError("Convert_price without unit1? amount:"+str(amount)+" unit2:"+str(unit))
     if not unit: raise ValidationError("Convert_price without unit2? amount:"+str(amount)+" unit1:"+str(shunit))
@@ -101,60 +152,74 @@ def convert_price(amount, shunit, unit, obj=None, deci=9):
                 raise ValidationError("Amount should be a Decimal or Integer! type:"+str(type(amount)))
             elif isinstance(amount, int):
                 amount = decimal.Decimal(amount)
-            try:
-                ratio = UnitRatio.objects.get(in_unit=shunit.gen_unit, out_unit=unit.gen_unit).rate
+            if obj and hasattr(obj, 'ratio'):
+                ratio = obj.ratio
                 price = amount/ratio
-            except:
-                print "No UnitRatio with in_unit '"+str(shunit.gen_unit.name)+"' and out_unit: "+str(unit.gen_unit.name)+". Trying reversed..."
-                #logger.info("No UnitRatio with in_unit 'faircoin' and out_unit: "+str(unit.gen_unit)+". Trying reversed...")
-                try:
-                    ratio = UnitRatio.objects.get(in_unit=unit.gen_unit, out_unit=shunit.gen_unit).rate
-                    price = amount*ratio
-                except:
-                    print "No UnitRatio with out_unit '"+str(shunit.gen_unit.name)+"' and in_unit: "+str(unit.gen_unit.name)+". Trying via botc api..."
-                    logger.info("No UnitRatio with out_unit '"+str(shunit.gen_unit.name)+"' and in_unit: "+str(unit.gen_unit.name)+". Trying via botc api...")
+                #print("using a CACHED obj.ratio: "+str(ratio)+" for obj:"+unicode(obj))
+                logger.warning("using a CACHED obj.ratio: "+str(ratio)+" for obj:"+unicode(obj))
+            else:
+                if unit.abbrev in settings.CRYPTOS and not unit.abbrev == 'fair':
+                    if hasattr(settings, 'CRYPTO_LAPSUS'):
+                        secs = settings.CRYPTO_LAPSUS
+                    else:
+                        secs = 60
+                    lapsus = datetime.timedelta(seconds=secs)
+                else:
+                    lapsus = None
+                urs = UnitRatio.objects.filter(in_unit=shunit.gen_unit, out_unit=unit.gen_unit)
+                if urs:
+                    if len(urs) > 1:
+                        raise ValidationError("There are more than one UnitRatio with same in+out units!! "+str(urs))
+                    ur = urs[0]
+                    if ur.changed_date and lapsus:
+                        now = datetime.datetime.now(pytz.utc)
+                        print("UR Changed date: "+str(ur.changed_date)+" now:"+str(now)+" lapsus:"+str(lapsus))
+                        if ur.changed_date < now - lapsus:
+                            #print("Update UnitRatio?")
+                            ratio = update_unitratio(shunit, unit, ur)
 
-                    if 'multicurrency' in settings.INSTALLED_APPS:
-                        if 'url_ticker' in settings.MULTICURRENCY:
-                            url = settings.MULTICURRENCY['url_ticker']+shunit.abbrev
-                            key = unit.abbrev.upper()+'x'+shunit.abbrev.upper()
-                            #print("KEY: "+key+" URL:"+url) #+" unitjson:"+str(unit.json))
-                            deci = settings.CRYPTO_DECIMALS
-                            if obj and not hasattr(obj, 'ratio'):
-                              ticker = requests.get(url)
-                              if int(ticker.status_code) == 200:
-                                json = ticker.json()
-                                print("Retrieved the ticker JSON! "+str(json))
-                                logger.info("Retrieved the ticker JSON! ") #+str(json))
-                                if 'data' in json: #.status == "ok":
-                                    if key in json['data']:
-                                        decimal.getcontext().prec = deci
-                                        ratio = decimal.Decimal(str(json['data'][key]))
-                                    else:
-                                        print("no key in ticker? "+key+" data:"+str(json['data']))
-                                        logger.error("no key in ticker? "+key+" data:"+str(json['data']))
-                                else:
-                                    print("No ticker.data?? json:"+str(json))
-                                    logger.error("No ticker.data?? json:"+str(json))
-                              else:
-                                error = str(ticker.status_code)
-                                msg = ticker.text
-                                print("Ticker request have returned "+error+" status code. Error: "+msg)
-                                logger.error("Ticker request have returned "+error+" status code. Error: "+msg)
-                            else:
-                              ratio = obj.ratio
-                              print("Using CACHED ratio!!")
-                              logger.info("Using CACHED ratio!!")
-
-                            if ratio:
-                                price = amount/ratio
-                            else:
-                                print("No RATIO?? "+str(ratio))
-                                logger.error("No RATIO?? "+str(ratio))
+                            price = amount/ratio
+                            if obj and hasattr(obj, 'exchange'):
+                                for tr in obj.exchange.transfers.all():
+                                    if tr.transfer_type.is_currency:
+                                        if not len(tr.events.all()):
+                                            for com in tr.commitments.all():
+                                                if not com.quantity == price:
+                                                    print("- UPDATED commitment qty from: "+str(com.quantity)+" to:"+str(price))
+                                                    logger.info("- UPDATED commitment qty from: "+str(com.quantity)+" to:"+str(price))
+                                                    com.quantity = price
+                                                    com.save()
+                                            #print("tr: price:"+str(price)+" qty:"+str(tr.quantity())+" coms:"+str(tr.commitments.all()))
 
                         else:
-                            print("No url for the Ticker?")
-                            logger.error("No url for the Ticker?")
+                            print("- use stored ratio...")
+                            ratio = ur.rate
+                    else:
+                        ratio = ur.rate
+                    #print("ratio:"+str(ratio)+" (type:"+str(type(ratio))+") / amount:"+str(amount)+" (type:"+str(type(amount))+")")
+                    price = amount/ratio
+                    #print("price:"+str(price)+" (type:"+str(type(price))+")")
+                else:
+                    print("No UnitRatio with in_unit '"+str(shunit.gen_unit.name)+"' and out_unit: "+str(unit.gen_unit.name)+". Trying reversed...")
+                    #logger.info("No UnitRatio with in_unit 'faircoin' and out_unit: "+str(unit.gen_unit)+". Trying reversed...")
+                    urs = UnitRatio.objects.filter(in_unit=unit.gen_unit, out_unit=shunit.gen_unit)
+                    if urs:
+                        ur = urs[0]
+                        if ur.changed_date:
+                            print("UR reversed (changed Date: "+str(ur.changed_date)+") NOT UPDATED!!")
+                            logger.warning("UR reversed (changed Date: "+str(ur.changed_date)+") NOT UPDATED!!")
+                        ratio = ur.rate
+                        price = amount*ratio
+                    else:
+                        print "No UnitRatio with out_unit '"+str(shunit.gen_unit.name)+"' and in_unit: "+str(unit.gen_unit.name)+". Trying via botc api..."
+                        logger.info("No UnitRatio with out_unit '"+str(shunit.gen_unit.name)+"' and in_unit: "+str(unit.gen_unit.name)+". Trying via botc api...")
+
+                        ratio = update_unitratio(shunit, unit) # omit ur to create it
+                        if ratio:
+                            price = amount/ratio
+                        else:
+                            print("No RATIO?? "+str(ratio))
+                            logger.error("No RATIO?? "+str(ratio))
 
             if not ratio or not price:
                 print("ERROR: ratio:"+str(ratio)+" price:"+str(price))
@@ -166,7 +231,7 @@ def convert_price(amount, shunit, unit, obj=None, deci=9):
                     amount = price
                 else:
                     #decs = decimal.getcontext().prec
-                    amount = round(price, deci)
+                    amount = price.quantize(deci) #round(price, deci)
 
                 print "Convert_price: ratio:"+str(ratio)+" price:"+str(price)+" shunit:"+str(shunit)+" unit:"+str(unit)+" amount:"+str(amount)
         else:
@@ -182,7 +247,7 @@ def remove_exponent(num):
       if '.' in str(num):
         return num.to_integral() if num == num.to_integral() else num.normalize()
     else:
-        print("Is a FLOAT??")
+        print("Is a FLOAT?? "+str(num))
     return num
 
 

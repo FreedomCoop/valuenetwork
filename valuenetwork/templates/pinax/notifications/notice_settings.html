@@ -19,12 +19,10 @@
 
     {% url "account_settings" as email_url %}
     {% if not request.user.email %}
-        {% blocktrans %}
         <p class="alert alert-warning">
-            <span class="warning">Note</span>:
-            You do not have a verified email address to which notices can be sent. <a href="{{ email_url }}">Add one</a> now.
+            <span class="warning">{% trans "Note" %}</span>:
+            {% blocktrans %}You do not have a verified email address to which notices can be sent. <a href="{{ email_url }}">Add one</a> now.{% endblocktrans %}
         </p>
-        {% endblocktrans %}
     {% endif %}
     <style>
     .notice-group h4 {

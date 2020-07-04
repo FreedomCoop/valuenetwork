@@ -11,8 +11,45 @@
 
 /*  M A I N   M E N U   */
 
+.navbar-inner {
+    min-height: 39px;
+}
+.dropdown-menu li > a:hover, .dropdown-menu .active > a, .dropdown-menu .active > a:hover {
+    background-color: #5C8A8A;
+}
+.navbar .btn-navbar {
+    opacity: 0.4;
+}
+
 .dropdown-menu a {
 	padding: 4px 15px 5px;
+}
+.dropdown-menu form, ul.subnav {
+    margin: 0;
+}
+.navbar .nav > li > a {
+    padding-bottom: 9px;
+}
+.dropdown-menu button.navlink {
+    display: inline;
+    -webkit-appearance: inherit;
+    border: 0;
+    background: none;
+    width: 100%;
+    text-align: left;
+    margin: 0;
+    padding: 6px 15px 9px;
+}
+.dropdown-menu button.navlink:hover, .dropdown-menu button.navlink:active {
+    background-color: #5C8A8A;
+    color: #eee;
+}
+.dropdown-menu a.disabled {
+    padding-left: 15px;
+}
+.dropdown-menu a.disabled:hover {
+    background-color: #fff;
+    color: #aaa;
 }
 ul.subnavsub li {
 	list-style-type: disc;
@@ -33,6 +70,17 @@ a.disabled:hover {
 	color: #aaa;
 	background-color: #fff;
 }
+i.world-icon::before {
+    display: inline-block;
+    font-family: 'Glyphicons Halflings';
+    font-style: normal;
+    content: "\e135";
+}
+i.world-icon {
+    line-height: 15px;
+    vertical-align: bottom;
+}
+
 
 /*   G E N E R A L   */
 
@@ -305,6 +353,12 @@ form#stateForm {
   margin: 5px 5px 5px 0;
 }
 
+ul.dt-button-collection.dropdown-menu {
+    max-width: 100%;
+    overflow: hidden;
+}
+
+
 /*   I N T E R N A L   J O I N   R E Q U E S T   */
 
 #joinForm {
@@ -444,4 +498,57 @@ span.fancytree-title span.edit a:hover {
 }
 span.fancytree-selected span.fancytree-title {
     font-style: inherit;
+}
+
+
+/*   R E S P O N S I V E   */
+
+@media (max-width: 767px) {
+    /* for phones */
+
+}
+@media (min-width: 768px) and (max-width: 979px) {
+    /* for tablets */
+
+}
+@media (max-width: 480px) {
+
+}
+@media (max-width: 767px) {
+
+}
+@media (min-width: 768px) and (max-width: 979px) {
+
+}
+@media (min-width: 1200px) {
+
+}
+@media (max-width: 979px) {
+    .nav-collapse .dropdown-menu a {
+        font-weight: normal;
+        color: #ccc;
+        padding-bottom: 8px;
+    }
+    .nav-collapse .dropdown-menu .navlink {
+        color: #ccc;
+    }
+    .nav-collapse button.navlink:hover, .nav-collapse button.navlink:active {
+        background-color: #222;
+        -webkit-border-radius: 3px;
+        -moz-border-radius: 3px;
+        border-radius: 3px;
+    }
+    .nav-collapse .dropdown-menu a.disabled {
+        color: #999;
+    }
+    .nav-collapse .dropdown-menu a.disabled:hover {
+        background: none;
+    }
+    .nav-collapse .nav > li > a {
+        padding-bottom: 7px;
+        margin-bottom: 0;
+    }
+}
+@media (min-width: 980px) {
+
 }

@@ -3,12 +3,14 @@ from decimal import Decimal
 import requests
 import logging
 loger = logging.getLogger("multicurrency")
+from datetime import date, datetime
 
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.contrib import messages
 
 from valuenetwork.valueaccounting.models import EconomicAgent, EconomicEvent
 from work.utils import remove_exponent
@@ -18,10 +20,7 @@ if hasattr(settings, 'DECIMALS'):
     DECIMALS = settings.DECIMALS
 else:
     DECIMALS = Decimal('1.000000000')
-if hasattr(settings, 'MARGIN'):
-    MARGIN = settings.MARGIN
-else:
-    MARGIN = Decimal("0.000001")
+
 
 if 'faircoin' in settings.INSTALLED_APPS:
     from faircoin.models import FC2_TX_URL
@@ -91,7 +90,7 @@ class MulticurrencyAuth(models.Model):
                 if saldo < pend:
                     out_text = str(_("The balance in your wallet needs some more "))+unit.upper()
                 else:
-                    out_text = '<b>'+str(_("You can pay the shares now!"))+'</b>'
+                    out_text = '<b>'+unicode(_("You can pay the shares now!"))+'</b>'
                     if user and user.is_superuser:
                         out_text += ' '+str(saldo)+" "+punit.symbol+" >= "+str(remove_exponent(pend))+" "+punit.symbol
                         if jn_req.payment_payed_amount():
@@ -112,6 +111,125 @@ class MulticurrencyAuth(models.Model):
                 if user and user.is_superuser:
                     out_text += "(punit: "+str(punit)+")" #balance['status'])
         return out_text, reqdata
+
+
+
+class MultiwalletTransaction(models.Model):
+    event = models.OneToOneField(EconomicEvent, on_delete=models.CASCADE, verbose_name=_('event'), related_name='multiwallet_transaction')
+    tx_id = models.CharField(_("Multiwallet Transaction ID"), max_length=96, editable=False) # 64 btc+fair, 66 eth
+    status = models.CharField(_('Status'), max_length=32, blank=True, null=True) # 33 btc, 34 fair, 42 eth
+    sent_to = models.CharField(_('Sent to username'), max_length=128, blank=True, null=True) # 33 btc, 34 fair, 42 eth
+    method = models.CharField(_("Method"), max_length=128, blank=True, null=True)
+    #amount = models.DecimalField(_('Quantity'), max_digits=20, decimal_places=9, default=0) # is already in the event
+    tx_fee = models.DecimalField(_('Transaction Fee'), max_digits=20, decimal_places=9, default=0)
+
+    def unit(self):
+        if self.event.unit_of_quantity:
+            return self.event.unit_of_quantity
+        else:
+            raise ValidationError("There's no unit_of_quantity in the related event: "+str(self.event))
+
+    def amount(self):
+        return self.event.quantity
+
+    def update_data(self, oauth, request, realamount=None):
+        url = None
+        json = None
+        inputs = []
+        input_vals = []
+        outputs = []
+        output_vals = []
+        outvals = []
+        mesg = ''
+        if realamount:
+            if not isinstance(realamount, Decimal):
+                realamount = Decimal(realamount)
+        else:
+            pass #mesg += "Without a realamount we can't check the payment"
+        if not oauth:
+            mesg += "Without an oauth we can't update_data!"
+            return mesg
+
+        unit = self.unit()
+        msg = None
+        if unit and unit.abbrev:
+            if unit.abbrev == 'fair':
+                if self.event.to_agent.nick == "BotC": # now only to pay botc shares
+                    from multicurrency.utils import ChipChapAuthConnection
+                    connection = ChipChapAuthConnection.get()
+                    json, msg = connection.check_payment(
+                        oauth.access_key,
+                        oauth.access_secret,
+                        unit.abbrev,
+                        self.tx_id,
+                    )
+                    if msg:
+                        if msg == 'success' or msg == 'ok':
+                            pass
+                        else:
+                            mesg += _("Error checking the Transaction:")+" <b>"+str(msg)+"</b> "
+                    if json:
+                        if not json['currency'] == 'FAC':
+                            mesg += _("The multiwallet tx found is not FairCoin?")
+                            return mesg #pass #raise ValidationError("The multiwallet tx found is not FairCoin ?? ")
+
+                        self.method = json['method']
+                        if 'data_out' in json: # exchanges don't have 'data_out'
+                            if 'sent_to' in json['data_out']:
+                                self.sent_to = json['data_out']['sent_to']
+                            else:
+                                loger.info("No sent_to in tx data_out ?? "+str(json['data_out']))
+                        self.status = json['status']
+                        divisor = Decimal(10 ** json['scale'])
+                        fees = Decimal(json['variable_fee']) + Decimal(json['fixed_fee'])
+                        if fees:
+                            self.tx_fee = remove_exponent(fees / divisor).quantize(settings.DECIMALS)
+                            print("tx fees:"+str(fees)+" fee:"+str(self.tx_fee)) #
+                        else:
+                            self.tx_fee = 0
+                        total = Decimal(json['total'] / divisor).quantize(settings.DECIMALS)
+                        if total < 0:
+                            total = total * -1
+
+                        if total == realamount:
+                            if fees:
+                                print("Found tx fees:"+str(fees)+" fee:"+str(self.tx_fee)) #+" tx:"+str(self))
+                                mesg += ("Found Fees ?? ("+str(self.tx_fee)+") abort...") #+" tx:"+str(self))
+                                loger.warning("Found Fees ?? ("+str(self.tx_fee)+") Abort... for mTx:"+str(self.id)+" ev:"+str(self.event.id)+" txid:"+str(self.tx_id))
+
+                            if not self.event.quantity == total:
+                                messages.info(request, _("Updated the event Quantity ({0}) to: {1} / ").format(self.event.quantity, total))
+                                self.event.quantity = total
+
+                            if not self.event.event_reference == self.tx_id:
+                                messages.info(request, _("Updated the event Reference ({0}) to: {1} / ").format(self.event.event_reference, self.tx_id))
+                                self.event.event_reference = self.tx_id
+
+                            dat = json['created']
+                            pos = dat.find("+")
+                            if not pos == -1:
+                                dat = dat[:pos]
+                            dt = datetime.strptime(dat, '%Y-%m-%dT%H:%M:%S')
+                            dat = dt.date()
+                            if not self.event.event_date == dat:
+                                messages.info(request, _("Updated the event Date ({0}) to: {1} / ").format(self.event.event_date, dat))
+                                self.event.event_date = dat
+
+                            if mesg == '':
+                                self.event.save()
+                                self.save()
+
+                        else:
+                            mesg += _("The received amount ({0}) is not like the one found ({1}).").format(realamount, total)
+                    else: # no json
+                        mesg += "No transaction found with this ID."
+                else: # not botc
+                    mesg += "No BotC related ??"
+            else: # not fair
+                mesg += "No 'faircoin' unit ??"
+        else: # not unit
+            mesg += "No unit or abbrev ??"
+        return mesg
 
 
 class BlockchainTransaction(models.Model):
@@ -143,6 +261,24 @@ class BlockchainTransaction(models.Model):
         else:
             raise ValidationError("There's no abbrev in the related unit: "+str(unit))
 
+    def related_join_request(self):
+        if not self.event.exchange and self.event.transfer.exchange:
+            loger.info("Fix missing event.exchange from event.transfer.exchange !! ev:"+str(self.event.id))
+            print("Fix missing event.exchange from event.transfer.exchange !! ev:"+str(self.event.id))
+            self.event.exchange = self.event.transfer.exchange
+            self.event.save()
+
+        if self.event.exchange:
+            if hasattr(self.event.exchange, 'join_request') and self.event.exchange.join_request:
+                return self.event.exchange.join_request
+            else:
+                loger.info("The related exchange is not related any join_request! ex:"+str(self.event.exchange.id))
+                print("The related exchange is not related any join_request! ex:"+str(self.event.exchange.id))
+        else:
+            loger.info("Error: An event without any relted exchange? ev:"+str(self.event.id))
+            print("Error: An event without any relted exchange? ev:"+str(self.event.id))
+        return None
+
     def update_data(self, realamount=None): #, oauth=None):
         url = None
         json = None
@@ -154,20 +290,19 @@ class BlockchainTransaction(models.Model):
         mesg = ''
         if realamount:
             realamount = Decimal(realamount)
-        """if not oauth:
-            mesg += "Without a oauth we can't update_data!"
-            self.event.delete()
-            self.delete()
-            return mesg"""
 
         if not self.tx_fee:
             unit = self.unit()
             msg = None
             if unit and unit.abbrev:
-                if unit.abbrev == 'fair' and 'faircoin' in settings.INSTALLED_APPS:
-                    from faircoin import utils as faircoin_utils
-                    wallet = faircoin_utils.is_connected()
-                    if wallet:
+                if unit.abbrev == 'fair':
+                    if self.event.to_agent.nick == "BotC":
+                        raise ValidationError("This model is not appropiate to store the Multiwallet ID! ")
+
+                    elif 'faircoin' in settings.INSTALLED_APPS:
+                      from faircoin import utils as faircoin_utils
+                      wallet = faircoin_utils.is_connected()
+                      if wallet:
                         trans = faircoin_utils.send_command('get_transaction', [self.tx_hash])
                         if trans != 'ERROR':
                             json = {'hash': self.tx_hash,
@@ -202,8 +337,13 @@ class BlockchainTransaction(models.Model):
                             self.event.delete()
                             self.delete()
                             return mesg
-                    else:
+                      else:
                         mesg += "There's no faircoin wallet to check the transaction."
+                        self.event.delete()
+                        self.delete()
+                        return mesg
+                    else:
+                        mesg += "Is faircoin but the faircoin app is not installed"
                         self.event.delete()
                         self.delete()
                         return mesg
@@ -228,22 +368,6 @@ class BlockchainTransaction(models.Model):
                     else:
                         mesg += ("The key is not in settings: "+str(key)+"<br>")
 
-
-                    """from multicurrency.utils import ChipChapAuthConnection
-                    connection = ChipChapAuthConnection.get()
-                    json, msg = connection.check_payment(
-                            oauth.access_key,
-                            oauth.access_secret,
-                            unit.abbrev,
-                            self.tx_hash,
-                    )
-                    if msg:
-                        mesg += ("Error checking the tx: <b>"+msg+"</b>")
-                        #for prop in txobj:
-                        #    mesg += "<br>"+str(prop)
-                        self.event.delete()
-                        self.delete()
-                        return mesg"""
 
                 if json:
                     if 'hash' in json: #.status == "ok":
@@ -299,66 +423,113 @@ class BlockchainTransaction(models.Model):
 
                                     if self.event.event_type.name == 'Give':
                                         val = Decimal( (outval + fee) / DIVISOR).quantize(DECIMALS) #, settings.CRYPTO_DECIMALS)
-                                        if realamount and not (realamount+outfee) == val:
+                                        if realamount:
+                                          if not (realamount+outfee) == val:
                                             if (realamount+outfee) < val:
                                                 rest = val - (realamount+outfee)
                                             else:
                                                 rest = (realamount+outfee) - val
-                                            if rest > MARGIN:
-                                                print("ev-give: Declared amount and chain discovered amount are too different!! rest:"+str(remove_exponent(rest))+" fee:"+str(outfee)+", found+fee:"+str(val)+" (type:"+str(type(val))+") - declared+fee:"+str(realamount+outfee)+"(type:"+str(type(realamount))+")")
-                                                #mesg += ("(give event): Declared amount and chain discovered amount are too different!! fee:"+str(outfee)+", found+fee:"+str(val)+" <> declared+fee:"+str(realamount+outfee)+" (rest:"+str(remove_exponent(rest))+")") #+"(type:"+str(type(realamount))+")")
+                                            jnreq = self.related_join_request()
+                                            if jnreq:
+                                                if rest > jnreq.payment_margin():
+                                                    print("ev-give: Declared amount and chain discovered amount are too different!! rest:"+str(remove_exponent(rest))+" fee:"+str(outfee)+", found+fee:"+str(val)+" (type:"+str(type(val))+") - declared+fee:"+str(realamount+outfee)+"(type:"+str(type(realamount))+")")
+                                                    #loger.info("ev-give: Declared amount and chain discovered amount are too different!! rest:"+str(remove_exponent(rest))+" fee:"+str(outfee)+", found+fee:"+str(val)+" (type:"+str(type(val))+") - declared+fee:"+str(realamount+outfee)+"(type:"+str(type(realamount))+")")
+                                                    #mesg += ("(give event): Declared amount and chain discovered amount are too different!! fee:"+str(outfee)+", found+fee:"+str(val)+" <> declared+fee:"+str(realamount+outfee)+" (rest:"+str(remove_exponent(rest))+")") #+"(type:"+str(type(realamount))+")")
+                                                    #self.event.delete()
+                                                    #self.delete()
+                                                else:
+                                                    validval = val
+                                                    print("ev-give: Declared amount and chain discovered amount are not equal but are close. Allow... rest:"+str(rest)+" fee:"+str(outfee)+" declared:"+str(realamount))
+                                                    loger.info("ev-give: Declared amount and chain discovered amount are not equal but are close. Allow... rest:"+str(rest)+" fee:"+str(outfee)+" declared:"+str(realamount))
+
+                                          else: # same val
+                                            print("ev-give: declared exactly the same amount (+fee): "+str(val))
+                                            loger.info("ev-give: declared exactly the same amount (+fee): "+str(val))
+                                            validval = val
+                                        else: # not declared realamount
+                                            if len(outvals) > 1:
+                                                print("ev-give: Not declared amount but tx has >1 output! can't check.")
+                                                mesg += _("Sorry, the system can't check a tx with many outputs without declaring the received amount (give event). ")
                                                 #self.event.delete()
                                                 #self.delete()
-                                            else:
-                                                validval = val
-                                                print("ev-give: Declared amount and chain discovered amount are not equal but are close. Allow? rest:"+str(rest)+" fee:"+str(outfee))
-
-                                                if not self.event.quantity == val:
-                                                    print("UPDATE ev give quantity! qty:"+str(self.event.quantity)+" val:"+str(val)+" (type:"+str(type(val))+") <> declared:"+str(realamount)+"(type:"+str(type(realamount))+")")
-                                                    loger.info("UPDATE ev give quantity! qty:"+str(self.event.quantity)+" val:"+str(val)+" type:"+str(type(val)))
-                                                    self.event.quantity = val
-                                                    self.event.save()
-                                                if self.event.commitment:
-                                                    if not self.event.commitment.quantity == val:
-                                                        print("UPDATE ev give commitment quantity! qty:"+str(self.event.commitment.quantity)+" val:"+str(val))
-                                                        loger.info("UPDATE ev give commitment quantity! qty:"+str(self.event.commitment.quantity)+" val:"+str(val))
-                                                        self.event.commitment.quantity = val
-                                                        self.event.commitment.save()
                                                 break
+                                            else:
+                                                print("ev-give: Without declared amount! Do we get the unique tx output as the valid value? "+str(val))
+                                                loger.info("ev-give: Without declared amount! Do we get the unique tx output as the valid value? TODO tx.id:"+str(self.id)+" ev.id:"+str(self.event.id)+" val:"+str(val))
+                                            mesg += _("Please, set the received amount to check the transaction.")
+
+                                        if validval:
+                                            if not self.event.quantity == validval:
+                                                print("UPDATE ev give quantity! qty:"+str(self.event.quantity)+" validval:"+str(validval)+" (type:"+str(type(validval))+") <> declared:"+str(realamount)+"(type:"+str(type(realamount))+")")
+                                                loger.info("UPDATE ev give quantity! qty:"+str(self.event.quantity)+" validval:"+str(validval)+" type:"+str(type(validval)))
+                                                self.event.quantity = validval
+                                                self.event.save()
+                                            if self.event.commitment:
+                                                if not self.event.commitment.quantity == validval:
+                                                    print("UPDATE ev give commitment quantity! qty:"+str(self.event.commitment.quantity)+" validval:"+str(validval))
+                                                    loger.info("UPDATE ev give commitment quantity! qty:"+str(self.event.commitment.quantity)+" validval:"+str(validval))
+                                                    self.event.commitment.quantity = validval
+                                                    self.event.commitment.save()
+                                            break
 
                                     elif self.event.event_type.name == 'Receive':
                                         val = Decimal( outval / DIVISOR).quantize(DECIMALS) #, settings.CRYPTO_DECIMALS)
-                                        if realamount and not realamount == val:
+                                        if realamount:
+                                          if not realamount == val:
                                             if realamount < val:
                                                 rest = val - realamount
                                             else:
                                                 rest = realamount - val
-                                            if rest > MARGIN:
-                                                print("ev-receive: Declared amount and chain discovered amount are too different!! rest:"+str(remove_exponent(rest))+" fee:"+str(outfee)+", found:"+str(val)+" (type:"+str(type(val))+") <> declared:"+str(realamount)+"(type:"+str(type(realamount))+")")
-                                                #mesg += ("(receive event): Declared amount and chain discovered amount are too different!! fee:"+str(outfee)+", found:"+str(val)+" <> declared:"+str(realamount)+" (rest:"+str(remove_exponent(rest))+")") #+"(type:"+str(type(realamount))+")")
+                                            jnreq = self.related_join_request()
+                                            if jnreq:
+                                                if rest > jnreq.payment_margin():
+                                                    print("ev-receive: Declared amount and chain discovered amount are too different!! rest:"+str(remove_exponent(rest))+" fee:"+str(outfee)+", found:"+str(val)+" (type:"+str(type(val))+") <> declared:"+str(realamount)+"(type:"+str(type(realamount))+")")
+                                                    #loger.info("ev-receive: Declared amount and chain discovered amount are too different!! rest:"+str(remove_exponent(rest))+" fee:"+str(outfee)+", found:"+str(val)+" (type:"+str(type(val))+") <> declared:"+str(realamount)+"(type:"+str(type(realamount))+")")
+                                                    #mesg += ("(receive event): Declared amount and chain discovered amount are too different!! fee:"+str(outfee)+", found:"+str(val)+" <> declared:"+str(realamount)+" (rest:"+str(remove_exponent(rest))+")") #+"(type:"+str(type(realamount))+")")
+                                                    #self.event.delete()
+                                                    #self.delete()
+                                                else:
+                                                    validval = val
+                                                    print("ev-receive: Declared amount and chain discovered amount are not equal but are close. Allow... rest:"+str(rest)+" fee:"+str(outfee)+" declared:"+str(realamount))
+                                                    loger.info("ev-receive: Declared amount and chain discovered amount are not equal but are close. Allow... rest:"+str(rest)+" fee:"+str(outfee)+" declared:"+str(realamount))
+
+                                          else: # same val
+                                            print("ev-receive: declared exactly the same amount (-fee): "+str(val))
+                                            loger.info("ev-receive: declared exactly the same amount (-fee): "+str(val))
+                                            validval = val
+                                        else: # not declared realamount
+                                            if len(outvals) > 1:
+                                                print("ev-receive: Not declared amount but tx has >1 output! can't check.")
+                                                mesg += _("Sorry, the system can't check a tx with many outputs without declaring the received amount.")
                                                 #self.event.delete()
                                                 #self.delete()
-                                            else:
-                                                validval = val
-                                                print("ev-receive: Declared amount and chain discovered amount are not equal but are close. Allow? rest:"+str(rest)+" fee:"+str(outfee))
-
-                                                if not self.event.quantity == val:
-                                                    print("UPDATE ev receive quantity! qty:"+str(self.event.quantity)+" val:"+str(val)+" (type:"+str(type(val))+") - realamount:"+str(realamount)+"(type:"+str(type(realamount))+")")
-                                                    loger.info("UPDATE ev receive quantity! qty:"+str(self.event.quantity)+" val:"+str(val))
-                                                    self.event.quantity = val
-                                                    self.event.save()
-                                                if self.event.commitment:
-                                                    if not self.event.commitment.quantity == val:
-                                                        print("UPDATE ev receive commitment quantity! qty:"+str(self.event.commitment.quantity)+" val:"+str(val))
-                                                        loger.info("UPDATE ev receive commitment quantity! qty:"+str(self.event.commitment.quantity)+" val:"+str(val))
-                                                        self.event.commitment.quantity = val
-                                                        self.event.commitment.save()
                                                 break
+                                            else:
+                                                print("ev-receive: Without declared amount! Do we get the unique tx output as the valid value? "+str(val))
+                                                loger.info("ev-receive: Without declared amount! Do we get the unique tx output as the valid value? TODO tx.id:"+str(self.id)+" ev.id:"+str(self.event.id)+" val:"+str(val))
+                                            mesg += _("Please, set the received amount to check the transaction.")
+
+                                        if validval:
+                                            if not self.event.quantity == validval:
+                                                print("UPDATE ev receive quantity! qty:"+str(self.event.quantity)+" val:"+str(val)+" (type:"+str(type(val))+") - realamount:"+str(realamount)+"(type:"+str(type(realamount))+")")
+                                                loger.info("UPDATE ev receive quantity! qty:"+str(self.event.quantity)+" val:"+str(val))
+                                                self.event.quantity = val
+                                                self.event.save()
+                                            if self.event.commitment:
+                                                if not self.event.commitment.quantity == val:
+                                                    print("UPDATE ev receive commitment quantity! qty:"+str(self.event.commitment.quantity)+" val:"+str(val))
+                                                    loger.info("UPDATE ev receive commitment quantity! qty:"+str(self.event.commitment.quantity)+" val:"+str(val))
+                                                    self.event.commitment.quantity = val
+                                                    self.event.commitment.save()
+                                            break
                                     else:
                                         raise ValidationError("TX event type not supported: "+str(self.event.event_type.name))
+                                # end for
 
                                 if not validval:
-                                    mesg += "Not found an output with a similar amount? "+str(outvals)
+                                    mesg += _("Not found an output with a similar amount?")+" "+str(outvals)
+                                    loger.warning("Not found an output with a similar amount? "+str(outvals))
+                                    print("Not found an output with a similar amount? "+str(outvals))
                                     self.event.delete()
                                     self.delete()
                                     return mesg

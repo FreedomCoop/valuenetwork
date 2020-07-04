@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.shortcuts import render, redirect
+from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import Http404
@@ -9,7 +10,7 @@ from django.utils.dateparse import parse_datetime
 from django.utils.translation import ugettext_lazy as _
 
 from valuenetwork.valueaccounting.models import EconomicAgent
-from multicurrency.models import MulticurrencyAuth
+from multicurrency.models import MulticurrencyAuth, MultiwalletTransaction
 from multicurrency.forms import MulticurrencyAuthForm, \
     MulticurrencyAuthDeleteForm, MulticurrencyAuthCreateForm, PaySharesForm
 from multicurrency.utils import ChipChapAuthConnection, ChipChapAuthError
@@ -264,7 +265,7 @@ def history(request, agent_id, oauth_id):
         table_caption = "Showing " + str(tx_list['data']['start'] + 1) + " to "\
             + str(tx_list['data']['end']) + " of " + str(tx_list['data']['total'])\
             + " movements"
-        table_headers = ['Created', 'Updated', 'Concept', 'Method', 'IO', 'Account or Address', 'Amount', 'Unit']
+        table_headers = [_('Created'), _('Updated'), _('Concept'), _('Method'), _('IO'), _('Account or Address'), _('Amount'), _('Unit'), _("Status")]
         table_rows = []
         paginator = {}
         if tx_list['data']['total'] > 0:
@@ -303,6 +304,27 @@ def history(request, agent_id, oauth_id):
                     amount = -amount if tx['type'] == 'out' else amount
                 currency = tx['currency'] if 'currency' in tx else '--'
                 if currency == "FAC": currency = "FAIR"
+                status = str(tx['status'])
+                if request.user.is_superuser:
+                    status = str(tx['id'])
+                multitxs = MultiwalletTransaction.objects.filter(tx_id=tx['id'])
+                if multitxs:
+                    status = u''
+                    exch = None
+                    for mtx in multitxs:
+                        if hasattr(mtx.event, 'exchange'):
+                            exch = mtx.event.exchange
+                        elif hasattr(mtx.event, 'transfer') and hasattr(mtx.event.transfer, 'exchange'):
+                            exch = mtx.event.transfer.exchange
+                        if exch:
+                            status += "<b><a href='"+reverse("exchange_logging_work", args=(agent_id, 0, exch.id))+"'>"
+                            status += unicode(_("Exchange")) #exch.status()
+                            status += "</a></b> "
+                            if hasattr(exch, 'join_request'):
+                                status += "/ <b><a href='"+reverse("project_feedback", args=(agent_id, exch.join_request.id))+"'>"
+                                status += unicode(_("Feedback"))
+                                status += "</a></b>"
+                            break
                 table_rows.append([
                     created.strftime('%Y/%m/%d-%H:%M'),
                     updated.strftime('%Y/%m/%d-%H:%M'),
@@ -312,6 +334,7 @@ def history(request, agent_id, oauth_id):
                     address,
                     str(round(amount, scale)), #.quantize(Decimal('0.01'))),
                     currency,
+                    status
                 ])
                 if tx_list['data']['total'] > tx_list['data']['end']:
                     paginator['next'] = {

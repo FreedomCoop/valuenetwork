@@ -46,8 +46,8 @@
             <tr>
               <td>{{ forloop.counter|add:offset }}</td>
               {% for td in row %}
-                {% if forloop.revcounter == 2 %}
-                    <td style="text-align: right;">{{ td }}</td>
+                {% if forloop.counter is 7 %}
+                    <td style="text-align: right;">{{ td|safe }}</td>
                 {% else %}
                     <td>{{ td|safe }}</td>
                 {% endif %}

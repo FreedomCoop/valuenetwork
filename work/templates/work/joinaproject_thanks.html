@@ -19,20 +19,19 @@
 
 </head>
 <body style="background-image: url({% if project.background_url %}{% static project.background_url %}{% else %}{% static 'img/photo-OCP-1600x900_green.jpg' %}{% endif %}); text-align:center;">
-<div style="font-weight:bold; position:absolute; left:13px; top:9px;">
-  <a href="{% url 'project_login' form_slug=project.fobi_slug %}" style="color:#734279;">{% trans "Login to" %} {{ project.agent.name }}</a>
+<div style="position:absolute; left:13px; top:9px;">
+  <a class="btn btn-mini" href="{% url 'project_login' form_slug=project.fobi_slug %}">{% trans "Login" %}</a>
 </div>
 <div class="container">
     {% include "_messages.html" %}
-    <p>&nbsp;</p>
+    <p>&nbsp;<br></p>
     {% if existuser or existemail %}
         <!-- {% if existuser and not existemail %}
             <h2>
                 {% trans "The username is already in the system." %}
             </h2>
             <p style="text-align:center; font-size:120%; ">
-                {% blocktrans %} If you are <b>{{ existuser }}</b>, put your existent password to connect this request to your account.
-                {% endblocktrans %}
+                {% blocktrans %}If you are <b>{{ existuser }}</b>, put your existent password to connect this request to your account.{% endblocktrans %}
             </p>
             {% if login_form %}
                 {% csrf_token %}
@@ -68,7 +67,8 @@
         <p> &nbsp; </p>
         {% if project.payment_options and jn_req.pending_shares %}
             <p style="text-align:center; font-size:120%; ">
-                {% trans "You've choosed to pay your" %} <b>{{ jn_req.pending_shares }}</b> {% trans "Shares via" %} <span style="font-weight:bold;">{{ jn_req.payment_option.val }}</span>
+                {% trans "You've choosed to make a payment of" %} <b>{{ jn_req.payment_amount }} {{ jn_req.payment_unit.abbrev }}</b>
+                <!-- {% trans "via" %} <span style="font-weight:bold;">{{ jn_req.payment_option.val }}</span> -->
             </p>
             {% if jn_req.payment_url or jn_req.multiwallet_user %}
                 <p style="text-align:center; font-size:120%; ">
@@ -82,7 +82,7 @@
                 </p>
 
             {% elif jn_req.payment_html %}
-                <p style="text-align:center">{{ jn_req.payment_html|safe }}</p>
+                <p style="text-align:center; font-size:120%; max-width:85%;">{{ jn_req.payment_html|safe }}</p>
             {% endif %}
         {% endif %}
     </div>

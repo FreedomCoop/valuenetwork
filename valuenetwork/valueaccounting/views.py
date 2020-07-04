@@ -12780,7 +12780,7 @@ def create_skill_for_suggestion(request, suggestion_id):
             skill = form.save(commit=False)
             skill.inventory_rule="never"
             skill.behavior="work"
-            hrs = Unit.objects.filter(name__icontains="Hour")
+            hrs = Unit.objects.filter(name_en__icontains="Hour")
             hr = None
             if hrs:
                 hr = hrs[0]

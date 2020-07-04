@@ -57,7 +57,7 @@ def initial_test_data():
     if c: print "t- created EconomicAgent: 'Freedom Coop'"
 
     # Project for FreedomCoop
-    pro, c = Project.objects.get_or_create(agent=fdc, joining_style="moderated", fobi_slug='freedom-coop')
+    pro, c = Project.objects.get_or_create(agent=fdc, joining_style="shares", fobi_slug='freedom-coop')
     if c: print "t- created Project: "+str(pro)
     pro.visibility = 'public'
     pro.save()
@@ -96,10 +96,10 @@ def initial_test_data():
     FC_unit = Unit.objects.get(name='FairCoin') #_or_create(unit_type='value', name='FairCoin', abbrev='fair')
     if FC_unit: print "t- found Unit: 'FairCoin'"
 
-    ert = EconomicResourceType.objects.get(name='Faircoin Ocp Account') #, unit=FC_unit, unit_of_use=FC_unit,
+    ert = EconomicResourceType.objects.get(name_en='Faircoin Ocp Account') #, unit=FC_unit, unit_of_use=FC_unit,
         #value_per_unit_of_use=decimal.Decimal('1.00'), substitutable=True, behavior='dig_acct')
     if ert: print "t- found EconomicResourceType: 'Faircoin Ocp Account'"
 
-    arrt, c = AgentResourceRoleType.objects.get_or_create(name='Owner', is_owner=True)
+    arrt, c = AgentResourceRoleType.objects.get_or_create(name_en='Owner', is_owner=True)
     if c: print "t- created AgentResourceRoleType: "+str(arrt)
 

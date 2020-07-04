@@ -204,8 +204,8 @@ th, td {
     {% elif agent.is_participant_candidate %}
         {% for req in agent.project_join_requests.all %}
           {% if req.state == "new" %}
-            <div style="margin-bottom: 13px;">{% trans "As a participant <b>candidate</b> in the" %}
-                <a href="{% url 'members_agent' agent_id=req.project.agent.id %}"><b>{{ req.project.agent.name }}</b></a>
+            <div style="margin-bottom: 13px;">{% trans "As a participant <b>candidate</b> in" %}
+                <a href="{% url 'members_agent' agent_id=req.project.agent.id %}"><b>{{ req.project.agent.name }}</b></a>,
             {% if 'faircoins' in req.project.services %}
               {% if not agent.faircoin_resource %}
                     {% trans "project, you need an internal Faircoin Account to fill it and pay your shares:" %}
@@ -220,18 +220,20 @@ th, td {
                         </button>
                     </form>
               {% elif req.pending_shares %}
-                {% trans "project, you still have" %} {{ req.pending_shares }} {% trans "pending shares to buy with your new" %}
+                {% with req.pending_shares as pendshr %}
+                {% blocktrans %}you still have {{ pendshr }} pending shares to buy with your new{% endblocktrans %}
+                {% endwith %}
                 <a href="{% url "manage_faircoin_account" resource_id=agent.faircoin_resource.id %}"
                    class="btn btn-primary">{% trans "Faircoin Account" %}</a>
               {% else %}
-                {% trans "project, you should be accepted by its coordinators before you can use all the project tools." %}
+                {% trans "you should be accepted by its coordinators before you can use all the project tools." %}
                 <a href="{% url "project_feedback" agent_id=agent.id join_request_id=req.id %}"
-                   class="btn btn-primary">{{ req.project.abbrev_name }} {% trans "Feedback" %}</a>
+                   class="btn btn-primary">{% with req.project.agent.nick as nick %}{% blocktrans %}{{ nick }} Feedback{% endblocktrans %}{% endwith %}</a>
               {% endif %}
             {% else %}
-                {% trans "project, you should be accepted by its coordinators before you can use all the project tools." %}
+                {% trans "you should be accepted by its coordinators before you can use all the project tools." %}
                 <a href="{% url "project_feedback" agent_id=agent.id join_request_id=req.id %}"
-                   class="btn btn-primary">{{ req.project.abbrev_name }} {% trans "Feedback" %}</a>
+                   class="btn btn-primary">{% with req.project.agent.nick as nick %}{% blocktrans %}{{ nick }} Feedback{% endblocktrans %}{% endwith %}</a>
             {% endif %}
             </div>
           {% endif %}

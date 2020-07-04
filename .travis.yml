@@ -6,13 +6,12 @@ sudo: false
 python: 2.7
 cache: pip
 env:
-  - TOXENV="py27_django10"
   - TOXENV="py27_django11"
 install:
   - sudo curl --output /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/2.43/chromedriver_linux64.zip
   - sudo unzip /tmp/chromedriver.zip -d /usr/local/bin/
   - pip install --upgrade pip setuptools --quiet
-  - pip install -r requirements.txt --trusted-host dist.pinaxproject.com --quiet
+  - pip install -U -r requirements.txt --trusted-host dist.pinaxproject.com --quiet
   - pip install Image --quiet
   - pip install tox --quiet
 script:

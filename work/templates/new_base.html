@@ -90,7 +90,7 @@
                                   <li class="joinaproject" >
                                     <a href="{% url 'project_feedback' agent_id=req.agent.id join_request_id=req.id %}"
                                       title="{% trans 'Your join-a-project process' %}"
-                                      >{{ req.project.agent.name }} {% trans 'Feedback' %}</a>
+                                      >{% blocktrans with name=req.project.agent.name %}{{ name }} Feedback{% endblocktrans %}</a>
                                   </li>
                                 {% endif %}
                               {% endfor %}
@@ -336,7 +336,7 @@
                               <li class="joinaproject" >
                                 <a href="{% url 'project_feedback' agent_id=req.agent.id join_request_id=req.id %}"
                                   title="{% trans 'Your join-a-project process' %}"
-                                  >{{ req.project.agent.name }} {% trans 'Feedback' %}</a>
+                                  >{% blocktrans with name=req.project.agent.name %}{{ name }} Feedback{% endblocktrans %}</a>
                               </li>
                             {% endif %}
                           {% endfor %}

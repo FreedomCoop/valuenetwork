@@ -303,24 +303,24 @@ class JoinRequestForm(forms.ModelForm):
             if not surname:
                 self.add_error('surname', _("Please put your Surname if you are an individual."))
                 return
-            exist_name = EconomicAgent.objects.filter(name__iexact=nome+' '+surname)
+            exist_name = EconomicAgent.objects.filter(name_en__iexact=nome+' '+surname)
             if not exist_name:
                 exist_name = User.objects.filter(first_name__iexact=nome, last_name__iexact=surname)
             if len(exist_name) > 0:
                 pass #self.add_error('name', _("This name and surname is already used by another user, do you want to differentiate anyhow?"))
                 #self.add_error('surname', _("This name and surname is already used by another user, do you want to differentiate anyhow?"))
         elif typeofuser == 'collective':
-            exist_name = EconomicAgent.objects.filter(name__iexact=nome)
+            exist_name = EconomicAgent.objects.filter(name_en__iexact=nome)
             if len(exist_name) > 0:
                 self.add_error('name', _("This name is already used by another agent, do yo want to diferentiate anyhow? "))
         else:
             self.add_error('type_of_user', _("Bad type of user??"))
 
-        exist_user = EconomicAgent.objects.filter(nick__iexact=username)
+        exist_user = EconomicAgent.objects.filter(nick_en__iexact=username)
 
         #+str(exist_name[0].nick))
         if len(exist_user) > 0:
-            if not exist_user[0].nick == username:
+            if not exist_user[0].nick_en == username:
                 self.add_error('requested_username', _("A too similar username already exists. Please login here with your OCP credentials or choose another username."))
             else:
                 self.add_error('requested_username', _("The username already exists. Please login here to join this project or choose another username."))
@@ -349,7 +349,7 @@ class JoinRequestForm(forms.ModelForm):
                 self.add_error('email_address', _("The email address is already registered in the system for various agents! Please login here and we'll try to solve this:"))
                 print "DUPLICATE email agent: "+str(exist_email)
             else:
-                if not exist_email[0].nick == username:
+                if not exist_email[0].nick_en == username:
                     self.add_error('email_address', _("The email address is already registered in the system for another username. To join this project please login here with your existent OCP username.")) #+str(exist_email[0].nick))
                 else:
                     self.add_error('email_address', _("The email address is already registered in the system with same username. To join this project please login here:"))
@@ -754,6 +754,8 @@ class NewResourceTypeForm(forms.Form):
           edid = ''
         if hasattr(data, 'name'):
           name_rts = Ocp_Artwork_Type.objects.filter(name=data["name"])
+          if not name_rts:
+            name_rts = Ocp_Artwork_Type.objects.filter(name_en=data["name"])
           if name_rts.count() and edid == '':
             self.add_error('name', "<b>"+data["name"]+"</b> already exists!")
           elif not edid == '' and edid.split('_')[1] != str(name_rts[0].id):
@@ -1188,8 +1190,8 @@ class ContextTransferForm(forms.Form):
                     self.fields['quantity'].label += " ERROR: this facet is what? "+str(facet) #pass
             else:
                 if resource_type:
-                    if resource_type.name == "Faircoin Ocp Account":
-                        resource_type = EconomicResourceType.objects.get(name="FairCoin")
+                    if resource_type.name_en == "Faircoin Ocp Account":
+                        resource_type = EconomicResourceType.objects.get(name_en="FairCoin")
 
                     try:
                         self.fields["ocp_resource_type"].initial = Ocp_Artwork_Type.objects.get(resource_type=resource_type)

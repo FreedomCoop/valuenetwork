@@ -263,7 +263,7 @@
                                     <form
                                         class="pay_for_shares"
                                         id="sharePaymentForm"
-                                        action="{% url "share_payment" agent_id=agent.id %}"
+                                        action="{% url "share_payment_fair" agent_id=agent.id %}"
                                         method="POST" >
                                         {% csrf_token %}
                                         <input type="hidden" name="join_request" value="{{ jn_req.id }}">
@@ -274,11 +274,7 @@
                                 {% else %}
                                     <br/>
                                     <p><em><b>
-                                    {% blocktrans %}
-                                        Your FairCoin account balance of {{ confirmed_balance }} ƒ
-                                        is too low to pay {{ share_price }} ƒ now.<br>
-                                        If you transfer <span class="error">{{ pending_amount }} ƒ</span> into your account, you'll see here the button to pay your shares.
-                                    {% endblocktrans %}
+                                    {% blocktrans %}Your FairCoin account balance of {{ confirmed_balance }} ƒ is too low to pay {{ share_price }} ƒ now.<br>If you transfer <span class="error">{{ pending_amount }} ƒ</span> into your account, you'll see here the button to pay your shares.{% endblocktrans %}
                                     </em></b></p>
                                 {% endif %}
                             {% else %}

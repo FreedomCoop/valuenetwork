@@ -6,7 +6,7 @@ from django.conf import settings
 
 url = "http://localhost:8069"
 timeout = 300
-logger = logging.getLogger('ocp')
+logger = logging.getLogger('fair')
 
 FAIRCOIN_DIVISOR = Decimal("100000000.00")
 
@@ -30,11 +30,13 @@ def send_command(cmd, params = [] ):
     try:
         r = response.json()
         if int(response.status_code) == 200:
-            logger.debug('Response: %s' %(r['result']))
+            #logger.debug('Response: %s' %(r['result']))
             out = r['result']
         else:
+            logger.debug('Error Response: %s' %(str(r)))
             out = 'ERROR'
     except:
+        logger.debug('Error Json: %s' %(str(response)))
         out = 'ERROR'
 
     return out
@@ -157,7 +159,7 @@ def get_address_index(address):
 
 def faircoin_rt():
     from valuenetwork.valueaccounting.models import EconomicResourceType
-    fc = EconomicResourceType.objects.get(name='FairCoin')
+    fc = EconomicResourceType.objects.get(name_en='FairCoin')
     return fc
 
 

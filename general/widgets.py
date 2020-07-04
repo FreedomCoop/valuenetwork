@@ -117,7 +117,7 @@ class contrib_ManyToManyRawIdWidgetWrapper(ManyToManyRawIdWidget):
         value = data.get(name)
         if value:
             return value.split(',')
-        
+
 
 from django.utils.translation import ugettext_lazy as _
 
@@ -159,7 +159,7 @@ class ForeignKeyRawIdWidgetWrapper(contrib_ForeignKeyRawIdWidgetWrapper):
 					),
 					current_app=self.admin_site.name,
 			)
-		
+
 			params = self.url_parameters()
 			if params:
 				url = '?' + '&amp;'.join('%s=%s' % (k, v) for k, v in params.items())
@@ -174,10 +174,10 @@ class ForeignKeyRawIdWidgetWrapper(contrib_ForeignKeyRawIdWidgetWrapper):
 			output.append(self.label_for_value(value))
 
 		attrs['class'] = ' '.join((attrs.get('class', ''), 'related-widget-wrapper'))
-		name_desc = name 
+		name_desc = name
 		name = "%s_%s" % ( name, value )
 
-		add_url = self.get_related_url(self.rel.to, info, 'add') 
+		add_url = self.get_related_url(self.rel.to, info, 'add')
 		add_help_text = _('Add Another')
 
 		try:
@@ -195,7 +195,7 @@ class ForeignKeyRawIdWidgetWrapper(contrib_ForeignKeyRawIdWidgetWrapper):
 		 'can_add_related': self.can_add_related,
 		 'add_link' :  add_url,
 		 'add_help_text' : add_help_text,
-		 'obj_desc' : obj_desc, 
+		 'obj_desc' : obj_desc,
 		 'name_desc': name_desc,
 		 'look_link': ""
 		}
@@ -203,14 +203,14 @@ class ForeignKeyRawIdWidgetWrapper(contrib_ForeignKeyRawIdWidgetWrapper):
 		output = ""
 		if value:
 			java_remove = format_html(' onclick="remove_item_foreign(&#39;id_{0}&#39;); return false;"', name_desc)
-			out_link = "<a %s href='javascript:void;'>%s</a>" % ( java_remove, _(u"Treu").encode("utf-8") )
+			out_link = "<a %s href='javascript:void;'>%s</a>" % ( java_remove, _(u"Remove").encode("utf-8") )
 			obj_desc = obj_desc + " | " + out_link
 			#CRUD buttons
 			if self.can_change_related:
-				change_url = self.get_related_url(self.rel.to, info, 'change', [value]) 
+				change_url = self.get_related_url(self.rel.to, info, 'change', [value])
 				template = self.get_related_url(self.rel.to, info, 'change', ['%s'])
 				change_url_template = template
-				change_help_text =  _('Change related model')	
+				change_help_text =  _('Change related model')
 				change_link = "<a class='related-widget-wrapper-link related-widget-wrapper-change-link changelink' "
 				change_link += "id='edit_id_" + name + "' data-href-template='" + change_url_template + "'"
 				if change_url:
@@ -221,23 +221,23 @@ class ForeignKeyRawIdWidgetWrapper(contrib_ForeignKeyRawIdWidgetWrapper):
 					'obj_desc' : mark_safe(obj_desc),
 					})
 			if self.can_delete_related:
-				delete_url = self.get_related_url(self.rel.to, info, 'delete', [value]) 
+				delete_url = self.get_related_url(self.rel.to, info, 'delete', [value])
 				template = self.get_related_url(self.rel.to, info, 'delete', ['%s'])
 				delete_url_template = template
 				delete_help_text =  _('Delete related model')
-				del_link = "<a class='related-widget-wrapper-link related-widget-wrapper-delete-link deletelink' id='delete_id_" 
+				del_link = "<a class='related-widget-wrapper-link related-widget-wrapper-delete-link deletelink' id='delete_id_"
 				del_link += name + "' data-href-template='" + delete_url_template + "'"
 				if delete_url:
 					del_link += " href='" + delete_url  + "'"
 				del_link += " title='" + delete_help_text.encode("utf-8") + "'>" + "</a>"
-				obj_desc = obj_desc + " | " + del_link 
+				obj_desc = obj_desc + " | " + del_link
 				context.update({
 					'obj_desc' : mark_safe(obj_desc),
 					})
 		if self.can_add_related:
-			add_url = self.get_related_url(self.rel.to, info, 'add') 
+			add_url = self.get_related_url(self.rel.to, info, 'add')
 			add_help_text = _('Add Another')
-			add_link = "<a class='related-widget-wrapper-link related-widget-wrapper-add-link add-related addlink' href='%s'>%s</a>" % (add_url, _("Afegeix").encode("utf-8"))
+			add_link = "<a class='related-widget-wrapper-link related-widget-wrapper-add-link add-related addlink' href='%s'>%s</a>" % (add_url, _("Add").encode("utf-8"))
 			context.update({'add_link' : mark_safe(add_link)})
 		look_url = related_url + url;
 		look_link = "<a class='related-lookup related-widget-wrapper-link' href='"
@@ -282,7 +282,7 @@ class ManyToManyRawIdWidgetWrapper(contrib_ManyToManyRawIdWidgetWrapper):
 				#CRUD buttons
 				change_link = None
 				if self.can_change_related:
-					change_url = self.get_related_url(self.rel.to, info, 'change', [obj.id]) 
+					change_url = self.get_related_url(self.rel.to, info, 'change', [obj.id])
 					template = self.get_related_url(self.rel.to, info, 'change', ['%s'])
 					change_url_template = template
 					change_help_text =  _('Change related model')
@@ -293,18 +293,18 @@ class ManyToManyRawIdWidgetWrapper(contrib_ManyToManyRawIdWidgetWrapper):
 					change_link += " title='" + change_help_text.encode("utf-8") + "'>"  + "</a>"
 				del_link = None
 				if self.can_delete_related:
-					delete_url = self.get_related_url(self.rel.to, info, 'delete', [obj.id]) 
+					delete_url = self.get_related_url(self.rel.to, info, 'delete', [obj.id])
 					template = self.get_related_url(self.rel.to, info, 'delete', ['%s'])
 					delete_url_template = template
 					delete_help_text =  _('Delete related model')
-					del_link = "<a class='related-widget-wrapper-link related-widget-wrapper-delete-link deletelink' id='delete_id_" 
+					del_link = "<a class='related-widget-wrapper-link related-widget-wrapper-delete-link deletelink' id='delete_id_"
 					del_link += field_name + "' data-href-template='" + delete_url_template + "'"
 					if delete_url:
 						del_link += " href='" + delete_url  + "'"
 					del_link += " title='" + delete_help_text.encode("utf-8") + "'>" + "</a>"
 				name = "manytomany_%s_%s" % ( field_name, obj.id )
 				java_remove = format_html(' onclick="remove_item(window,&#39;{0}&#39;,&#39;{1}&#39;, &#39;{2}&#39;); return false;"', name, hidden_ids_text_name, obj.id)
-				out_link = "<a %s href='javascript:void;'>%s</a>" % ( java_remove, _(u"Treu").encode("utf-8") )
+				out_link = "<a %s href='javascript:void;'>%s</a>" % ( java_remove, _(u"Remove").encode("utf-8") )
 				span = "<span name='%s' id='%s' value='%s'>%s - %s|%s|%s</span>" % (name, name, obj.id, obj, out_link, change_link, del_link);
 				output += "<li> %s </li>" % (span)
 		return mark_safe(output + "</ul>")
@@ -376,7 +376,7 @@ class ForeignKeyRawIdWidgetWrapperAdmin(admin.ModelAdmin):
 		this_object = kwargs.pop('obj', None)
 		formfield = super(ForeignKeyRawIdWidgetWrapperAdmin, self).formfield_for_dbfield(db_field, **kwargs)
 
-		if (formfield and isinstance(formfield.widget, admin.widgets.ForeignKeyRawIdWidget)): 
+		if (formfield and isinstance(formfield.widget, admin.widgets.ForeignKeyRawIdWidget)):
 			request = kwargs.pop('request', None)
 
 			related_modeladmin = self.admin_site._registry.get(db_field.rel.to)
@@ -391,8 +391,8 @@ class ForeignKeyRawIdWidgetWrapperAdmin(admin.ModelAdmin):
 			related_modeladmin.has_delete_permission(request))
 			if isinstance(formfield.widget, admin.widgets.ManyToManyRawIdWidget):
 				widget = ManyToManyRawIdWidgetWrapper.from_contrib_wrapper(
-					formfield.widget, 
-					self.admin_site, 
+					formfield.widget,
+					self.admin_site,
 					can_add_related,
 					can_change_related,
 					can_delete_related,
@@ -400,8 +400,8 @@ class ForeignKeyRawIdWidgetWrapperAdmin(admin.ModelAdmin):
 				formfield.widget = widget
 			else:
 				widget = ForeignKeyRawIdWidgetWrapper.from_contrib_wrapper(
-					formfield.widget, 
-					self.admin_site, 
+					formfield.widget,
+					self.admin_site,
 					can_add_related,
 					can_change_related,
 					can_delete_related,

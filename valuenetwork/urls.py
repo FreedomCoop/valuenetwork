@@ -8,7 +8,6 @@ from account.views import LoginView
 from django.http import HttpResponse
 
 from django.contrib import admin
-admin.autodiscover()
 
 import work.views
 #from valuenetwork.valueaccounting.models import *
@@ -19,7 +18,7 @@ urlpatterns = [
     url(r"^$", work.views.home, name="home"),
     #url(r"^$", valuenetwork.valueaccounting.views.home, name="home"),
     url(r"^accounting/", include("valuenetwork.valueaccounting.urls")),
-    url(r"^admin/", include(admin.site.urls)),
+    url(r"^admin/", admin.site.urls),
     url(r"^account/", include("account.urls")),
     #url(r"^notification/", include("pinax.notifications.urls")),
     url(r"^notifications/", include("pinax.notifications.urls", namespace="pinax_notifications")),

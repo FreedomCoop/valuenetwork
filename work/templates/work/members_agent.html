@@ -77,6 +77,10 @@
   .smaller {
       font-size: .9em;
   }
+  span.small img {
+      padding: 5px 0;
+      width:30%;
+  }
   .button-row {
       margin-top: 0;
       margin-bottom: 10px;
@@ -299,7 +303,8 @@
                         <h3 id="agent-change-label">{% trans "Change" %} {{ agent.name }}</h3>
                     </div>
                     <div class="modal-body">
-                        <form id="agentForm" enctype="multipart/form-data" action="{% url 'members_agent' agent_id=agent.id %}" method="POST" name="{{ agent.id }}" >
+                        <form id="agentForm" enctype="multipart/form-data" action="{% url 'members_agent' agent_id=agent.id %}"
+                              method="POST" name="{{ agent.id }}" >
                             {% csrf_token %}
                             {{ agn_form|as_bootstrap }}
                             {% if pro_form %}
@@ -364,19 +369,50 @@
                         </div>
                       </div>
                       {% if agent.photo and photo_size %}
-                        <img src="{% thumbnail agent.photo photo_size %}" />
+                        {% if agent.photo.readable %}
+                          <img src="{% thumbnail agent.photo photo_size %}" />
+                        {% elif agent.photo.url %}
+                          <img src="{{ agent.photo.url }}" style="width:auto;"/>
+                        {% else %}
+                          <span class="error">{% trans "Error: can't read the image." %}</span>
+                          {% if request.user.is_superuser %}<br>{{ agent.photo.url }}{% endif %}
+                        {% endif %}
                       {% elif agent.photo_url %}
-                        <img src="{{ agent.photo_url }}" width="300" />
+                        <img src="{{ agent.photo_url }}" style="width:auto;"/><br>
                       {% endif %}
-                      {% if user_agent in agent.managers or user_is_agent %}
-                        <a href="#uploadPicture" role="button" class="btn btn-primary btn-mini" data-toggle="modal" style="float:right;">{% if agent.photo or agent.photo_url %}{% trans "Change" %}{% else %}{% trans "Set" %}{% endif %}</a>
+                      {% if user_agent in agent.managers or user_is_agent or user.is_superuser %}
+                        <a href="#uploadPicture" role="button" class="btn btn-primary btn-mini" data-toggle="modal"
+                           style="float:right; margin-top:5px;">{% if agent.photo or agent.photo_url %}{% trans "Change" %}{% else %}{% trans "Set" %}{% endif %}</a>
+
+                        {% if not agent.photo_url == agent.photo_url_en %}
+                          <br><span class="small">(en: <img src="{{ agent.photo_url_en }}" /> )</span>
+                        {% endif %}
+                        {% if not agent.photo_url == agent.photo_url_es %}
+                          <br><span class="small">(es: <img src="{{ agent.photo_url_es }}" /> )</span>
+                        {% endif %}
+                        {% if not agent.photo_url == agent.photo_url_ca %}
+                          <br><span class="small">(ca: <img src="{{ agent.photo_url_ca }}" /> )</span>
+                        {% endif %}
                       {% endif %}
                     </td>
                   </tr>
 
                   <tr>
                         <th style="width: 150px; text-align: right;">{% trans "Nickname" %}</th>
-                        <td>{{ agent.nick }} {% if agn_form.nick.errors %}<br> -> <span class="error">"{{ agn_form.nick.value }}": {{ agn_form.nick.errors|first }}</span>{% endif %}</td>
+                        <td>{{ agent.nick }}
+                            {% if agn_form.nick.errors %}<br> ->
+                                <span class="error">"{{ agn_form.nick.value }}": {{ agn_form.nick.errors|first }}</span>
+                            {% endif %}
+                            {% if not agent.nick == agent.nick_en %}
+                                <br><span class="small">(en: {{ agent.nick_en }})</span>
+                            {% endif %}
+                            {% if not agent.nick == agent.nick_es %}
+                                <br><span class="small">(es: {{ agent.nick_es }})</span>
+                            {% endif %}
+                            {% if not agent.nick == agent.nick_ca %}
+                                <br><span class="small">(ca: {{ agent.nick_ca }})</span>
+                            {% endif %}
+                        </td>
                   </tr>
                   {% if request.user.is_superuser and agent.user.user %}
                         <tr>
@@ -386,7 +422,17 @@
                   {% endif %}
                   <tr>
                         <th style="text-align: right;">{% trans "Full Name" %}</th>
-                        <td>{{ agent.name }} {% if agn_form.name.errors %}<br> -> <span class="error">"{{ agn_form.name.value }}": {{ agn_form.name.errors|first }}</span>{% endif %}</td>
+                        <td>{{ agent.name }} {% if agn_form.name.errors %}<br> -> <span class="error">"{{ agn_form.name.value }}": {{ agn_form.name.errors|first }}</span>{% endif %}
+                        {% if not agent.name == agent.name_en %}
+                            <br><span class="small">(en: {{ agent.name_en }})</span>
+                        {% endif %}
+                        {% if not agent.name == agent.name_es %}
+                            <br><span class="small">(es: {{ agent.name_es }})</span>
+                        {% endif %}
+                        {% if not agent.name == agent.name_ca %}
+                            <br><span class="small">(ca: {{ agent.name_ca }})</span>
+                        {% endif %}
+                        </td>
                   </tr>
                   <tr>
                         <th style="text-align: right;">{% trans "Type" %}</th>
@@ -401,7 +447,19 @@
                   {% if agent.url %}
                       <tr>
                           <th style="text-align: right;">{% trans "URL" %}</th>
-                          <td><a href="{{ agent.url }}" target="_blank">{{ agent.url }}</a></td>
+                          <td><a href="{{ agent.url }}" target="_blank">{{ agent.url }}</a>
+                            {% if user_agent in agent.members or user_is_agent %}
+                              {% if not agent.url == agent.url_en %}
+                                  <br><span class="small">(en: {{ agent.url_en }})</span>
+                              {% endif %}
+                              {% if not agent.url == agent.url_es %}
+                                  <br><span class="small">(es: {{ agent.url_es }})</span>
+                              {% endif %}
+                              {% if not agent.url == agent.url_ca %}
+                                  <br><span class="small">(ca: {{ agent.url_ca }})</span>
+                              {% endif %}
+                            {% endif %}
+                          </td>
                       </tr>
                   {% endif %}
                   {% if agent.description %}
@@ -414,7 +472,19 @@
 
                     <tr>
                         <th style="text-align: right; vertical-align: top; ">{% trans "Email" %}</th>
-                        <td>{% if agent.email %}{{ agent.email }}{% else %}<span class="error">{% trans "Address Missing!" %}</span>{% endif %} {% if agn_form.email.errors %}<br> -> <span class="error">"{{ agn_form.email.value }}": {{ agn_form.email.errors|first }}</span>{% endif %}</td>
+                        <td>{% if agent.email %}{{ agent.email }}{% else %}<span class="error">{% trans "Address Missing!" %}</span>{% endif %} {% if agn_form.email.errors %}<br> -> <span class="error">"{{ agn_form.email.value }}": {{ agn_form.email.errors|first }}</span>{% endif %}
+                          {% if user_agent in agent.managers or user_is_agent %}
+                            {% if not agent.email == agent.email_en %}
+                                <br><span class="small">(en: {{ agent.email_en }})</span>
+                            {% endif %}
+                            {% if not agent.email == agent.email_es %}
+                                <br><span class="small">(es: {{ agent.email_es }})</span>
+                            {% endif %}
+                            {% if not agent.email == agent.email_ca %}
+                                <br><span class="small">(ca: {{ agent.email_ca }})</span>
+                            {% endif %}
+                          {% endif %}
+                        </td>
                     </tr>
 
                         {% if user_agent in agent.managers or user_is_agent or agent.primary_location %}
@@ -429,13 +499,36 @@
                                 {% else %}
                                   {{ agent.address }}
                                 {% endif %}
+                                {% if user_agent in agent.members or user_is_agent %}
+                                    {% if not agent.address == agent.address_en %}
+                                        <br><span class="small">(en: {{ agent.address_en }})</span>
+                                    {% endif %}
+                                    {% if not agent.address == agent.address_es %}
+                                        <br><span class="small">(es: {{ agent.address_es }})</span>
+                                    {% endif %}
+                                    {% if not agent.address == agent.address_ca %}
+                                        <br><span class="small">(ca: {{ agent.address_ca }})</span>
+                                    {% endif %}
+                                {% endif %}
                             </td>
                           </tr>
                         {% endif %}
                      {% if agent.phone_primary %}
                          <tr>
                             <th style="text-align: right; vertical-align: top; ">{% trans "Phone" %}</th>
-                            <td>{{ agent.phone_primary }}</td>
+                            <td>{{ agent.phone_primary }}
+                              {% if user_agent in agent.managers or user_is_agent %}
+                                {% if not agent.phone_primary == agent.phone_primary_en %}
+                                    <br><span class="small">(en: {{ agent.phone_primary_en }})</span>
+                                {% endif %}
+                                {% if not agent.phone_primary == agent.phone_primary_es %}
+                                    <br><span class="small">(es: {{ agent.phone_primary_es }})</span>
+                                {% endif %}
+                                {% if not agent.phone_primary == agent.phone_primary_ca %}
+                                    <br><span class="small">(ca: {{ agent.phone_primary_ca }})</span>
+                                {% endif %}
+                              {% endif %}
+                            </td>
                         </tr>
                      {% endif %}
                   {% endif %}
@@ -472,7 +565,7 @@
                   {% if agent.faircoin_resources %}
                         <tr>
                             <th style="text-align: right; vertical-align: top; ">{% trans "FairCoin address" %}</th>
-                            <td>{% for fcr in agent.faircoin_resources %} {{ fcr.faircoin_address.address }}
+                            <td>{% for fcr in agent.faircoin_resources %}<span class="small">{{ fcr.faircoin_address.address }}</span>
                                   {% if user_agent in agent.managers or user_is_agent %}
                                     {% if fcr.id %} &nbsp; <b><a href="{% url "manage_faircoin_account" resource_id=fcr.id %}"
                                                                  class="btn btn-primary btn-mini">Manage</a></b>
@@ -505,14 +598,14 @@
                       <tr>
                         <th>{% trans "Project Joining Style:" %}</th>
                         <td>{{ agent.project.joining_style }}
-                          {% if agent.project.joining_style == 'moderated' %}
+                          {% if agent.project.is_moderated %}
                             {% if agent.project.fobi_slug %}
                           - <b><a href="/work/agent/{{ agent.id }}/join-requests/">{% trans "Manage Requests" %}</a></b>
                             - <b><a href="/joinaproject/{{ agent.project.fobi_slug }}" target="_blank">{% if agent.project.fobi_form %}{% trans "View Form" %}{% else %}<span class="error">{% trans "Error" %}</span>{% endif %}</a></b>
                             {% endif %}
                           {% endif %}</td>
                       </tr>
-                      {% if agent.project.joining_style == 'moderated' %}
+                      {% if agent.project.is_moderated %}
                           <tr>
                             <th>{% trans "Auto create users+agents and confirm email:" %}</th>
                             <td>{{ agent.project.auto_create_pass }}</td>
@@ -540,6 +633,7 @@
                           </td>
                         </tr>
                         {% if agent.project.share_types or agent.project.payment_options %}
+                          {% if 'shares' == agent.project.joining_style %}
                           <tr>
                             <th>{% trans "Offered Shares:" %}</th>
                             <td>{% if not agent.project.share_types %}<span class="error">{% trans "Error: No project's Share types found!" %}</span>{% else %}<ul style="margin-left:15px;">
@@ -573,7 +667,7 @@
                                       class="create-shares-form miniform"
                                       id="createSharesForm"
                                       action="{% url "create_project_shares" agent_id=agent.id %}"
-                                      method="POST" >
+                                      method="POST" style="width: max-content;">
                                     {% csrf_token %}
                                     <label for="shareabbr">{% trans "Share unit abbrev" %}:</label>
                                     <input type="text" id="shareabbr" name="shareabbr"
@@ -602,6 +696,14 @@
                             {% endif %}
                             </td>
                           </tr>
+                          {% elif 'subscription' == agent.project.joining_style %}
+                          <tr>
+                              <th>{% trans "Subscription Details:" %}</th>
+                              <td>ResourceType: <b {% if not agent.project.subscription_rt %}class="error"{% endif %}>{{ agent.project.subscription_rt }}</b><br>
+                                  Unit: <b {% if not agent.project.subscription_unit %}class="error"{% endif %}>{{ agent.project.subscription_unit }}</b>
+                              </td>
+                          </tr>
+                          {% endif %}
                         {% endif %}
                         {% if agent.project.share_totals %}
                           <tr>
@@ -620,14 +722,29 @@
                             </ul>
                             {% if request.user.is_superuser %}
                                 <span class="smaller">(KEYS: {{ agent.project.active_payment_options_obj }} )<br>
-                                {% for et in agent.project.shares_account_type.ocp_artwork_type.rel_nonmaterial_type.ocp_record_types.all %}
+                                {% if agent.project.shares_account_type %}
+                                  {% for et in agent.project.shares_account_type.ocp_artwork_type.rel_nonmaterial_type.ocp_record_types.all %}
                                     <a href="{% url "change_exchange_type" exchange_type_id=et.exchange_type.id %}" >{{ et.exchange_type }}</a><br>
                                     {% for tt in et.exchange_type.transfer_types.all %}
                                       &nbsp; &nbsp;<span class="{% if not tt.get_resource_types %}error{% endif %}">{% if tt.inherit_types %}+{% else %}-{% endif %} {{ tt }} ({% for rt in tt.get_resource_types %}{{ rt }}, {% endfor %}) <em>(FV:{% for fv in tt.facet_values.all %}{{ fv.facet_value }}, {% endfor %})</em></span><br>
                                     {% endfor %}
-                                {% endfor %}
-                                </span>
-                                <br><b><a href="{% url "create_shares_exchange_types" agent_id=agent.id %}">Create Exchange Types</a></b><!--  -->
+                                  {% endfor %}
+                                  </span>
+                                  <br><b><a href="{% url "create_shares_exchange_types" agent_id=agent.id %}">Create Shares Exchange Types</a></b>
+                                {% elif agent.project.subscription_unit %}
+                                  {% for et in agent.project.subscription_rt.ocp_artwork_type.ocp_record_types.all %}
+                                    <a href="{% url "change_exchange_type" exchange_type_id=et.exchange_type.id %}" >{{ et.exchange_type }}</a><br>
+                                    {% for tt in et.exchange_type.transfer_types.all %}
+                                      &nbsp; &nbsp;<span class="{% if not tt.get_resource_types %}error{% endif %}">{% if tt.inherit_types %}+{% else %}-{% endif %} {{ tt }} ({% for rt in tt.get_resource_types %}{{ rt }}, {% endfor %}) <em>(FV:{% for fv in tt.facet_values.all %}{{ fv.facet_value }}, {% endfor %})</em></span><br>
+                                    {% endfor %}
+                                  {% endfor %}
+                                  </span>
+                                  <br><b><a href="{% url "create_subscription_exchange_types" agent_id=agent.id %}">Create Subscription Exchange Types</a></b>
+                                {% else %}
+                                    <b class="error">Error</b>
+                                    </span>
+                                {% endif %}
+
                             {% endif %}
                             </td>
                           </tr>
@@ -811,13 +928,13 @@
                   <h3 class="">{% trans "Skills" %}:</h3>
                   {% if agent.skills %}
                     {% if user_agent in agent.managers or user_is_agent %}
-                      <a href="#skillAssnForm" role="button" class="btn btn-primary btn-mini" data-toggle="modal" style="float:right;">Edit offered skills</a>
+                      <a href="#skillAssnForm" role="button" class="btn btn-primary btn-mini" data-toggle="modal" style="float:right;">{% trans "Edit offered skills" %}</a>
                     {% endif %}
                     <ul>
                         {% for skill in agent.skills %}
                             <li>
                                 {% if skill.ocp_skill_type %}{{ skill.ocp_skill_type }}{% else %}{{ skill }}{% endif %}
-                                {% if skill.created_by == agent.user.user and user_is_agent %} <em>{% trans "(created by you)" %}</em>{% elif skill.changed_by == agent.user.user and user_is_agent %} <em>{% trans "(edited by you)" %}</em>{% elif skill in agent.suggested_skills %} <em>{% blocktrans %}(suggested by {{ agent }}) {% endblocktrans %}</em>{% endif %}
+                                {% if skill.created_by == agent.user.user and user_is_agent %} <em>{% trans "(created by you)" %}</em>{% elif skill.changed_by == agent.user.user and user_is_agent %} <em>{% trans "(edited by you)" %}</em>{% elif skill in agent.suggested_skills %} <em>{% blocktrans %}(suggested by {{ agent }}){% endblocktrans %}</em>{% endif %}
 
                             </li>
                         {% endfor %}
@@ -966,13 +1083,14 @@
   	        <div class="span6 assoc infobox" style="width:100%;">
               <h3>
                 {% trans "Relations:" %}
+                {% if request.user.is_superuser %}<small class="small">co:{{ assobj.coords|length }} mb:{{ assobj.members|length }} ca:{{ assobj.candids|length }} ch:{{ assobj.childs|length }}</small>{% endif %}
               </h3>
 
-              <h4 class="hdg"> {{ agent.name }} {% trans "is associated with" %}: </h4>{% if user_agent.is_superuser %}<!-- debug:managed_projects: {% for pro in agent.managed_projects %}{{ pro.name}} ({{ pro.id }}), {% endfor %} -->{% endif %}
+              <h4 class="hdg"> {{ agent.nick }} {% trans "is associated with" %}: </h4>{% if user_agent.is_superuser %}<!-- debug:managed_projects: {% for pro in agent.managed_projects %}{{ pro.name}} ({{ pro.id }}), {% endfor %} -->{% endif %}
               <ul>
                 {% for assoc in is_associated_with  %}
                     {% ifchanged assoc.association_type and assoc.state %}
-                       <h4>{% if not assoc.state == 'active' %}{{ assoc.association_type.label|cut:" of" }} {% trans "candidate of" %}{% else %}
+                       <h4>{% if not assoc.state == 'active' %}{{ assoc.association_type.label|cut:" of"|cut:" de"|cut:" en"|cut:" a" }} {% trans "candidate of" %}{% else %}
                                 {{ assoc.association_type.label }}{% endif %}: </h4>
                     {% endifchanged %}
                     <li><a href="{% url "members_agent" agent_id=assoc.has_associate.id %}">{{ assoc.has_associate.name }}</a>
@@ -1000,7 +1118,7 @@
                 {% endfor %}
               </ul>
               {% if has_associations %}
-                  <h4 class="hdg">{{ agent.name }} {% trans "has these associates" %}: &nbsp; &nbsp;
+                  <h4 class="hdg">{{ agent.nick }} {% trans "has these associates" %}: <span class="small">{{ has_associations|length }}</span>&nbsp; &nbsp;
                   {% if user_agent in agent.managers or user_agent == agent or user_agent.is_staff %}
                       {% if agent.is_context %}
                         <a href="#agentAssnForm" role="button" class="btn btn-primary btn-mini" data-toggle="modal">{% trans "Edit member relations" %}</a>
@@ -1064,7 +1182,7 @@
                             {% endwith %}
                             {% for req in assoc.is_associate.jn_reqs %}
                               {% if req.id %}
-                                {% if not assoc.state == "active" %} ({{ assoc.get_state_display }} - {{ req.state }}) {% endif %} &nbsp;
+                                {% if not assoc.state == "active" %} ({{ assoc.get_state_display }}{% if not req.state == "new" %} - {{ req.state }}{% endif %}) {% endif %} &nbsp;
                                 {% get_comment_count for req as ncom  %}
                                 {% if req.project.agent == agent or req.agent == agent %}
                                     <a href="{% url 'project_feedback' agent_id=agent.id join_request_id=req.id %}">
@@ -1073,7 +1191,7 @@
                                 {% else %}
                                 {% endif %}
                                 {% if req.exchange %}&nbsp; <a href="{% url "exchange_logging_work" context_agent_id=agent.id exchange_type_id=0 exchange_id=req.exchange.id %}"
-                                                               class="bold">Exchange</a> {% endif %}
+                                                               class="bold">{% trans "Exchange" %}</a> {% endif %}
                                 {% if not req.fobi_data %} &nbsp;<b class="error">ERROR!</b> {% endif %}
                                 {% if not forloop.first %} &nbsp;<b class="error">Error: multiple requests!</b>{% endif %}
                               {% endif %}
@@ -1090,7 +1208,7 @@
                                 {% endwith %}
                                 {% with assoc.is_associate.newshares as shares %}
                                   {% if shares %}
-                                      &nbsp; <span style="color:#476B6B">({{ shares }} share{{ shares|pluralize }})</span>
+                                      &nbsp; <span style="color:#476B6B">({% blocktrans count shares=shares %}{{ shares }} share{% plural %}{{ shares }} shares{% endblocktrans %})</span>
                                   {% elif assoc.state == "active" %}
                                       &nbsp;<b class="error">warning</b>
                                   {% endif %}
@@ -1111,7 +1229,7 @@
                                         <b>{% trans "Feedback" %}</b> {{ ncom }}
                                     </a>
                                     {% if req.exchange %}&nbsp; <a href="{% url "exchange_logging_work" context_agent_id=agent.id exchange_type_id=0 exchange_id=req.exchange.id %}"
-                                                                   class="bold">Exchange</a> {% endif %}
+                                                                   class="bold">{% trans "Exchange" %}</a> {% endif %}
                                     {% if not req.fobi_data %} &nbsp;<b class="error">ERROR!</b> {% endif %}
                                   {% endif %}
                                   {% if not forloop.first %} &nbsp;<b class="error">Error: multiple requests!</b>{% endif %}
@@ -1185,7 +1303,7 @@
       <h3>
         {% trans "Join this project:" %}
       </h3>
-      {% if agent.project.joining_style == "moderated" %}
+      {% if agent.project.is_moderated %}
         {% if user_agent.req %}
             {% if user_agent.req.state == 'declined' %}
               <p>{% trans "Sorry, you've tried to join this project but your request was <b>declined</b> for any reason. See the thread at" %}:
@@ -1197,7 +1315,9 @@
             {% endif %}
         {% else %}
           <p>{% trans "This project has a moderated access workflow. Please fill the following form to request access, and then you will have a special feedback page to comunicate with the project coordinators" %}:</p>
-          <p> {% if agent.project.fobi_slug %}<b><a href="{% url 'project_joinform' agent_id=agent.id %}" class="btn btn-primary">{% trans "Form to join" %} "{{ agent.name }}"</a></b>{% else %} <em class="alert">{% trans "Sorry, the form is not ready, try tomorrow" %}</em> {% endif %}
+          <p> {% if agent.project.fobi_form %}<b><a href="{% url 'project_joinform' agent_id=agent.id %}"
+                                                    class="btn btn-primary">{% trans "Form to join" %} "{{ agent.name }}"</a></b>
+              {% else %} <div class="alert"><em>{% trans "Sorry, the form is not ready, try tomorrow" %}</em></div> {% endif %}
           </p>
         {% endif %}
       {% elif agent.project.joining_style == "autojoin" %}

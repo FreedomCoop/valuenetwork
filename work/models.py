@@ -16,6 +16,16 @@ from easy_thumbnails.fields import ThumbnailerImageField
 from valuenetwork.valueaccounting.models import *
 from fobi.models import FormEntry
 
+from nine.versions import DJANGO_LTE_1_5
+from fobi.contrib.plugins.form_handlers.db_store.models import SavedFormDataEntry
+import simplejson as json
+import random
+import hashlib
+
+from django_comments.models import Comment
+from general.models import UnitRatio
+from faircoin import utils as faircoin_utils
+
 from mptt.fields import TreeForeignKey
 
 if "pinax.notifications" in settings.INSTALLED_APPS:
@@ -61,26 +71,15 @@ class MembershipRequest(models.Model):
     surname = models.CharField(_('Surname (for individual memberships)'), max_length=255, blank=True)
     requested_username = models.CharField(_('Requested username'), max_length=32)
     email_address = models.EmailField(_('Email address'), max_length=96,)
-    #    help_text=_("this field is optional, but we can't contact you via email without it"))
     phone_number = models.CharField(_('Phone number'), max_length=32, blank=True, null=True)
     address = models.CharField(_('Where do you live?'), max_length=255, blank=True)
     native_language = models.CharField(_('Languages'), max_length=255, blank=True)
     type_of_membership = models.CharField(_('Type of membership'),
         max_length=12, choices=MEMBERSHIP_TYPE_CHOICES,
         default="individual")
-    #membership_for_services = models.BooleanField(_('Membership for services'), default=False,
-    #    help_text=_('you have legal entity and want to offer services or products to the cooperative'))
-    #autonomous_membership = models.BooleanField(_('Autonomous membership'), default=False,
-    #    help_text=_("you don't have legal entity and want to use the cooperative to make invoices either from inside and to outside the cooperative"))
-    #ocp_user_membership = models.BooleanField(_('OCP user membership'), default=False,
-    #    help_text=_('for those that only want to use the OCP platform'))
-    #consumer_membership = models.BooleanField(_('Consumer membership'), default=False,
-    #    help_text=_("you don't offer any product or service but want to consume through it and support the cooperative"))
     number_of_shares = models.IntegerField(_('Number of shares'),
         default=1,
         help_text=_("How many shares would you like to underwrite? Each share is worth 30 Euros"))
-    #work_for_shares = models.BooleanField(_('work for one share'), default=False,
-    #    help_text=_("You can get 1 share for 6 hours of work. If you choose this option, we will send you a list of tasks and the deadline. You won't have full access before the tasks are accomplished."))
     description = models.TextField(_('Description'),
         help_text=_("Describe your project or collective and the skills or abilities you can offer the cooperative"))
     website = models.CharField(_('Website'), max_length=255, blank=True)
@@ -90,7 +89,6 @@ class MembershipRequest(models.Model):
         help_text = _("If you are in the directory at <a href='https://use.fair-coin.org' target='_blank'>use.fair-coin.org</a> please add the URL to your profile."))
     fairmarket = models.CharField(_('FairMarket shop'), max_length=255, blank=True,
         help_text = _("If you have an online shop at <a href='https://market.fair.coop' target='_blank'>market.fair.coop</a> please add the URL to your fair shop."))
-    #how_do_you_know_fc = models.TextField(_('How do you know Freedom Coop?'), blank=True,)
     known_member = models.CharField(_('Are there any FairCoop participant(s) who can give references about you? If so, who?'), max_length=255, blank=True)
     comments_and_questions = models.TextField(_('Comments and questions'), blank=True,)
 
@@ -112,6 +110,8 @@ class MembershipRequest(models.Model):
 
 
 JOINING_STYLE_CHOICES = (
+    ('subscription', _('subscription')),
+    ('shares', _('shares')),
     ('moderated', _('moderated')),
     ('autojoin', _('autojoin')),
 )
@@ -152,7 +152,9 @@ class Project(models.Model):
         return _('Project: ') + self.agent.name
 
     def is_moderated(self):
-        return self.joining_style == 'moderated'
+        if self.joining_style in ['moderated','shares','subscription']:
+            return True
+        return False #self.joining_style == 'moderated'
 
     def is_public(self):
         return self.visibility == 'public'
@@ -193,8 +195,9 @@ class Project(models.Model):
 
     def shares_type(self):
         st = None
-        at = self.shares_account_type()
-        if at:
+        if self.joining_style == 'shares':
+          at = self.shares_account_type()
+          if at:
             if hasattr(at, 'ocp_artwork_type') and at.ocp_artwork_type:
                 if hasattr(at.ocp_artwork_type, 'rel_nonmaterial_type') and at.ocp_artwork_type.rel_nonmaterial_type:
                     if hasattr(at.ocp_artwork_type.rel_nonmaterial_type, 'resource_type') and at.ocp_artwork_type.rel_nonmaterial_type.resource_type:
@@ -208,7 +211,7 @@ class Project(models.Model):
             else:
                 print "ERROR: The at: "+str(at)+" has no 'ocp_artwork_type' !"
                 loger.error("ERROR: The at: "+str(at)+" has no 'ocp_artwork_type' !")
-        else:
+          else:
             print("ERROR: The project has no shares_account_type? pro:"+str(self.agent.nick))
             loger.error("ERROR: The project has no shares_account_type? pro:"+str(self.agent.nick))
         return st
@@ -290,11 +293,20 @@ class Project(models.Model):
                                     gate = gates[key]
                                 except:
                                     gate = None
-                                if gate is not None:
-                                    ok = '<span style="color:#090">ok:</span>'
-                                    if gate['html']:
-                                        ok += ' <ul><li>'+str(gate['html'])+'</li></ul>'
-                            pay_opts.append(val+' &nbsp;'+ok)
+                                if gate:
+                                    ok = u'<span style="color:#090">ok:</span>'
+                                    if 'html' in gate:
+                                        if not isinstance(gate['html'], unicode) and not isinstance(gate['html'], str):
+                                            html = gate['html']
+                                            html = str(html).decode('utf-8')
+                                        else:
+                                            html = gate['html']
+                                        ok += u' <ul><li>'+html+u'</li></ul>'
+                                    else:
+                                        ok = "Error: no html?"
+                                else:
+                                    ok = "Error: no gate?"
+                            pay_opts.append(u""+val+u' &nbsp;'+ok)
               return pay_opts
         return False
 
@@ -382,9 +394,43 @@ class Project(models.Model):
                 fobi_keys.append(name)
         return fobi_keys
 
+    def subscription_rt(self):
+        rt = None
+        sut = self.subscription_unit()
+        if sut:
+            surts = EconomicResourceType.objects.filter(name_en=self.compact_name()+" Subscription")
+            if not surts:
+                surts = EconomicResourceType.objects.filter(name_en=self.agent.nick_en+" Subscription")
+            if not surts:
+                surts = EconomicResourceType.objects.filter(name_en=self.agent.nick_es+" Subscription")
+            if not surts:
+                surts = EconomicResourceType.objects.filter(name_en=self.agent.nick+" Subscription")
+            if surts:
+                rt = surts[0]
+        return rt
+
+    def subscription_unit(self):
+        unit = None
+        if self.joining_style == 'subscription':
+          if not hasattr(self, 'subscript_unit'):
+            for key in self.fobi_items_keys():
+                if key:
+                    keyarr = key.split('_')
+                    if len(keyarr) == 2:
+                        if keyarr[0] == 'amount': # fieldname specially defined for subscription amount and base currency
+                            unit = Unit.objects.get(abbrev=keyarr[1])
+            if not unit:
+                print("ERROR: Subscription Unit not found!! keys: "+str(self.fobi_items_keys()))
+                loger.error("ERROR: Subscription Unit not found!! keys: "+str(self.fobi_items_keys()))
+            else:
+                self.subscript_unit = unit
+          else:
+            unit = self.subscript_unit
+        return unit
+
     def shares_account_type(self):
         account_type = None
-        if self.joining_style == "moderated" and self.fobi_slug:
+        if self.is_moderated() and self.fobi_slug:
             rts = self.rts_with_clas() #list(set([arr.resource.resource_type for arr in self.agent.resource_relationships()]))
             keys = self.fobi_items_keys()
             for rt in rts:
@@ -423,13 +469,13 @@ class Project(models.Model):
         return pay_opts
 
     def compact_name(self):
-        name = self.agent.name.title()
+        name = self.agent.name_en.title()
         arr = name.split()
         name = ''.join(arr)
         return name
 
     def abbrev_name(self):
-        name = self.agent.name
+        name = self.agent.name_en
         arr = name.split()
         abbr = ''
         for a in arr:
@@ -443,6 +489,29 @@ class Project(models.Model):
                 abbr = arr[0][:1]+half+arr[1][:1]
         return abbr
 
+    def multiwallet_auth(self): # is for checking payments via botc-wallet (which requires auth).
+        auth = None
+        if self.agent.need_multicurrency():
+            if 'multicurrency' in settings.INSTALLED_APPS:
+                from multicurrency.models import MulticurrencyAuth
+                try:
+                    oauths = MulticurrencyAuth.objects.filter(agent=self.agent)
+                except MulticurrencyAuth.DoesNotExist:
+                    raise PermissionDenied
+                if len(oauths) > 1:
+                    for oau in oauths:
+                        if 'wallet' in oau.auth_user:
+                            auth = oau
+                    if not auth:
+                        print("More than one oauth for this project! return only the first. Agent:"+str(self.agent))
+                        loger.warning("More than one oauth for this project! return only the first. Agent:"+str(self.agent))
+                        auth = oauths[0]
+                elif oauths:
+                    auth = oauths[0]
+                if not auth:
+                    print("Not found any oauth for project: "+str(self.agent))
+                    loger.error("Not found any oauth for project: "+str(self.agent))
+        return auth
 
 
 
@@ -477,15 +546,8 @@ class SkillSuggestion(models.Model):
         return SkillSuggestionResourceTypeForm(initial=init, prefix=self.form_prefix())
 
 
-from nine.versions import DJANGO_LTE_1_5
-from fobi.contrib.plugins.form_handlers.db_store.models import SavedFormDataEntry
-import simplejson as json
-import random
-import hashlib
 
-from django_comments.models import Comment
-from general.models import UnitRatio
-from faircoin import utils as faircoin_utils
+
 
 WALLET = faircoin_utils.is_connected()
 
@@ -605,10 +667,20 @@ class JoinRequest(models.Model):
         if self.fobi_data and self.fobi_data.pk:
             self.entries = SavedFormDataEntry.objects.filter(pk=self.fobi_data.pk).select_related('form_entry')
             entry = self.entries[0]
-            self.form_headers = json.loads(entry.form_data_headers)
-            for val in self.form_headers:
-                fobi_headers.append(self.form_headers[val])
-                fobi_keys.append(val)
+            form_headers = json.loads(entry.form_data_headers)
+            for elem in self.fobi_data.form_entry.formelemententry_set.all().order_by('position'):
+                data = json.loads(elem.plugin_data)
+                nam = data.get('name')
+                if nam:
+                    if not nam in form_headers:
+                        form_headers[nam] = data.get('label')
+                    if not form_headers[nam] in fobi_headers:
+                        fobi_headers.append(form_headers[nam])
+                    if not nam in fobi_keys:
+                        fobi_keys.append(nam)
+                else:
+                    pass
+            self.form_headers = fobi_headers
         return fobi_keys
 
     def fobi_items_data(self):
@@ -623,13 +695,87 @@ class JoinRequest(models.Model):
                 self.items_data.append(self.data.get(key))
         return self.items_data
 
-    def pending_shares(self):
+    def payment_regularity(self):
+        if not self.project.joining_style == 'subscription':
+            return None
+        answer = {}
+        data2 = None
+        if self.project.is_moderated() and self.fobi_data:
+            for key in self.fobi_items_keys():
+                if key == "regularity": # fieldname specially defined in the fobi form
+                    self.entries = SavedFormDataEntry.objects.filter(pk=self.fobi_data.pk).select_related('form_entry')
+                    entry = self.entries[0]
+                    self.data = json.loads(entry.saved_data)
+                    val = self.data.get(key)
+                    #import pdb; pdb.set_trace()
+                    answer['val'] = val
+                    for elem in self.fobi_data.form_entry.formelemententry_set.all(): #filter(plugin_data_en__isnull=False):
+                        data2 = json.loads(elem.plugin_data)
+                        nam = data2.get('name')
+                        if nam == key:
+                          choi = data2.get('choices') # works with radio or select
+                          if choi:
+                            opts = choi.split('\r\n')
+                            for op in opts:
+                                opa = op.split(',')
+                                #print('op:'+op)
+                                if val.strip() == opa[1].strip() or val.strip() == opa[0].strip():
+                                    answer['key'] = opa[0].strip()
+                          else:
+                            raise ValidationError("The regularity field has no choices? "+str(data2))
+                        if not 'key' in answer and hasattr(elem, 'plugin_data_en'):
+                            #print("not key? "+str(elem.plugin_data_en))
+                            data3 = json.loads(elem.plugin_data_en)
+                            nam = data3.get('name')
+                            if nam == key:
+                              choi = data3.get('choices') # works with radio or select
+                              if choi:
+                                opts = choi.split('\r\n')
+                                for op in opts:
+                                    opa = op.split(',')
+                                    #print('op1:'+op)
+                                    if val.strip() == opa[1].strip() or val.strip() == opa[0].strip():
+                                        answer['key'] = opa[0].strip()
+                              else:
+                                raise ValidationError("The regularity field has no choices 2? "+str(data3))
+                        if not 'key' in answer and hasattr(elem, 'plugin_data_es'):
+                            #print("not key? "+str(elem.plugin_data_en))
+                            data4 = json.loads(elem.plugin_data_es)
+                            nam = data4.get('name')
+                            if nam == key:
+                              choi = data4.get('choices') # works with radio or select
+                              if choi:
+                                opts = choi.split('\r\n')
+                                for op in opts:
+                                    opa = op.split(',')
+                                    #print('op1:'+op)
+                                    if val.strip() == opa[1].strip() or val.strip() == opa[0].strip():
+                                        answer['key'] = opa[0].strip()
+                              else:
+                                raise ValidationError("The regularity field has no choices 3? "+str(data4))
+                        #print('answer:'+str(answer))
+
+                    if not answer.has_key('key'):
+                        raise ValidationError(u"can't find the regularity key! answer: "+str(data2)+u' val: '+val)
+            if not answer.has_key('key') or not answer.has_key('val'):
+                print("Can't find the regularity key! answer: "+str(answer)+" keys:"+str(self.fobi_items_keys()))
+                loger.warning("Can't find the regularity key! answer: "+str(answer)+" keys:"+str(self.fobi_items_keys()))
+                #pass #raise ValidationError("can't find the payment_option key! data2: "+str(data2)) #answer key: "+str(answer['key'])+' val: '+str(answer['val'])+" for jn_req: "+str(self))
+        return answer
+
+    def pending_shares(self): # also used for subscriptions
         answer = ''
         account_type = self.payment_account_type()
-        balance = 0
+        #balance = 0
         amount = self.payment_amount()
 
         balance = self.total_shares()
+        subrt = self.subscription_rt()
+        if subrt and not balance:
+            pendpay = self.pending_payments()
+            if pendpay == 0:
+                balance = amount
+
         #import pdb; pdb.set_trace()
         if amount:
             answer = amount - balance
@@ -655,6 +801,40 @@ class JoinRequest(models.Model):
                         if rs.resource_type == rt:
                             balance = int(rs.price_per_unit) # TODO: update the price_per_unit with wallet balance
         return balance
+
+    def pending_payments(self):
+        amount = self.payment_amount()
+        if self.agent:
+          if self.project.joining_style == 'subscription':
+            subrt = self.project.subscription_rt()
+            arrs = self.agent.resource_relationships()
+            user_rts = list(set([arr.resource.resource_type for arr in arrs]))
+            for rt in user_rts:
+                if rt == subrt: #.ocp_artwork_type:
+                    rss = list(set([arr.resource for arr in arrs]))
+                    for rs in rss:
+                        if rs.resource_type == rt:
+                            expires = rs.expiration_date
+                            today = datetime.date.today()
+                            if expires:
+                                if today >= expires:
+                                    return amount
+                                else:
+                                    return 0
+          else:
+            return self.pending_shares()
+        return amount
+
+
+    def subscription_resource(self):
+        if self.project.joining_style == 'subscription':
+            subrt = self.project.subscription_rt()
+            if self.agent:
+                agsubres = self.agent.owned_resource_of_type(subrt)
+                if agsubres:
+                    return agsubres
+        return None
+
 
     def multiwallet_user(self, username=None):
         answer = ''
@@ -707,7 +887,7 @@ class JoinRequest(models.Model):
 
     def payment_option(self):
         answer = {}
-        data2 = None
+        #data2 = None
         if self.project.is_moderated() and self.fobi_data:
             for key in self.fobi_items_keys():
                 if key == "payment_mode": # fieldname specially defined in the fobi form
@@ -715,8 +895,10 @@ class JoinRequest(models.Model):
                     entry = self.entries[0]
                     self.data = json.loads(entry.saved_data)
                     val = self.data.get(key)
+                    #import pdb; pdb.set_trace()
                     answer['val'] = val
-                    for elem in self.fobi_data.form_entry.formelemententry_set.all():
+                    #answer['key'] = key
+                    for elem in self.fobi_data.form_entry.formelemententry_set.all(): #filter(plugin_data_en__isnull=False):
                         data2 = json.loads(elem.plugin_data)
                         nam = data2.get('name')
                         if nam == key:
@@ -725,31 +907,111 @@ class JoinRequest(models.Model):
                             opts = choi.split('\r\n')
                             for op in opts:
                                 opa = op.split(',')
-                                #import pdb; pdb.set_trace()
+                                #print('op:'+op)
                                 if val.strip() == opa[1].strip() or val.strip() == opa[0].strip():
-                                    answer['key'] = opa[0]
+                                    answer['key'] = opa[0].strip()
                           else:
                             raise ValidationError("The payment mode field has no choices? "+str(data2))
+                        if not 'key' in answer:
+                            #print("Can't find payment mode key in elem.plugin_data, try langs....")
+                            plugdata = None
+                            for lan in settings.LANGUAGES:
+                                if hasattr(elem, 'plugin_data_'+lan[0]):
+                                    plugdata = getattr(elem, 'plugin_data_'+lan[0])
+                                    if not plugdata:
+                                        continue
+                                    data3 = json.loads(plugdata)
+                                    nam = data3.get('name')
+                                    if nam == key:
+                                      choi = data3.get('choices') # works with radio or select
+                                      if choi:
+                                        opts = choi.split('\r\n')
+                                        for op in opts:
+                                            opa = op.split(',')
+                                            #print('op1:'+op)
+                                            if val.strip() == opa[1].strip() or val.strip() == opa[0].strip():
+                                                answer['key'] = opa[0].strip()
+                                                break
+                                      else:
+                                        raise ValidationError("The payment mode field has no choices 2? "+str(data3))
+                                    if answer.has_key('key'):
+                                        break
+
+
+                            """
+                                #loger.info("found1 elem.plugin_data_CA: ") #+str(plugdata))
+                            elif hasattr(elem, 'plugin_data_es') and elem.plugin_data_es:
+                                plugdata = elem.plugin_data_es
+                                #loger.info("found1 elem.plugin_data_ES: ") #+str(plugdata))
+                            elif hasattr(elem, 'plugin_data_en') and elem.plugin_data_en:
+                                plugdata = elem.plugin_data_en
+                                #loger.info("found1 elem.plugin_data_EN: ") #+str(plugdata))
+                            else:
+                                raise ValidationError("Can't find translations of plugin_data for elem: "+str(elem))
+                            #print("not key? "+str(elem.plugin_data_en)) """
+
+
+                        """if not answer.has_key('key'):
+                            loger.info("Can't find payment mode key in elem.plugin_data in second round try third ...")
+                            plugdata = None
+                            if hasattr(elem, 'plugin_data_en') and elem.plugin_data_en:
+                                plugdata = elem.plugin_data_en
+                                #loger.info("found2 elem.plugin_data_EN: ") #+str(plugdata))
+                            elif hasattr(elem, 'plugin_data_es') and elem.plugin_data_es:
+                                plugdata = elem.plugin_data_es
+                                #loger.info("found2 elem.plugin_data_ES: ") #+str(plugdata))
+                            elif hasattr(elem, 'plugin_data_ca') and elem.plugin_data_ca:
+                                plugdata = elem.plugin_data_ca
+                                #loger.info("found2 elem.plugin_data_CA: ") #+str(plugdata))
+                            else:
+                                raise ValidationError("Can't find translations of plugin_data for elem: "+str(elem))
+                            #print("not key? "+str(elem.plugin_data_en))
+                            data3 = json.loads(plugdata)
+                            nam = data3.get('name')
+                            if nam == key:
+                              choi = data3.get('choices') # works with radio or select
+                              if choi:
+                                opts = choi.split('\r\n')
+                                for op in opts:
+                                    opa = op.split(',')
+                                    #print('op1:'+op)
+                                    if val.strip() == opa[1].strip() or val.strip() == opa[0].strip():
+                                        answer['key'] = opa[0].strip()
+                              else:
+                                raise ValidationError("The payment mode field has no choices 3? "+str(data3))
+                        #print('answer:'+str(answer))"""
+
+
                     if not answer.has_key('key'):
-                        raise ValidationError("can't find the payment_option key! answer: "+str(data2)+' val: '+str(val))
+                        raise ValidationError(u"can't find the payment_mode key! data3: "+str(data3)+u' val: '+val)
             if not answer.has_key('key') or not answer.has_key('val'):
+                #print("Can't find the payment_mode key! answer: "+str(answer)+" keys:"+str(self.fobi_items_keys()))
+                #loger.warning("Can't find the payment_mode key! answer: "+str(answer)+" keys:"+str(self.fobi_items_keys()))
                 pass #raise ValidationError("can't find the payment_option key! data2: "+str(data2)) #answer key: "+str(answer['key'])+' val: '+str(answer['val'])+" for jn_req: "+str(self))
         return answer
 
     def share_price(self):
         shrtyp = self.project.shares_type()
-        price = shrtyp.price_per_unit
-        unit = shrtyp.unit_of_price
-        requnit = self.payment_unit()
-        amount = price
-        if not requnit == unit and price:
-            from work.utils import convert_price, remove_exponent
-            amount, ratio = convert_price(price, unit, requnit, self)
-            self.ratio = ratio
-            amount = remove_exponent(amount)
-        if not amount == price:
-            pass #print "Changed the price!"
-        return amount
+        if shrtyp:
+            price = shrtyp.price_per_unit
+            unit = shrtyp.unit_of_price
+            requnit = self.payment_unit()
+            amount = price
+            if not requnit == unit and price:
+                from work.utils import remove_exponent
+                if hasattr(self, 'ratio'):
+                    amount = price / self.ratio
+                    print("using CACHED ratio at share_price!")
+                    loger.warning("using CACHED ratio at share_price!")
+                else:
+                    from work.utils import convert_price
+                    amount, ratio = convert_price(price, unit, requnit, self)
+                    self.ratio = ratio
+                amount = amount.quantize(settings.DECIMALS)
+            if not amount == price:
+                pass #print "Changed the price!"
+            return amount
+        return False
 
     def show_share_price(self):
         unit = self.payment_unit()
@@ -762,12 +1024,16 @@ class JoinRequest(models.Model):
 
     def total_price(self):
         #decimal.getcontext().prec = settings.CRYPTO_DECIMALS
-        shtype = self.project.shares_type()
-        shunit = shtype.unit_of_price
-        shprice = shtype.price_per_unit
         unit = self.payment_unit()
-        amount = amountpay = self.payment_amount() * shprice
-        if not unit == shunit and amount: #unit.abbr == 'fair':
+        shtype = self.project.shares_type()
+        if shtype:
+            shunit = shtype.unit_of_price
+            shprice = shtype.price_per_unit
+            amount = amountpay = self.payment_amount() * shprice
+        else:
+            shunit = self.subscription_unit()
+            amount = amountpay = self.payment_amount()
+        if not unit == shunit and amount: #unit.abbrev == 'fair':
             #amountpay = round(decimal.Decimal(self.payment_amount() * self.share_price()), 10)
             from work.utils import convert_price, remove_exponent
             amountpay, ratio = convert_price(amount, shunit, unit, self)
@@ -792,15 +1058,37 @@ class JoinRequest(models.Model):
                 except:
                     pass
             if obj:
-                return obj['url']
+                if 'url' in obj:
+                    return obj['url']
         return False
 
     def payment_gateway(self):
         url = self.payment_url()
-        arr = url.split('/')
-        if len(arr) > 2:
-            return arr[2]
-        return self.payment_option()['key']
+        if url:
+            arr = url.split('/')
+            if len(arr) > 2:
+                return arr[2]
+
+        popt = self.payment_option()
+        if popt and 'key' in popt:
+            return popt['key']
+        return None
+
+    def payment_margin(self):
+        payopt = self.payment_option()
+        margin = Decimal("0.0")
+        if settings.PAYMENT_GATEWAYS and payopt:
+            gates = settings.PAYMENT_GATEWAYS
+            if self.project.fobi_slug and gates[self.project.fobi_slug]:
+                try:
+                    obj = gates[self.project.fobi_slug][payopt['key']]
+                except:
+                    print "WARN Can't find the key '"+str(payopt['key'])+"' in PAYMENT_GATEWAYS object for slug "+str(self.project.fobi_slug)
+                    loger.info("WARN Can't find the key '"+str(payopt['key'])+"' in PAYMENT_GATEWAYS object for slug "+str(self.project.fobi_slug))
+                    pass
+                if obj and 'margin' in obj:
+                    margin = Decimal(obj['margin'])
+        return margin
 
     def payment_html(self):
         payopt = self.payment_option()
@@ -824,7 +1112,7 @@ class JoinRequest(models.Model):
                   amount = None
                   if self.project.agent.need_faircoins():
                     if not self.agent:
-                        txt = str(_("Once you log in and change your password, you'll be able to top-up your internal Faircoin account and proceed to pay the membership shares."))
+                        txt = unicode(_("Once you log in and change your password, you'll be able to top-up your internal Faircoin account and proceed to pay the membership shares."))
                         return txt
 
                     addr = self.agent.faircoin_address()
@@ -843,38 +1131,45 @@ class JoinRequest(models.Model):
                               balance = fairrs.faircoin_address.balance()
                               if balance != None:
                                 if round(balance, settings.CRYPTO_DECIMALS) < round(amopend, settings.CRYPTO_DECIMALS):
-                                    txt = '<b>'+str(_("Your ocp faircoin balance is not enough to pay this shares, still missing: %(f)s <br/>"
+                                    txt = u'<b>'+unicode(_("Your ocp faircoin balance is not enough to pay this shares, still missing: %(f)s <br/>"
                                                       +" You can send them to your account %(ac)s and then pay the shares") %
                                                       {'f':"<span class='error'>"+str(round(decimal.Decimal(amopend - balance), settings.CRYPTO_DECIMALS))+" fair</span>", 'ac':' </b> '+addr+' <b> '})
                                 elif amopend:
-                                    txt = '<b>'+str(_("Your actual faircoin balance is enough. You can pay the shares now!"))
-                                    txt += "</b> &nbsp;<a href='"+str(reverse('manage_faircoin_account', args=(fairrs.id,)))
-                                    txt += "' class='btn btn-primary'>"+str(_("Faircoin account"))+"</a>"
+                                    txt = u'<b>'+unicode(_("Your actual faircoin balance is enough. You can pay the shares now!"))
+                                    txt += u"</b> &nbsp;<a href='"+str(reverse('manage_faircoin_account', args=(fairrs.id,)))
+                                    txt += u"' class='btn btn-primary'>"+unicode(_("Faircoin account"))+"</a>"
                               else:
-                                txt = str(_("Can't find the balance of your faircoin account:"))+' '+addr
+                                txt = unicode(_("Can't find the balance of your faircoin account:"))+' '+addr
                             else:
-                              txt = str(_("The agent faircoin address is not from the same wallet!"))
+                              txt = unicode(_("The agent faircoin address is not from the same wallet!"))
                           else:
-                            txt = str(_("The OCP wallet is not available now, try later."))
+                            txt = unicode(_("The OCP wallet is not available now, try later."))
                         else:
-                            txt = str(_("The account is requested and should be available in less than a minute... please refresh the page!"))
+                            txt = unicode(_("The account is requested and should be available in less than a minute... please refresh the page!"))
                       else:
-                        txt = str(_("No faircoin address?"))
+                        txt = unicode(_("No faircoin address?"))
                     else:
-                      txt = str(_("This agent don't have an OCP Faircoin Account yet."))
+                      txt = unicode(_("This agent don't have an OCP Faircoin Account yet."))
 
                     if not balance or not amount:
-                      txt = "<span class='error'>"+txt+"</span>"
+                      txt = u"<span class='error'>"+txt+"</span>"
 
-                    amtopay = u"<br>Amount to pay: <b> "+str(round(amount, settings.CRYPTO_DECIMALS))+u" ƒ "
+                    amtopay = u"<br>"+unicode(_("Amount to pay"))+u": <b> "+str(round(amount, settings.CRYPTO_DECIMALS))+u" ƒ "
                     amispay = self.payment_payed_amount()
                     if amispay > 0:
                       if amopend:
-                        amtopay += "- "+str(amispay)+u" ƒ payed = "+str(round(amopend, settings.CRYPTO_DECIMALS))+u' ƒ pending'
+                        amtopay += u"- "+str(amispay)+u" ƒ payed = "+str(round(amopend, settings.CRYPTO_DECIMALS))+u' ƒ pending'
                       else:
-                        amtopay += " (payed "+str(amispay)+u" ƒ)"
+                        amtopay += " ("+unicode(_("payed"))+" "+str(amispay)+u" ƒ)"
                     amtopay += "</b>"
-                    return obj['html']+amtopay+"<br>"+txt
+
+                    if not isinstance(obj['html'], unicode) and not isinstance(obj['html'], str):
+                        html = obj['html']
+                        html = str(html).decode('utf-8')
+                    else:
+                        html = obj['html']
+
+                    return html+amtopay+u"<br>"+txt
 
                   else:
                     # don't need internal faircoin
@@ -892,7 +1187,8 @@ class JoinRequest(models.Model):
     def payment_amount(self): # TODO rename to payment_shares
         amount = 0
         shat = self.project.shares_account_type()
-        if self.project.is_moderated() and self.fobi_data and shat:
+        if self.project.is_moderated() and self.fobi_data:
+          if shat:
             for key in self.fobi_items_keys():
                 if key == shat.ocp_artwork_type.clas: # fieldname is the artwork type clas, project has shares of this type
                     self.entries = SavedFormDataEntry.objects.filter(pk=self.fobi_data.pk).select_related('form_entry')
@@ -916,6 +1212,30 @@ class JoinRequest(models.Model):
                         elif type(val) is unicode and val:
                             amount = int(val)
                             break
+          else:
+            for key in self.fobi_items_keys():
+                keyarr = key.split('_')
+                if 'amount' in str(keyarr[0]): # fieldname specially defined for subscription amount and base currency
+                    #shunit = Unit.objects.get(abbrev=keyarr[1])
+                    self.entries = SavedFormDataEntry.objects.filter(pk=self.fobi_data.pk).select_related('form_entry')
+                    entry = self.entries[0]
+                    self.data = json.loads(entry.saved_data)
+                    val = self.data.get(key)
+                    if val:
+                        if type(val) is int:
+                            amount = val
+                            break
+                        elif type(val) is unicode:
+                            amount = int(val)
+                            break
+                        else:
+                            print("*?* type:"+str(type(val))+" val:"+str(val))
+                            loger.warning("*?* type:"+str(type(val))+" val:"+str(val))
+                    else:
+                        print("*?* no val for 'amount'? data:"+str(self.data))
+                        loger.warning("*?* no val for 'amount'? data:"+str(self.data))
+                else:
+                    pass #print("keyarr[0]: "+str(keyarr[0]))
                     #import pdb; pdb.set_trace()
         return amount
 
@@ -934,23 +1254,27 @@ class JoinRequest(models.Model):
         unit = self.payment_unit()
         unit_rt = self.payment_unit_rt()
         shtype = self.project.shares_type()
-        shunit = shtype.unit_of_price
-        amount2 = shtype.price_per_unit * self.pending_shares()
+        if shtype:
+            shunit = shtype.unit_of_price
+            amount2 = shtype.price_per_unit * self.pending_shares()
+        else:
+            shunit = self.subscription_unit()
+            amount2 = self.pending_shares()
         amountpay = amount2
         if hasattr(self, 'pending_amount'):
             amountpay = self.pending_amount
             print("Using CACHED pending_amount!! "+str(amountpay))
             loger.info("Using CACHED pending_amount!! "+str(amountpay))
         else:
-            from work.utils import convert_price
-            if not shunit == unit and amount2: #unit.abbr == 'fair':
+            if not shunit == unit and amount2: #unit.abbrev == 'fair':
+                from work.utils import convert_price
                 amountpay, ratio = convert_price(amount2, shunit, unit, self)
                 self.ratio = ratio
                 self.pending_amount = amountpay
 
         amispay = self.payment_payed_amount()
         pendamo = amountpay
-        if amispay > 0 and amountpay:
+        if shtype and amispay > 0 and amountpay:
             pendamo = decimal.Decimal(amountpay) - amispay
         if pendamo < 0:
             pendamo = 0
@@ -959,15 +1283,35 @@ class JoinRequest(models.Model):
     def payment_pending_to_pay(self):
         return round((self.pending_shares() * self.share_price()), settings.CRYPTO_DECIMALS)
 
+    def subscription_unit(self):
+        unit = None
+        if self.project.joining_style == 'subscription':
+          if not hasattr(self, 'subscript_unit'):
+            for key in self.fobi_items_keys():
+                keyarr = key.split('_')
+                if keyarr[0] == 'amount': # fieldname specially defined for subscription amount and base currency
+                    unit = Unit.objects.get(abbrev=keyarr[1])
+            if not unit:
+                print("ERROR: Subscription Unit not found!! keys: "+str(self.fobi_items_keys()))
+                loger.error("ERROR: Subscription Unit not found!! keys: "+str(self.fobi_items_keys()))
+            else:
+                self.subscript_unit = unit
+          else:
+            unit = self.subscript_unit
+        return unit
+
+    def subscription_rt(self):
+        return self.project.subscription_rt()
+
     def is_flexprice(self):
         unit = self.payment_unit()
-        if unit.abbrev in settings.CRYPTOS:
+        if unit and unit.abbrev in settings.CRYPTOS:
             return True
         return False
 
     def payment_account_type(self):
         account_type = None
-        if self.project.joining_style == "moderated" and self.fobi_data:
+        if self.project.is_moderated() and self.fobi_data:
             rts = self.project.rts_with_clas() #list(set([arr.resource.resource_type for arr in self.project.agent.resource_relationships()]))
             for rt in rts:
                 if rt.ocp_artwork_type:
@@ -1110,7 +1454,7 @@ class JoinRequest(models.Model):
             txt = unit.abbrev
         return txt
 
-    def payment_unit(self):
+    def payment_unit(self, askmargin=None):
         payopt = self.payment_option()
         unit = None
         obj = None
@@ -1129,6 +1473,15 @@ class JoinRequest(models.Model):
                     unit = Unit.objects.get(abbrev=obj['unit'].lower())
                 except:
                     raise ValidationError("Can't find the payment Unit with abbrev = "+obj['unit'].lower())
+                if askmargin:
+                    if 'margin' in obj and obj['margin']:
+                        return unit, obj['margin']
+                    else:
+                        loger.error("Askmargin in payment_unit, but the margin is not set for currency: "+unicode(unit)+" at project: "+unicode(self.project.agent))
+                        return unit, None
+                        #raise ValidationError("To ask for a margin of amount repair it must be first defined in the project settings for this gateway.")
+        if askmargin:
+            return unit, None
         return unit
 
     def payment_unit_rt(self):
@@ -1140,15 +1493,20 @@ class JoinRequest(models.Model):
         unit_rts = EconomicResourceType.objects.filter(ocp_artwork_type__general_unit_type__id=unit.gen_unit.unit_type.id)
         if unit_rts:
             if len(unit_rts) > 1:
+                if self.payment_gateway() == 'cash':
+                    clas = '_cash'
+                else:
+                    clas = '_digital'
                 try:
-                    unit_rt = unit_rts.get(ocp_artwork_type__clas__contains='_digital')
+                    unit_rt = unit_rts.get(ocp_artwork_type__clas__contains=clas)
                 except:
-                    raise ValidationError("None of the unit_rts is related an ocp_artwork_type with a clas that contains '_digital': "+str(unit_rts))
+                    raise ValidationError("None of the unit_rts is related an ocp_artwork_type with a clas that contains '"+clas+"'!! rts:"+str(unit_rts))
             else:
                 unit_rt = unit_rts[0]
         else:
             raise ValidationError("The unit is not related any resource type: "+str(unit.gen_unit.unit_type))
         return unit_rt
+
 
     def exchange_type(self):
         et = None
@@ -1174,7 +1532,7 @@ class JoinRequest(models.Model):
                         for an in ancs:
                             if an.clas == 'fair_economy':
                                 recs.append(rec)
-                    elif payopt['key'] in ('transfer','ccard'):
+                    elif payopt['key'] in ('transfer','ccard','cash','debit','botcw'):
                         for an in ancs:
                             if an.clas == 'fiat_economy':
                                 recs.append(rec)
@@ -1201,9 +1559,56 @@ class JoinRequest(models.Model):
             else:
                 pass #raise ValidationError("not found any ocp_record_type related: "+str(rt.ocp_artwork_type))
           else:
-            raise ValidationError("not rt or not rt.ocp_artwork_type : "+str(rt))
-        else: # no payopt
-            raise ValidationError("no payment option key? "+str(payopt))
+            if self.subscription_unit():
+                rt = self.project.subscription_rt()
+                if rt:
+                    recordts = Ocp_Record_Type.objects.filter(
+                        ocpRecordType_ocp_artwork_type=rt.ocp_artwork_type,
+                        exchange_type__isnull=False)
+                    if not recordts:
+                        recordts = Ocp_Record_Type.objects.filter(
+                            ocpRecordType_ocp_artwork_type=rt.ocp_artwork_type.rel_nonmaterial_type,
+                            exchange_type__isnull=False)
+                    if len(recordts) > 0:
+                        for rec in recordts:
+                            ancs = rec.get_ancestors(True,True)
+                            if payopt['key'] == 'faircoin':
+                                for an in ancs:
+                                    if an.clas == 'fair_economy':
+                                        recs.append(rec)
+                            elif payopt['key'] in ('transfer','ccard','cash','debit','botcw'):
+                                for an in ancs:
+                                    if an.clas == 'fiat_economy':
+                                        recs.append(rec)
+                            elif payopt['key'] in settings.CRYPTOS:
+                                for an in ancs:
+                                    if an.clas == 'crypto_economy':
+                                        recs.append(rec)
+                            else:
+                                raise ValidationError("Payment mode not known: "+str(payopt['key'])+" at JR:"+str(self.id)+" pro:"+str(self.project))
+                        if len(recs) > 1:
+                            for rec in recs:
+                                ancs = rec.get_ancestors(True,True)
+                                for an in ancs:
+                                    if 'buy' == an.clas:
+                                        et = rec.exchange_type
+                        elif recs:
+                            et = recs[0].exchange_type
+
+                        #import pdb; pdb.set_trace()
+                        if not et or not len(recs):
+                            raise ValidationError("Can't find the exchange_type related the payment option: "+payopt['key']+" . The related account type ("+str(rt.ocp_artwork_type)+") has recordts: "+str(recordts))
+                    elif recordts:
+                        raise ValidationError("found ocp_record_type's ?? : "+str(recordts)) # pass #et = recordts[0].exchange_type
+                    else:
+                        pass
+                else:
+                    # not rt
+                    return 'error'
+            else:
+                raise ValidationError("not rt or not rt.ocp_artwork_type : "+str(rt))
+        else: # no payopt, can be if no payment defined
+            pass #raise ValidationError("no payment option key? "+str(payopt))
         #et.crypto = self.crypto
         return et
 
@@ -1372,18 +1777,140 @@ class JoinRequest(models.Model):
 
         return ex
 
+    def create_subscription_resource(self):
+        subrt = self.subscription_rt()
+        #un = self.subscript_unit()
+        role = AgentResourceRoleType.objects.get(is_owner=True, name_en="Owner")
+        agsubres = self.subscription_resource()
+        if not agsubres:
+            agsubres, c = EconomicResource.objects.get_or_create(
+                resource_type=subrt,
+                identifier=subrt.name_en+" of "+self.agent.nick_en,
+                quantity=1
+            )
+            if c:
+                print("- created EconomicResource: "+unicode(agsubres))
+                loger.info("- created EconomicResource: "+unicode(agsubres))
+        agsubres.identifier = subrt.name_en+" of "+self.agent.nick_en
+        agsubres.quantity = 1
+        agsubres.unit_of_quantity = Unit.objects.get(name_en="Each")
+        agsubres.expiration_date = datetime.date.today() + self.subscription_expiration_delta()
+        agsubres.save()
+        if role:
+            rra, c = AgentResourceRole.objects.get_or_create(
+                agent=self.agent,
+                role = role,
+                resource = agsubres
+            )
+            if c:
+                print("- created AgentResourceRole: "+str(rra))
+                loger.info("- created AgentResourceRole: "+str(rra))
+            rra.is_contact = False
+            rra.save()
+        return agsubres
+
+
+    def subscription_expiration_delta(self):
+        delta = None
+        regu = self.payment_regularity()
+        if regu and regu['key']:
+            if regu['key'] == 'month':
+                delta = datetime.timedelta(days=30)
+            elif regu['key'] == 'quarter':
+                delta = datetime.timedelta(days=91)
+            elif regu['key'] == 'semester':
+                delta = datetime.timedelta(days=182)
+            elif regu['key'] == 'year':
+                delta = datetime.timedelta(days=365)
+        if not delta:
+            raise ValidationError("Can't build delta! "+unicode(regu))
+        return delta
+
+    def check_subscription_expiration(self):
+        agsubres = self.subscription_resource()
+        ex = self.exchange
+        if agsubres and ex:
+            print("------ check_subscription_expiration ("+self.agent.nick+" at "+self.project.agent.nick+") ------")
+            expdt = agsubres.expiration_date
+            today = datetime.date.today()
+            if today >= expdt:
+                coms = None
+                txpay = ex.txpay()
+                for tx in ex.transfers.all():
+                    if tx == txpay:
+                        coms = tx.commitments.all()
+                        evts = tx.events.all()
+                if coms:
+                    comfils = []
+                    for com in coms:
+                        if com.fulfillment_events.all():
+                            comfils.append(com)
+                    #print("COMFILS: "+str(comfils))
+                    if len(comfils) == len(coms):
+                        newdate = expdt + self.subscription_expiration_delta()
+                        et_give = EventType.objects.get(name="Give")
+                        et_receive = EventType.objects.get(name="Receive")
+                        newcom, c = Commitment.objects.get_or_create(
+                            event_type = et_give,
+                            commitment_date = newdate,
+                            due_date = newdate, # + datetime.timedelta(days=7), # TODO custom process delaytime by project
+                            resource_type = self.payment_unit_rt(), # shtype, #account_type,
+                            exchange = ex,
+                            transfer = txpay,
+                            exchange_stage = ex.exchange_type,
+                            context_agent = self.project.agent,
+                            quantity = self.payment_pending_amount(),
+                            unit_of_quantity = self.payment_unit(),
+                            from_agent = self.agent,
+                            to_agent = self.project.agent
+                        )
+                        if c:
+                            print("- created Commitment: "+str(newcom))
+                            loger.info("- created Commitment: "+str(newcom))
+
+                        newcom2, c = Commitment.objects.get_or_create(
+                            event_type = et_receive,
+                            commitment_date = newdate,
+                            due_date = newdate, # + datetime.timedelta(days=7), # TODO custom process delaytime by project
+                            resource_type = self.payment_unit_rt(), # shtype, #account_type,
+                            exchange = ex,
+                            transfer = txpay,
+                            exchange_stage = ex.exchange_type,
+                            context_agent = self.project.agent,
+                            quantity = self.payment_pending_amount(),
+                            unit_of_quantity = self.payment_unit(),
+                            from_agent = self.agent,
+                            to_agent = self.project.agent
+                        )
+                        if c:
+                            print("- created Commitment2: "+str(newcom2))
+                            loger.info("- created Commitment2: "+str(newcom2))
+
+
+
 
     def update_payment_status(self, status=None, gateref=None, notes=None, request=None, realamount=None, txid=None):
         account_type = self.payment_account_type()
         balance = 0
         amount = self.payment_amount()
-        unit = self.payment_unit()
+        unit, margin = self.payment_unit(True) # arg: ask unit margin to settings obj
         unit_rt = self.payment_unit_rt()
+        subtyp = self.project.subscription_rt()
         shtype = self.project.shares_type()
-        shunit = shtype.unit_of_price
+        shrunit = None
+        if account_type:
+            shrunit = account_type.unit_of_price
+        if shtype:
+            shunit = shtype.unit_of_price
+            amount2 = shtype.price_per_unit * self.pending_shares()
+        elif subtyp:
+            shunit = self.subscription_unit()
+            amount2 = amount
+            shtype = subtyp
+            shrunit = Unit.objects.get(name_en="Each")
+
         if not shunit:
-            raise ValidationError("Can't find the unit_of_price of the project share type: "+str(shtype))
-        amount2 = shtype.price_per_unit * self.pending_shares()
+            raise ValidationError("Can't find the unit_of_price of the project share type or subscription! pro: "+unicode(self.project))
 
         amountpay = amount2
 
@@ -1391,7 +1918,7 @@ class JoinRequest(models.Model):
 
         if not txid:
             from work.utils import convert_price
-            if not shunit == unit and amount2: #unit.abbr == 'fair':
+            if not shunit == unit and amount2: #unit.abbrev == 'fair':
                 amountpay, ratio = convert_price(amount2, shunit, unit, self)
                 self.ratio = ratio
             if not amountpay:
@@ -1424,6 +1951,21 @@ class JoinRequest(models.Model):
                 if self.agent.user():
                     user = self.agent.user().user
                 agshac = self.agent_shares_account()
+                agsubac = self.subscription_resource()
+                shtotal = self.total_shares()
+                pendshr = self.pending_shares()
+                #shrunit = account_type.unit_of_price
+                if not agshac and subtyp: # is subscription
+                    if agsubac: # agent already has the subscres
+                        pass #agshac = agsubac
+
+                    elif status == 'complete' or status == 'published':
+                        agsubac = self.create_subscription_resource()
+                        #agshac = agsubac
+
+                    shtotal = 1
+                    pendshr = 1
+                    amount = 1
 
                 if not self.exchange:
                     ex = self.create_exchange(notes)
@@ -1476,9 +2018,9 @@ class JoinRequest(models.Model):
 
         #       C O M P L E T E
 
-                        if len(evts):
+                        if len(evts) and not subtyp:
                             if txid:
-                                raise ValidationError("complete with txid a xfer_pay with existent events?? evts:"+str(evts))
+                                pass #raise ValidationError("complete with txid a xfer_pay with existent events?? evts:"+str(evts))
                             print ("The payment transfer already has events! "+str(len(evts)))
                             loger.warning("The payment transfer already has events! "+str(len(evts)))
                             for evt in evts:
@@ -1493,8 +2035,46 @@ class JoinRequest(models.Model):
                                         loger.info("CHANGED evt:"+str(evt.id)+" qty:0 to "+str(amountpay))
                                         evt.quantity = amountpay
                                         evt.save()
-                            #return
+                                if txid and evt.unit_of_quantity.is_currency():
+                                    print("Transfer with a txid, REPAIR? unit:"+unit.abbrev+" project:"+self.project.agent.nick)
+                                    loger.info("Transfer with a txid, REPAIR? unit:"+unit.abbrev+" project:"+self.project.agent.nick)
+                                    if margin and pendamo and pendamo > margin:
+                                        print("The pending amount is larger than the defined margin! Can't repair the found event. pendamo:"+str(pendamo))
+                                        loger.warning("The pending amount is larger than the defined margin! Can't repair the found event. pendamo:"+str(pendamo)+" evt:"+str(evt))
+                                        messages.error(request, "The pending amount is larger than the defined margin! Can't repair the found event...")
+                                        return False
+                                    if unit.abbrev == "fair" and self.project.agent.nick == "BotC":
+                                        if hasattr(evt, 'multiwallet_transaction'):
+                                            tx = evt.multiwallet_transaction
+                                        else:
+                                            from multicurrency.models import MultiwalletTransaction
+                                            tx, created = MultiwalletTransaction.objects.get_or_create(
+                                                tx_id = txid,
+                                                event = evt)
+                                            if created:
+                                                print("- created MultiwalletTransaction (repair evt): "+str(tx))
+                                                loger.info("- created MultiwalletTransaction (repair evt): "+str(tx))
+                                        oauth = self.project.multiwallet_auth()
+                                        msg = tx.update_data(oauth, request, realamount)
+                                        if not msg == '':
+                                            #tx.delete()
+                                            messages.error(request, msg, extra_tags='safe')
+                                            return False
+
+
                         elif amountpay and pendamo:
+                            if subtyp:
+                                commit_pays = coms.filter(fulfillment_events__isnull=True)
+                                if commit_pays and len(commit_pays) == 2:
+                                    for com in commit_pays:
+                                        if com.event_type == et_give:
+                                            commit_pay = com
+                                        elif com.event_type == et_receive:
+                                            commit_pay2 = com
+                                else:
+                                    print("There are no commitments to fulfill?")
+                                    loger.info("There are no commitments to fulfill?")
+                                    return False
                             event_res = event_res2 = None
                             if unit.abbrev == 'fair' and self.project.agent.need_faircoins():
                                 if not self.agent.faircoin_resource() or not self.agent.faircoin_resource().faircoin_address.is_mine():
@@ -1504,10 +2084,13 @@ class JoinRequest(models.Model):
                                 else:
                                     event_res = self.agent.faircoin_resource()
                                     event_res2 = self.project.agent.faircoin_resource()
-                            elif self.is_flexprice:
+                            elif self.is_flexprice():
                                 if txid:
                                     if 'multicurrency' in settings.INSTALLED_APPS:
-                                        from multicurrency.models import BlockchainTransaction
+                                        if unit.abbrev == "fair" and self.project.agent.nick == "BotC":
+                                            from multicurrency.models import MultiwalletTransaction
+                                        else:
+                                            from multicurrency.models import BlockchainTransaction
                                     else:
                                         raise ValidationError("Can't manage blockchain txs without the multicurrency app installed!")
                                     if realamount:
@@ -1562,18 +2145,38 @@ class JoinRequest(models.Model):
                                 loger.info(" created Event: "+str(evt))
 
                             if txid:
-                                tx, created = BlockchainTransaction.objects.get_or_create(
-                                    tx_hash = txid,
-                                    event = evt)
-                                if created:
-                                    print("- created BlockchainTransaction: "+str(tx))
-                                    loger.info("- created BlockchainTransaction: "+str(tx))
-                                msg = tx.update_data(realamount) #, self.multiwallet_auth())
-                                if not msg == '':
-                                    if evt.id:
-                                        evt.delete()
-                                    messages.error(request, msg, extra_tags='safe')
-                                    return False
+                                if unit.abbrev == "fair" and self.project.agent.nick == "BotC":
+                                    tx, created = MultiwalletTransaction.objects.get_or_create(
+                                        tx_id = txid,
+                                        event = evt)
+                                    if created:
+                                        print("- created MultiwalletTransaction: "+str(tx))
+                                        loger.info("- created MultiwalletTransaction: "+str(tx))
+                                    oauth = self.project.multiwallet_auth()
+                                    msg = tx.update_data(oauth, request, realamount)
+                                    if not msg == '':
+                                        tx.event.delete()
+                                        tx.delete()
+                                        if evt.id:
+                                            evt.delete()
+                                        messages.error(request, msg, extra_tags='safe')
+                                        return False
+
+                                else:
+                                    tx, created = BlockchainTransaction.objects.get_or_create(
+                                        tx_hash = txid,
+                                        event = evt)
+                                    if created:
+                                        print("- created BlockchainTransaction: "+str(tx))
+                                        loger.info("- created BlockchainTransaction: "+str(tx))
+                                    msg = tx.update_data(realamount) #, self.multiwallet_auth())
+                                    if not msg == '':
+                                        tx.event.delete()
+                                        tx.delete()
+                                        if evt.id:
+                                            evt.delete()
+                                        messages.error(request, msg, extra_tags='safe')
+                                        return False
 
 
                             evt2, created = EconomicEvent.objects.get_or_create(
@@ -1602,18 +2205,37 @@ class JoinRequest(models.Model):
                                 loger.info(" created Event2: "+str(evt2))
 
                             if txid:
-                                tx, created = BlockchainTransaction.objects.get_or_create(
-                                    tx_hash = txid,
-                                    event = evt2)
-                                if created:
-                                    print("- created BlockchainTransaction: "+str(tx))
-                                    loger.info("- created BlockchainTransaction: "+str(tx))
-                                msg = tx.update_data(realamount) #, self.multiwallet_auth())
-                                if not msg == '':
-                                    if evt2.id:
-                                        evt2.delete()
-                                    messages.error(request, msg)
-                                    return False
+                                if unit.abbrev == "fair" and self.project.agent.nick == "BotC":
+                                    tx2, created = MultiwalletTransaction.objects.get_or_create(
+                                        tx_id = txid,
+                                        event = evt2)
+                                    if created:
+                                        print("- created MultiwalletTransaction (evt2): "+str(tx2))
+                                        loger.info("- created MultiwalletTransaction (evt2): "+str(tx2))
+                                    oauth = self.project.multiwallet_auth()
+                                    msg = tx2.update_data(oauth, request, realamount)
+                                    if not msg == '':
+                                        tx2.event.delete()
+                                        tx2.delete()
+                                        if evt2.id:
+                                            evt2.delete()
+                                        messages.error(request, msg, extra_tags='safe')
+                                        return False
+                                else:
+                                    tx2, created = BlockchainTransaction.objects.get_or_create(
+                                        tx_hash = txid,
+                                        event = evt2)
+                                    if created:
+                                        print("- created BlockchainTransaction: "+str(tx2))
+                                        loger.info("- created BlockchainTransaction: "+str(tx2))
+                                    msg = tx2.update_data(realamount) #, self.multiwallet_auth())
+                                    if not msg == '':
+                                        tx2.event.delete()
+                                        tx2.delete()
+                                        if evt2.id:
+                                            evt2.delete()
+                                        messages.error(request, msg)
+                                        return False
 
                         if xfer_share:
                             evts = xfer_share.events.all()
@@ -1644,7 +2266,7 @@ class JoinRequest(models.Model):
                                 exchange_stage = ex.exchange_type,
                                 context_agent = self.project.agent,
                                 quantity = amount,
-                                unit_of_quantity = account_type.unit_of_price,
+                                unit_of_quantity = shrunit,
                                 #value = amountpay,
                                 #unit_of_value = unit, #account_type.unit_of_price,
                                 from_agent = self.project.agent,
@@ -1667,7 +2289,7 @@ class JoinRequest(models.Model):
                                     exchange_stage = ex.exchange_type,
                                     context_agent = self.project.agent,
                                     quantity = amount,
-                                    unit_of_quantity = account_type.unit_of_price,
+                                    unit_of_quantity = shrunit,
                                     #value = amount,
                                     #unit_of_value = account_type.unit_of_price,
                                     from_agent = self.project.agent,
@@ -1680,6 +2302,13 @@ class JoinRequest(models.Model):
                                     loger.info("- created Commitment2: "+str(commit_share2))
 
 
+                        if agsubac:
+                            expdt = agsubac.expiration_date
+                            delta = self.subscription_expiration_delta()
+                            if datetime.date.today() > expdt:
+                                agsubac.expiration_date = expdt + delta
+                                agsubac.save()
+                            agshac = agsubac
 
                         # create share events
                         if not evts and msg == '':
@@ -1692,8 +2321,8 @@ class JoinRequest(models.Model):
                                 transfer = xfer_share,
                                 exchange_stage = ex.exchange_type,
                                 context_agent = self.project.agent,
-                                quantity = self.pending_shares(),
-                                unit_of_quantity = account_type.unit_of_price,
+                                quantity = pendshr,
+                                unit_of_quantity = shrunit,
                                 #value = amountpay,
                                 #unit_of_value = unit, #account_type.unit_of_price,
                                 from_agent = self.project.agent,
@@ -1717,8 +2346,8 @@ class JoinRequest(models.Model):
                                 transfer = xfer_share,
                                 exchange_stage = ex.exchange_type,
                                 context_agent = self.project.agent,
-                                quantity = self.pending_shares(),
-                                unit_of_quantity = account_type.unit_of_price,
+                                quantity = pendshr,
+                                unit_of_quantity = shrunit,
                                 #value = amountpay,
                                 #unit_of_value = unit, #account_type.unit_of_price,
                                 from_agent = self.project.agent,
@@ -1754,8 +2383,8 @@ class JoinRequest(models.Model):
                                                 messages.info(request, "Transfered new shares to the agent's shares account: "+str(sh_evt.quantity)+" "+str(rs))
                           else: # not pending_shares and not share events
                             date = agshac.created_date
-                            print "No pending shares and no events related shares. REPAIR! total_shares:"+str(self.total_shares())+" date:"+str(date)
-                            loger.info("No pending shares and no events related shares. REPAIR! total_shares:"+str(self.total_shares())+" date:"+str(date))
+                            print "No pending shares and no events related shares. REPAIR! total_shares:"+str(shtotal)+" date:"+str(date)
+                            loger.info("No pending shares and no events related shares. REPAIR! total_shares:"+str(shtotal)+" date:"+str(date))
 
                             sh_evt, created = EconomicEvent.objects.get_or_create(
                                 event_type = et_give,
@@ -1765,8 +2394,8 @@ class JoinRequest(models.Model):
                                 transfer = xfer_share,
                                 exchange_stage = ex.exchange_type,
                                 context_agent = self.project.agent,
-                                quantity = self.total_shares(),
-                                unit_of_quantity = account_type.unit_of_price,
+                                quantity = shtotal,
+                                unit_of_quantity = shrunit,
                                 #value = amountpay,
                                 #unit_of_value = unit, #account_type.unit_of_price,
                                 from_agent = self.project.agent,
@@ -1790,8 +2419,8 @@ class JoinRequest(models.Model):
                                 transfer = xfer_share,
                                 exchange_stage = ex.exchange_type,
                                 context_agent = self.project.agent,
-                                quantity = self.total_shares(),
-                                unit_of_quantity = account_type.unit_of_price,
+                                quantity = shtotal,
+                                unit_of_quantity = shrunit,
                                 #value = amountpay,
                                 #unit_of_value = unit, #account_type.unit_of_price,
                                 from_agent = self.project.agent,
@@ -1807,7 +2436,7 @@ class JoinRequest(models.Model):
                                 print "- created missing shares Event2: "+str(sh_evt2)
                                 loger.info("- created missing shares Event2: "+str(sh_evt2))
 
-                        else:
+                        elif not self.subscription_unit():
                             print "The shares transfer already has Events!! "+str(len(evts))
                             loger.warning("The shares transfer already has Events!! "+str(len(evts)))
                             for ev in evts:
@@ -1893,7 +2522,7 @@ class JoinRequest(models.Model):
                                     exchange_stage = ex.exchange_type,
                                     context_agent = self.project.agent,
                                     quantity = amount,
-                                    unit_of_quantity = account_type.unit_of_price,
+                                    unit_of_quantity = shrunit,
                                     #value = amountpay,
                                     #unit_of_value = unit,
                                     from_agent = self.project.agent,
@@ -1916,7 +2545,7 @@ class JoinRequest(models.Model):
                                         exchange_stage = ex.exchange_type,
                                         context_agent = self.project.agent,
                                         quantity = amount,
-                                        unit_of_quantity = account_type.unit_of_price,
+                                        unit_of_quantity = shrunit,
                                         #value = amount,
                                         #unit_of_value = account_type.unit_of_price,
                                         from_agent = self.project.agent,
@@ -1981,7 +2610,10 @@ class JoinRequest(models.Model):
             self.save()
             project = self.project
             # add relation candidate
-            ass_type = get_object_or_404(AgentAssociationType, identifier="participant")
+            if project.shares_account_type():
+                ass_type = get_object_or_404(AgentAssociationType, identifier="member")
+            else:
+                ass_type = get_object_or_404(AgentAssociationType, identifier="participant")
             ass = AgentAssociation.objects.filter(is_associate=self.agent, has_associate=self.project.agent)
             if ass_type and not ass:
                 aa = AgentAssociation(
@@ -2048,7 +2680,7 @@ class JoinRequest(models.Model):
                                 )
                             except:
                                 if request:
-                                    messages.error(request, _("Email failed! The destination address seems not real (or there's another email error): ")+str(email))
+                                    messages.error(request, unicode(_("Email failed! The destination address seems not real (or there's another email error): "))+str(email))
                                 loger.error("Email failed! The destination address seems not real (or there's another email error): "+str(email))
 
                                 aa.delete()
@@ -2127,7 +2759,7 @@ class JoinRequest(models.Model):
         return password
 
     def check_user_pass(self, showpass=False):
-        if self.agent and self.agent.user():
+        if hasattr(self, 'agent') and self.agent and self.agent.user():
           con_typ = ContentType.objects.get(model='joinrequest')
           coms = Comment.objects.filter(content_type=con_typ, object_pk=self.pk)
           for c in coms:
@@ -2138,6 +2770,8 @@ class JoinRequest(models.Model):
                         return first
                     else:
                         return _("WARNING!")
+        else:
+            return _("ERROR!")
         return False
 
     def duplicated(self):
@@ -2508,19 +3142,19 @@ class Ocp_Skill_Type(Job):
     ocp_artwork_type = TreeForeignKey(
       Ocp_Artwork_Type,
       on_delete=models.SET_NULL,
-      verbose_name=_('general artwork_type'),
+      verbose_name=_('ocp artwork_type'),
       related_name='ocp_skill_types',
       blank=True, null=True,
-      help_text=_("a related General Artwork Type")
+      help_text=_("a related Ocp Artwork Type")
     )
-    '''event_type = models.ForeignKey( # only for verbs that are ocp event types
+    event_type = models.OneToOneField( # only for verbs that are ocp event types
       EventType,
       on_delete=models.SET_NULL,
       verbose_name=_('ocp event_type'),
       related_name='ocp_skill_type',
       blank=True, null=True,
       help_text=_("a related OCP EventType")
-    )'''
+    )
 
     objects = Ocp_Skill_TypeManager()
 
@@ -2711,28 +3345,6 @@ class Ocp_Unit_TypeManager(TreeManager):
 
 
 class Ocp_Unit_Type(Unit_Type):
-    '''general_unit_type = models.OneToOneField(
-        Unit_Type,
-        on_delete=models.CASCADE,
-        primary_key=True,
-        parent_link=True
-    )
-    ocp_unit =  models.OneToOneField(
-        Unit,
-        on_delete=models.CASCADE,
-        verbose_name=_('ocp unit'),
-        related_name='ocp_unit_type',
-        blank=True, null=True,
-        help_text=_("a related OCP Unit")
-    )
-    general_unit = models.OneToOneField(
-        Gene_Unit,
-        on_delete=models.CASCADE,
-        verbose_name=_('general unit'),
-        related_name='ocp_unit_type',
-        blank=True, null=True,
-        help_text=_("a related General Unit")
-    )'''
 
     objects = Ocp_Unit_TypeManager()
 
@@ -2772,45 +3384,116 @@ class Ocp_Unit_Type(Unit_Type):
 
 
 
-'''class Gen_Unit(Gene_Unit):
-    """general_unit = models.OneToOneField(
-        Gene_Unit,
-        on_delete=models.CASCADE,
-        primary_key=True,
-        parent_link=True
-    )"""
-    ocp_unit =  models.OneToOneField(
-        Unit,
-        on_delete=models.CASCADE,
-        verbose_name=_('ocp unit'),
-        related_name='gen_unit',
-        blank=True, null=True,
-        help_text=_("a related OCP Unit")
-    )
 
-    class Meta:
-        verbose_name= _(u'General-OCP Unit')
-        verbose_name_plural= _(u'o-> General-OCP Units')
-
-    def __unicode__(self):
-        if self.ocp_unit:
-            return self.name+'('+self.ocp_unit.name+')'
-        else:
-            return self.name
-'''
-
-from django.db.models.signals import post_migrate
+#from django.db.models.signals import post_migrate
 #from work.apps import WorkAppConfig
 
+
+def fill_empty_languages(**kwargs):
+
+    from django.core.management import call_command
+    import modeltranslation
+
+    lang = settings.LANGUAGE_CODE
+    print("default LANG: "+lang)
+    try:
+        ocp = EconomicAgent.objects.filter(nick='OCP')
+        if hasattr(ocp, 'nick_en'):
+            print("OCP en:"+str(ocp.nick_en))
+    except:
+        print("OCP still has not translatable fields. SKIP!")
+        return
+    call_command('update_translation_fields', interactive=True)
+
+    for lan in settings.LANGUAGES:
+        if not lan[0] == lang:
+            print("other LANG: "+lan[0])
+            modeltranslation.management.commands.update_translation_fields.DEFAULT_LANGUAGE = lan[0]
+            call_command('update_translation_fields', interactive=True)
+
+    modeltranslation.management.commands.update_translation_fields.DEFAULT_LANGUAGE = lang
+    print("---- Language's empty strings has been filled with the default language string to keep uniqueness. ----")
+
+
+
 def create_unit_types(**kwargs):
+
+    atnet = AgentType.objects.filter(name="Network")
+    if not atnet:
+        atnet, c = AgentType.objects.get_or_create(
+            name="Network",
+            party_type="network",
+            is_context=True)
+        if c:
+            print("- created AgentType: Network")
+    else:
+        atnet = atnet[0]
+    ocp = EconomicAgent.objects.filter(nick='OCP')
+    if not ocp:
+        print("- 'OCP' nick not found, fill from nick_en!")
+        ocp = EconomicAgent.objects.filter(nick_en='OCP')
+        if not ocp:
+            ocp, c = EconomicAgent.objects.get_or_create(
+                nick="OCP",
+                name="General OCP",
+                agent_type=atnet)
+            if c:
+                print("- created EconomicAgent: OCP")
+        ocp.nick = 'OCP'
+        ocp.save()
+    else:
+        ocp = ocp[0]
+        if not ocp.nick_es:
+            ocp.nick_es = ocp.nick_en
+            ocp.save()
+            print("- missing nick_es! fill it: "+ocp.nick_es)
+        if not ocp.nick_ca:
+            ocp.nick_ca = ocp.nick_en
+            ocp.save()
+            print("- missing nick_ca! fill it: "+ocp.nick_ca)
+
+    atcop = AgentType.objects.filter(name="Cooperative")
+    if not atcop:
+        atcop, c = AgentType.objects.get_or_create(
+            name="Cooperative",
+            party_type="organization",
+            is_context=True)
+        if c:
+            print("- created AgentType: Cooperative")
+    else:
+        atcop = atcop[0]
+
+    fdc = EconomicAgent.objects.filter(nick='Freedom Coop')
+    if not fdc:
+        print("- 'Freedom Coop' nick not found, fill from nick_en!")
+        fdc = EconomicAgent.objects.filter(nick_en='Freedom Coop')
+        if not fdc:
+            fdc, c = EconomicAgent.objects.get_or_create(
+                name='Freedom Coop', nick='Freedom Coop',
+                agent_type=atcop, is_context=True)
+            if c: print("t- created EconomicAgent: 'Freedom Coop'")
+
+        fdc.nick = 'Freedom Coop'
+        fdc.save()
+    else:
+        fdc = fdc[0]
+        if not fdc.nick_es:
+            fdc.nick_es = fdc.nick_en
+            fdc.save()
+            print("- missing nick_es! fill it: "+fdc.nick_es)
+        if not fdc.nick_ca:
+            fdc.nick_ca = fdc.nick_en
+            fdc.save()
+            print("- missing nick_ca! fill it: "+fdc.nick_ca)
+
     print "Analizing the unit types in the system..."
     # Each
-    ocp_eachs = Unit.objects.filter(name='Each')
+    ocp_eachs = Unit.objects.filter(name_en='Each')
     if ocp_eachs:
         ocp_each = ocp_eachs[0]
     else:
         ocp_each, created = Unit.objects.get_or_create(
-            name='Each',
+            name_en='Each',
             unit_type='quantity',
             abbrev='u.')
         if created:
@@ -2818,14 +3501,14 @@ def create_unit_types(**kwargs):
     ocp_each.abbrev = 'u.'
     ocp_each.save()
 
-    gen_artwt, created = Type.objects.get_or_create(name="Artwork", clas='Artwork')
+    gen_artwt, created = Type.objects.get_or_create(name_en="Artwork", clas='Artwork')
     if created:
         print "- created root general Type: 'Artwork'"
-    gen_unitt, created = Artwork_Type.objects.get_or_create(name="Unit", parent=gen_artwt, clas='Unit')
+    gen_unitt, created = Artwork_Type.objects.get_or_create(name_en="Unit", parent=gen_artwt, clas='Unit')
     if created:
         print "- created general Artwork_Type: 'Unit'"
     each_typ, created = Ocp_Unit_Type.objects.get_or_create(
-        name='Each',
+        name_en='Each',
         parent=gen_unitt
     )
     if created:
@@ -2850,12 +3533,12 @@ def create_unit_types(**kwargs):
     each.save()
 
     # Percent
-    ocp_percs = Unit.objects.filter(name='Percent')
+    ocp_percs = Unit.objects.filter(name_en='Percent')
     if ocp_percs:
         ocp_perc = ocp_percs[0]
     else:
         ocp_perc, created = Unit.objects.get_or_create(
-            name='Percent',
+            name_en='Percent',
             unit_type='percent',
             abbrev='Pct')
         if created:
@@ -2864,7 +3547,7 @@ def create_unit_types(**kwargs):
     ocp_perc.save()
 
     perc_typ, created = Ocp_Unit_Type.objects.get_or_create(
-        name='Percent',
+        name_en='Percent',
         parent=gen_unitt
     )
     if created:
@@ -2884,25 +3567,25 @@ def create_unit_types(**kwargs):
             print "- created General.Unit for Percent: 'percent'"
 
     # Hours
-    ocp_hours = Unit.objects.filter(name='Hour')
+    ocp_hours = Unit.objects.filter(name_en='Hour')
     if ocp_hours:
         ocp_hour = ocp_hours[0]
-        ocp_hour.name = 'Hours'
+        ocp_hour.name_en = 'Hours'
         ocp_hour.save()
     else:
-        ocp_hours = Unit.objects.filter(name='Hours')
+        ocp_hours = Unit.objects.filter(name_en='Hours')
         if ocp_hours:
             ocp_hour = ocp_hours[0]
         else:
             ocp_hour, created = Unit.objects.get_or_create(
-                name='Hours',
+                name_en='Hours',
                 unit_type='time',
                 abbrev='Hr')
             if created:
                 print "- created Unit: 'Hours'"
 
     gen_time_typ, created = Ocp_Unit_Type.objects.get_or_create(
-        name='Time',
+        name_en='Time',
         parent=gen_unitt
     )
     if created:
@@ -2925,16 +3608,16 @@ def create_unit_types(**kwargs):
     hour.save()
 
     # Days
-    ocp_days = Unit.objects.filter(name='Day')
+    ocp_days = Unit.objects.filter(name_en='Day')
     if ocp_days:
         ocp_day = ocp_days[0]
     else:
-        ocp_days = Unit.objects.filter(name='Days')
+        ocp_days = Unit.objects.filter(name_en='Days')
         if ocp_days:
             ocp_day = ocp_days[0]
         else:
             ocp_day, created = Unit.objects.get_or_create(
-                name='Day',
+                name_en='Day',
                 unit_type='time',
                 abbrev='day')
             if created:
@@ -2954,26 +3637,26 @@ def create_unit_types(**kwargs):
 
 
     # Kilos
-    ocp_kilos = Unit.objects.filter(name='Kilos')
+    ocp_kilos = Unit.objects.filter(name_en='Kilos')
     if ocp_kilos:
         ocp_kilos = ocp_kilos[0]
     else:
-        ocp_kilos = Unit.objects.filter(name='Kilo')
+        ocp_kilos = Unit.objects.filter(name_en='Kilo')
         if ocp_kilos:
             ocp_kilos = ocp_kilos[0]
         else:
             ocp_kilos, created = Unit.objects.get_or_create(
-                name='Kilos',
+                name_en='Kilos',
                 unit_type='weight',
                 abbrev='Kg')
             if created:
                 print "- created Unit: 'Kilos'"
-    ocp_kilos.name = 'Kilos'
+    ocp_kilos.name_en = 'Kilos'
     ocp_kilos.abbrev = 'Kg'
     ocp_kilos.save()
 
     gen_weight_typ, created = Ocp_Unit_Type.objects.get_or_create(
-        name='Weight',
+        name_en='Weight',
         parent=gen_unitt
     )
     if created:
@@ -3074,7 +3757,7 @@ def create_unit_types(**kwargs):
 
     #   F a i r C o i n
 
-    ocp_fair, created = Unit.objects.get_or_create(name='FairCoin', unit_type='value')
+    ocp_fair, created = Unit.objects.get_or_create(name_en='FairCoin', unit_type='value')
     if created:
         print "- created a main ocp Unit: 'FairCoin'!"
     ocp_fair.abbrev = 'fair'
@@ -3083,7 +3766,7 @@ def create_unit_types(**kwargs):
     ocp_fair.save()
 
     gen_curr_typ, created = Ocp_Unit_Type.objects.get_or_create(
-        name='Currency',
+        name_en='Currency',
         parent=gen_unitt
     )
     if created:
@@ -3092,14 +3775,14 @@ def create_unit_types(**kwargs):
     gen_curr_typ.save()
 
     gen_crypto_typ, created = Ocp_Unit_Type.objects.get_or_create(
-        name='Crypto Currency',
+        name_en='Crypto Currency',
         parent=gen_curr_typ
     )
     if created:
         print "- created Ocp_Unit_Type: 'Crypto Currency'"
 
     gen_fair_typ, created = Ocp_Unit_Type.objects.get_or_create(
-        name='Faircoins',
+        name_en='Faircoins',
         parent=gen_crypto_typ
     )
     if created:
@@ -3122,10 +3805,10 @@ def create_unit_types(**kwargs):
     fair.ocp_unit = ocp_fair
     fair.save()
 
-    ocp_fair_rts = EconomicResourceType.objects.filter(name='FairCoin')
+    ocp_fair_rts = EconomicResourceType.objects.filter(name_en='FairCoin')
     if not ocp_fair_rts:
         ocp_fair_rt, created = EconomicResourceType.objects.get_or_create(
-            name='FairCoin')
+            name_en='FairCoin')
         if created:
             print "- created EconomicResourceType: 'FairCoin'"
     else:
@@ -3168,21 +3851,21 @@ def create_unit_types(**kwargs):
         nonmat_typ = nonmat_typs[0]
     else:
         nonmat_typ, created = Ocp_Artwork_Type.objects.get_or_create(
-            name='Non-material',
+            name_en='Non-material',
             parent=gen_artwt,
             clas='Nonmaterial')
         if created:
             print "- created Ocp_Artwork_Type: 'Non-material'"
 
     digart_typ, created = Ocp_Artwork_Type.objects.get_or_create(
-        name='Digital artwork',
+        name_en='Digital artwork',
         parent=nonmat_typ)
     if created:
         print "- created Ocp_Artwork_Type: 'Digital artwork'"
-    digcur_typs = Ocp_Artwork_Type.objects.filter(name='digital Currencies')
+    digcur_typs = Ocp_Artwork_Type.objects.filter(name_en='digital Currencies')
     if not digcur_typs:
         digcur_typ, created = Ocp_Artwork_Type.objects.get_or_create(
-            name='digital Currencies',
+            name_en='digital Currencies',
             parent=digart_typ)
         if created:
             print "- created Ocp_Artwork_Types: 'digital Currencies'"
@@ -3191,10 +3874,10 @@ def create_unit_types(**kwargs):
     digcur_typ.clas = 'currency'
     digcur_typ.save()
 
-    fair_rts = Ocp_Artwork_Type.objects.filter(name='FairCoin')
+    fair_rts = Ocp_Artwork_Type.objects.filter(name_en='FairCoin')
     if not fair_rts:
         fair_rt, created = Ocp_Artwork_Type.objects.get_or_create(
-            name='FairCoin',
+            name_en='FairCoin',
             parent=digcur_typ)
         if created:
             print "- created Ocp_Artwork_Types: 'FairCoin'"
@@ -3208,10 +3891,10 @@ def create_unit_types(**kwargs):
 
     #    F a i r c o i n   O c p   A c c o u n t
 
-    fairacc_rts = EconomicResourceType.objects.filter(name='Faircoin Ocp Account')
+    fairacc_rts = EconomicResourceType.objects.filter(name_en='Faircoin Ocp Account')
     if not fairacc_rts:
         fairacc_rt, created = EconomicResourceType.objects.get_or_create(
-            name='Faircoin Ocp Account')
+            name_en='Faircoin Ocp Account')
         if created:
             print "- created EconomicResourceType: 'Faircoin Ocp Account'"
     else:
@@ -3230,26 +3913,26 @@ def create_unit_types(**kwargs):
 
     print "- "+str(fairacc_rt)+" FV's: "+str([fv.facet_value.value+', ' for fv in fairacc_rt.facets.all()])
 
-    digacc_typs = Ocp_Artwork_Type.objects.filter(name='digital Account')
+    digacc_typs = Ocp_Artwork_Type.objects.filter(name_en='digital Account')
     if not digacc_typs:
-        digacc_typs = Ocp_Artwork_Type.objects.filter(name='digital Accounts')
+        digacc_typs = Ocp_Artwork_Type.objects.filter(name_en='digital Accounts')
     if not digacc_typs:
         digacc_typ, created = Ocp_Artwork_Type.objects.get_or_create(
-            name='digital Accounts',
+            name_en='digital Accounts',
             parent=digart_typ)
         if created:
             print "- created Ocp_Artwork_Types: 'digital Accounts'"
     else:
         digacc_typ = digacc_typs[0]
-    digacc_typ.name = 'digital Accounts'
+    digacc_typ.name_en = 'digital Accounts'
     digacc_typ.clas = 'accounts'
     digacc_typ.parent = digart_typ
     digacc_typ.save()
 
-    facc_rts = Ocp_Artwork_Type.objects.filter(name='Faircoin Ocp Account')
+    facc_rts = Ocp_Artwork_Type.objects.filter(name_en='Faircoin Ocp Account')
     if not facc_rts:
         facc_rt, created = Ocp_Artwork_Type.objects.get_or_create(
-            name='Faircoin Ocp Account',
+            name_en='Faircoin Ocp Account',
             parent=digacc_typ)
         if created:
             print "- created Ocp_Artwork_Types: 'Faircoin Ocp Account'"
@@ -3272,6 +3955,8 @@ def create_unit_types(**kwargs):
         intfairets = ExchangeType.objects.filter(name="Transfer Faircoins")
     if intfairets:
         intfairet = intfairets[0]
+        if len(intfairets) > 1:
+            print("Repeated ET, delete? "+str(intfairets[1].id))
     else:
         intfairet, c = ExchangeType.objects.get_or_create(
             name="Transfer Faircoins",
@@ -3282,11 +3967,31 @@ def create_unit_types(**kwargs):
     intfairet.name = "Transfer Faircoins"
     intfairet.save()
 
+    intfairtts = intfairet.transfer_types.all()
+    if intfairtts:
+        intfairtt = intfairtts[0]
+        print("- found first intTT id:"+str(intfairtt.id)+" name:"+str(intfairtt)+" txs:"+str(len(intfairtt.transfers.all())))
+    if len(intfairtts) > 1:
+        for tt in intfairtts:
+            if not tt == intfairtt:
+                txs = tt.transfers.all()
+                print(" - found other intTT id:"+str(tt.id)+" name:"+str(tt)+" txs:"+str(txs))
+                for tx in txs:
+                    print("- REPAIRED transfer_type of the tx:"+str(tx.id)+" from:"+str(tx.transfer_type.id)+" to:"+str(intfairtt.id))
+                    tx.transfer_type = intfairtt
+                    tx.save()
+                if tt.is_deletable():
+                    if not tt.facet_values.all():
+                        print("- DELETE intTT ? id:"+str(tt.id))
+                        tt.delete()
+
     extfairets = ExchangeType.objects.filter(name="Send FairCoins")
     if not extfairets:
         extfairets = ExchangeType.objects.filter(name="Send Faircoins")
     if extfairets:
         extfairet = extfairets[0]
+        if len(extfairets) > 1:
+            print("Repeated ET, delete? "+str(extfairets[1].id))
     else:
         extfairet = ExchangeType(
             use_case=out_usecase,
@@ -3296,11 +4001,31 @@ def create_unit_types(**kwargs):
     extfairet.use_case = out_usecase
     extfairet.save()
 
+    extfairtts = extfairet.transfer_types.all()
+    if extfairtts:
+        extfairtt = extfairtts[0]
+        print("- found first extTT id:"+str(extfairtt.id)+" name:"+str(extfairtt)+" txs:"+str(len(extfairtt.transfers.all())))
+    if len(extfairtts) > 1:
+        for tt in extfairtts:
+            if not tt == extfairtt:
+                txs = tt.transfers.all()
+                print(" - found other extTT id:"+str(tt.id)+" name:"+str(tt)+" txs:"+str(txs))
+                for tx in txs:
+                    print("- REPAIRED transfer_type of the tx:"+str(tx.id)+" from:"+str(tx.transfer_type.id)+" to:"+str(extfairtt.id))
+                    tx.transfer_type = extfairtt
+                    tx.save()
+                if tt.is_deletable():
+                    if not tt.facet_values.all():
+                        print("- DELETE extTT ? id:"+str(tt.id))
+                        tt.delete()
+
     incfairets = ExchangeType.objects.filter(name="Receive FairCoins")
     if not incfairets:
         incfairets = ExchangeType.objects.filter(name="Receive Faircoins")
     if incfairets:
         incfairet = incfairets[0]
+        if len(incfairets) > 1:
+            print("Repeated ET, delete? "+str(incfairets[1].id))
     else:
         incfairet, c = ExchangeType.objects.get_or_create(
             name="Receive Faircoins",
@@ -3311,24 +4036,41 @@ def create_unit_types(**kwargs):
     incfairet.use_case = inc_usecase
     incfairet.save()
 
+    incfairtts = incfairet.transfer_types.all()
+    if incfairtts:
+        incfairtt = incfairtts[0]
+        print("- found first incTT id:"+str(incfairtt.id)+" name:"+str(incfairtt)+" txs:"+str(len(incfairtt.transfers.all())))
+    if len(incfairtts) > 1:
+        for tt in incfairtts:
+            if not tt == incfairtt:
+                txs = tt.transfers.all()
+                print(" - found other incTT id:"+str(tt.id)+" name:"+str(tt)+" txs:"+str(txs))
+                for tx in txs:
+                    print("- REPAIRED transfer_type of the tx:"+str(tx.id)+" from:"+str(tx.transfer_type.id)+" to:"+str(incfairtt.id))
+                    tx.transfer_type = incfairtt
+                    tx.save()
+                if tt.is_deletable():
+                    if not tt.facet_values.all():
+                        print("- DELETE incTT ? id:"+str(tt.id))
+                        tt.delete()
 
     genrec = Artwork_Type.objects.get(clas="Record")
     ocprecs = Artwork_Type.objects.filter(clas='ocp_record')
     if not ocprecs:
-        ocprecs = Artwork_Type.objects.filter(name='OCP Record')
+        ocprecs = Artwork_Type.objects.filter(name_en='OCP Record')
         print "- found OCP Record as an Artwork_Type by name"
 
     if ocprecs:
         ocprec = ocprecs[0]
     else:
         ocprec, c = Artwork_Type.objects.get_or_create(
-            name="OCP Record",
+            name_en="OCP Record",
             clas="ocp_record",
             parent=genrec)
         if c:
             print "- created Artwork_Type: "+str(ocprec)
     ocprec.clas = 'ocp_record'
-    ocprec.name = "OCP Record"
+    ocprec.name_en = "OCP Record"
     ocprec.parent = genrec
     ocprec.save()
 
@@ -3338,50 +4080,50 @@ def create_unit_types(**kwargs):
         ocpext = ocpexts[0]
     else:
         ocpext, c = Ocp_Record_Type.objects.get_or_create(
-            name="OCP ExchangeType",
+            name_en="OCP ExchangeType",
             clas="ocp_exchange",
             parent=ocprec)
         if c:
             print "- created Ocp_Record_Type: "+str(ocpext)
 
 
-    gen_gifts = Ocp_Record_Type.objects.filter(name__icontains="Gift Economy")
+    gen_gifts = Ocp_Record_Type.objects.filter(name_en__icontains="Gift Economy")
     if gen_gifts:
         gen_gift = gen_gifts[0]
     else:
         gen_gift, c = Ocp_Record_Type.objects.get_or_create(
-            name="Gift Economy:",
+            name_en="Gift Economy:",
             parent=ocpext)
         if c:
             print "- created Ocp_Record_Type: "+str(gen_gift)
-    gen_gift.name = "Gift Economy:"
+    gen_gift.name_en = "Gift Economy:"
     gen_gift.clas = "gift_economy"
     gen_gift.save()
 
-    gen_gives = Ocp_Record_Type.objects.filter(name__icontains="Give gift")
+    gen_gives = Ocp_Record_Type.objects.filter(name_en__icontains="Give gift")
     if gen_gives:
         gen_give = gen_gives[0]
     else:
         gen_give, c = Ocp_Record_Type.objects.get_or_create(
-            name="Give gift:",
+            name_en="Give gift:",
             parent=gen_gift)
         if c:
             print "- created Ocp_Record_Type: "+str(gen_give)
-    gen_give.name = "Give gift:"
+    gen_give.name_en = "Give gift:"
     gen_give.clas = "give"
     gen_give.parent = gen_gift
     gen_give.save()
 
-    gen_nmats = Ocp_Record_Type.objects.filter(name__icontains="give Non-material resources")
+    gen_nmats = Ocp_Record_Type.objects.filter(name_en__icontains="give Non-material resources")
     if gen_nmats:
         gen_nmat = gen_nmats[0]
     else:
         gen_nmat, c = Ocp_Record_Type.objects.get_or_create(
-            name="give Non-material resources",
+            name_en="give Non-material resources",
             parent=gen_give)
         if c:
             print "- created Ocp_Record_Type: "+str(gen_nmat)
-    gen_nmat.name = "give Non-material resources"
+    gen_nmat.name_en = "give Non-material resources"
     gen_nmat.parent = gen_give
     gen_nmat.ocpRecordType_ocp_artwork_type = nonmat_typ
     gen_nmat.save()
@@ -3408,9 +4150,9 @@ def create_unit_types(**kwargs):
             print "- DELETED ExchangeType: "+str(oldet.id)+" "+str(oldet)
             oldet.delete()
 
-    gen_fairints = Ocp_Record_Type.objects.filter(name__icontains="give FairCoin donation (via ocp)")
+    gen_fairints = Ocp_Record_Type.objects.filter(name_en__icontains="give FairCoin donation (via ocp)")
     if not gen_fairints:
-        gen_fairints = Ocp_Record_Type.objects.filter(name__icontains="give FairCoin donation")
+        gen_fairints = Ocp_Record_Type.objects.filter(name_en__icontains="give FairCoin donation")
     if gen_fairints:
         if len(gen_fairints) > 1:
             print "WARNING there is more than one gen_fairint ? "+str(gen_fairints)
@@ -3418,77 +4160,77 @@ def create_unit_types(**kwargs):
         gen_fairint = gen_fairints[0]
     else:
         gen_fairint, c = Ocp_Record_Type.objects.get_or_create(
-            name="give FairCoin donation (via ocp)",
+            name_en="give FairCoin donation (via ocp)",
             parent=gen_nmat)
         if c:
             print "- created Ocp_Record_Type: "+str(gen_fairint)
-    gen_fairint.name = "give FairCoin donation (via ocp)"
+    gen_fairint.name_en = "give FairCoin donation (via ocp)"
     gen_fairint.parent = gen_nmat
     gen_fairint.ocpRecordType_ocp_artwork_type = fair_rt # facc_rt ?
     gen_fairint.exchange_type = intfairet
     gen_fairint.save()
 
-    gen_fairouts = Ocp_Record_Type.objects.filter(name__icontains="give FairCoin donation (external)")
+    gen_fairouts = Ocp_Record_Type.objects.filter(name_en__icontains="give FairCoin donation (external)")
     if gen_fairouts:
         gen_fairout = gen_fairouts[0]
     else:
         gen_fairout, c = Ocp_Record_Type.objects.get_or_create(
-            name="give FairCoin donation (external)",
+            name_en="give FairCoin donation (external)",
             parent=gen_nmat)
         if c:
             print "- created Ocp_Record_Type: "+str(gen_fairout)
-    gen_fairout.name = "give FairCoin donation (external)"
+    gen_fairout.name_en = "give FairCoin donation (external)"
     gen_fairout.parent = gen_nmat
     gen_fairout.ocpRecordType_ocp_artwork_type = fair_rt
     gen_fairout.exchange_type = extfairet
     gen_fairout.save()
 
-    gen_receives = Ocp_Record_Type.objects.filter(name__contains="Receive gift")
+    gen_receives = Ocp_Record_Type.objects.filter(name_en__contains="Receive gift")
     if gen_receives:
         if len(gen_receives) > 1:
             print "WARNING: There is more than one gen_receives: "+str(gen_receives)
         gen_receive = gen_receives[0]
     else:
         gen_receive, c = Ocp_Record_Type.objects.get_or_create(
-            name="Receive gift:",
+            name_en="Receive gift:",
             parent=gen_gift)
         if c:
             print "- created Ocp_Record_Type: "+str(gen_receive)
-    gen_receive.name = "Receive gift:"
+    gen_receive.name_en = "Receive gift:"
     gen_receive.parent = gen_gift
     gen_receive.description = "Branch of exchange types only used when there's no way to identify the sending 'from' agent in the system"
     gen_receive.save()
 
-    gen_recnons = Ocp_Record_Type.objects.filter(name__icontains="receive Non-material resources")
+    gen_recnons = Ocp_Record_Type.objects.filter(name_en__icontains="receive Non-material resources")
     if gen_recnons:
         if len(gen_recnons) > 1:
             print "WARNING: There is more than one gen_recnons: "+str(gen_recnons)
         gen_recnon = gen_recnons[0]
     else:
         gen_recnon, c = Ocp_Record_Type.objects.get_or_create(
-            name="receive Non-material resources",
+            name_en="receive Non-material resources",
             parent=gen_receive)
         if c:
             print "- created Ocp_Record_Type: "+str(gen_recnon)
-    gen_recnon.name = "receive Non-material resources"
+    gen_recnon.name_en = "receive Non-material resources"
     gen_recnon.parent = gen_receive
     gen_recnon.ocpRecordType_ocp_artwork_type = nonmat_typ
     gen_recnon.save()
 
-    gen_recfairs = Ocp_Record_Type.objects.filter(name__icontains="receive Faircoin donation")
+    gen_recfairs = Ocp_Record_Type.objects.filter(name_en__icontains="receive Faircoin donation")
     if not gen_recfairs:
-        gen_recfairs = Ocp_Record_Type.objects.filter(name__icontains="receive Faircoin")
+        gen_recfairs = Ocp_Record_Type.objects.filter(name_en__icontains="receive Faircoin")
     if gen_recfairs:
         if len(gen_recfairs) > 1:
             print "WARNING: Theres is more than one gen_recfairs: "+str(gen_recfairs)
         gen_recfair = gen_recfairs[0]
     else:
         gen_recfair, c = Ocp_Record_Type.objects.get_or_create(
-            name="receive Faircoin donation",
+            name_en="receive Faircoin donation",
             parent=gen_recnon)
         if c:
             print "- created Ocp_Record_Type: "+str(gen_recfair)
-    gen_recfair.name = "receive Faircoin donation"
+    gen_recfair.name_en = "receive Faircoin donation"
     gen_recfair.parent = gen_recnon
     gen_recfair.ocpRecordType_ocp_artwork_type = fair_rt
     gen_recfair.exchange_type = incfairet
@@ -3510,14 +4252,14 @@ def create_unit_types(**kwargs):
     ocp_euro.symbol = '€'
     ocp_euro.save()
     gen_fiat_typ, created = Ocp_Unit_Type.objects.get_or_create(
-        name='Fiat Currency',
+        name_en='Fiat Currency',
         parent=gen_curr_typ
     )
     if created:
         print "- created Ocp_Unit_Type: 'Fiat Currency'"
 
     gen_euro_typ, created = Ocp_Unit_Type.objects.get_or_create(
-        name='Euros',
+        name_en='Euros',
         parent=gen_fiat_typ
     )
     if created:
@@ -3549,7 +4291,7 @@ def create_unit_types(**kwargs):
         else:
             raise ValidationError("There is only one rt related Euro but is not 'Euro': "+str(ocp_euro_rts[0]))
     elif len(ocp_euro_rts) > 1:
-        digi_rt = ocp_euro_rts.get(name='Euro digital')
+        digi_rt = ocp_euro_rts.get(name_en='Euro digital')
         if not digi_rt:
             raise ValidationError("Can't find a ResourceType named 'Euro digital' rts: "+str(ocp_euro_rts))
         digi_rt.unit = ocp_euro
@@ -3563,7 +4305,7 @@ def create_unit_types(**kwargs):
         digi_rt.inventory_rule = 'yes'
         digi_rt.behavior = 'dig_curr'
         digi_rt.save()
-        cash_rt = ocp_euro_rts.get(name='Euro cash')
+        cash_rt = ocp_euro_rts.get(name_en='Euro cash')
         if not cash_rt:
             raise ValidationError("Can't find a ResourceType named 'Euro cash' rts: "+str(ocp_euro_rts))
         cash_rt.unit = ocp_euro
@@ -3579,7 +4321,7 @@ def create_unit_types(**kwargs):
         cash_rt.save()
     else:
         digi_rt, created = EconomicResourceType.objects.get_or_create(
-            name='Euro digital',
+            name_en='Euro digital',
             unit=ocp_euro,
             unit_of_use=ocp_euro,
             price_per_unit = 1,
@@ -3590,7 +4332,7 @@ def create_unit_types(**kwargs):
         if created:
             print "- created EconomicResourceType: 'Euro digital'"
         cash_rt, created = EconomicResourceType.objects.get_or_create(
-            name='Euro cash',
+            name_en='Euro cash',
             unit=ocp_euro,
             unit_of_use=ocp_euro,
             price_per_unit=1,
@@ -3606,7 +4348,7 @@ def create_unit_types(**kwargs):
 
     artw_euros = Ocp_Artwork_Type.objects.filter(name__icontains="Euro")
     if len(artw_euros) > 1:
-        digi = artw_euros.get(name='Euro digital')
+        digi = artw_euros.get(name_en='Euro digital')
         if digi:
             digi.clas = 'euro_digital'
             digi.resource_type = digi_rt
@@ -3614,7 +4356,7 @@ def create_unit_types(**kwargs):
             digi.save()
         else:
             raise ValidationError("Can't find an Ocp_Artwork_Type named 'Euro digital' artw: "+str(artw_euros))
-        cash = artw_euros.get(name='Euro cash')
+        cash = artw_euros.get(name_en='Euro cash')
         if cash:
             cash.clas = 'euro_cash'
             cash.resource_type = cash_rt
@@ -3628,7 +4370,7 @@ def create_unit_types(**kwargs):
         #raise ValidationError("There are not 2 Ocp_Artwork_Types containing 'Euro' in the name (should find 'Euro digital' and 'Euro cash': "+str(artw_euros))
 
         digi, created = Ocp_Artwork_Type.objects.get_or_create(
-            name='Euro digital',
+            name_en='Euro digital',
             parent=digcur_typ,
         )
         if created:
@@ -3646,16 +4388,16 @@ def create_unit_types(**kwargs):
             mat_typ = mat_typs[0]
         else:
             mat_typ, created = Ocp_Artwork_Type.objects.get_or_create(
-                name='Material',
+                name_en='Material',
                 parent=gen_artwt,
                 clas='Material')
             if created:
                 print "- created Ocp_Artwork_Type: 'Material'"
 
-        phycur_typs = Ocp_Artwork_Type.objects.filter(name='physical Currencies')
+        phycur_typs = Ocp_Artwork_Type.objects.filter(name_en='physical Currencies')
         if not phycur_typs:
             phycur_typ, created = Ocp_Artwork_Type.objects.get_or_create(
-                name='physical Currencies',
+                name_en='physical Currencies',
                 parent=mat_typ)
             if created:
                 print "- created Ocp_Artwork_Types: 'physical Currencies'"
@@ -3665,7 +4407,7 @@ def create_unit_types(**kwargs):
         phycur_typ.save()
 
         cash, created = Ocp_Artwork_Type.objects.get_or_create(
-            name='Euro cash',
+            name_en='Euro cash',
             parent=phycur_typ)
         if created:
             print "- created Ocp_Artwork_Type: 'Euro cash'"
@@ -3828,35 +4570,35 @@ def create_unit_types(**kwargs):
 
     #   S h a r e s
 
-    gen_share_typs = Ocp_Unit_Type.objects.filter(name='Shares')
+    gen_share_typs = Ocp_Unit_Type.objects.filter(name_en='Shares')
     if not gen_share_typs:
-        gen_share_typs = Ocp_Unit_Type.objects.filter(name='Shares currency')
+        gen_share_typs = Ocp_Unit_Type.objects.filter(name_en='Shares currency')
     if not gen_share_typs:
         gen_share_typ, created = Ocp_Unit_Type.objects.get_or_create(
-            name='Shares currency',
+            name_en='Shares currency',
             parent=gen_curr_typ)
         if created:
             print "- created Ocp_Unit_Type: 'Shares currency'"
     else:
         gen_share_typ = gen_share_typs[0]
-    gen_share_typ.name = 'Shares currency'
+    gen_share_typ.name_en = 'Shares currency'
     gen_share_typ.parent = gen_curr_typ
     gen_share_typ.clas = 'shares_currency'
     gen_share_typ.save()
 
 
-    artw_share = Ocp_Artwork_Type.objects.filter(name='Share')
+    artw_share = Ocp_Artwork_Type.objects.filter(name_en='Share')
     if not artw_share:
-        artw_share = Ocp_Artwork_Type.objects.filter(name='Shares')
+        artw_share = Ocp_Artwork_Type.objects.filter(name_en='Shares')
     if not artw_share:
         artw_sh, created = Ocp_Artwork_Type.objects.get_or_create(
-            name='Shares',
+            name_en='Shares',
             parent=digcur_typ)
         if created:
             print "- created Ocp_Artwork_Type branch: 'Shares'"
     else:
         artw_sh = artw_share[0]
-    artw_sh.name = 'Shares'
+    artw_sh.name_en = 'Shares'
     artw_sh.clas = 'shares'
     artw_sh.parent = digcur_typ
     artw_sh.resource_type = None
@@ -3876,12 +4618,12 @@ def create_unit_types(**kwargs):
     else:
         fdc_ag = fdc_ag[0]
 
-    ocp_shares = Unit.objects.filter(name='Share')
+    ocp_shares = Unit.objects.filter(name_en='Share')
     if not ocp_shares:
-        ocp_shares = Unit.objects.filter(name='FreedomCoop Share')
+        ocp_shares = Unit.objects.filter(name_en='FreedomCoop Share')
     if not ocp_shares:
         ocp_share, created = Unit.objects.get_or_create(
-            name='FreedomCoop Share',
+            name_en='FreedomCoop Share',
             unit_type='value',
             abbrev='FdC'
         )
@@ -3889,15 +4631,15 @@ def create_unit_types(**kwargs):
             print "- created OCP Unit: 'FreedomCoop Share'"
     else:
         ocp_share = ocp_shares[0]
-    ocp_share.name = 'FreedomCoop Share'
+    ocp_share.name_en = 'FreedomCoop Share'
     ocp_share.unit_type = 'value'
     ocp_share.abbrev = 'FdC'
     ocp_share.save()
 
-    gen_fdc_typs = Ocp_Unit_Type.objects.filter(name='FreedomCoop Shares')
+    gen_fdc_typs = Ocp_Unit_Type.objects.filter(name_en='FreedomCoop Shares')
     if not gen_fdc_typs:
         gen_fdc_typ, created = Ocp_Unit_Type.objects.get_or_create(
-            name='FreedomCoop Shares',
+            name_en='FreedomCoop Shares',
             parent=gen_share_typ)
         if created:
             print "- created Ocp_Unit_Type: 'FreedomCoop Shares'"
@@ -3916,21 +4658,21 @@ def create_unit_types(**kwargs):
     fdc_share.ocp_unit = ocp_share
     fdc_share.save()
 
-    ocp_share_rts = EconomicResourceType.objects.filter(name='FreedomCoop Share')
+    ocp_share_rts = EconomicResourceType.objects.filter(name_en='FreedomCoop Share')
     if not ocp_share_rts:
-        ocp_share_rts = EconomicResourceType.objects.filter(name='Membership Share')
+        ocp_share_rts = EconomicResourceType.objects.filter(name_en='Membership Share')
     if not ocp_share_rts:
-        ocp_share_rts = EconomicResourceType.objects.filter(name='Share')
+        ocp_share_rts = EconomicResourceType.objects.filter(name_en='Share')
     if ocp_share_rts:
         if len(ocp_share_rts) > 1:
             raise ValidationError("There's more than one 'FreedomCoop Share' ?? "+str(ocp_share_rts))
         share_rt = ocp_share_rts[0]
     else:
         share_rt, created = EconomicResourceType.objects.get_or_create(
-            name='FreedomCoop Share')
+            name_en='FreedomCoop Share')
         if created:
             print "- created EconomicResourceType: 'FreedomCoop Share'"
-    share_rt.name = 'FreedomCoop Share'
+    share_rt.name_en = 'FreedomCoop Share'
     share_rt.unit = ocp_share
     share_rt.inventory_rule = 'yes'
     share_rt.behavior = 'other'
@@ -3938,7 +4680,7 @@ def create_unit_types(**kwargs):
     if not share_rt.price_per_unit:
         print "- Added first FdC share price to 30 eur"
         share_rt.price_per_unit = 30
-    else:
+    elif not share_rt.price_per_unit == 30:
         check_new_rt_price(share_rt)
     share_rt.unit_of_price = ocp_euro
     share_rt.save()
@@ -3954,16 +4696,16 @@ def create_unit_types(**kwargs):
         print "- created ResourceTypeFacetValue: "+str(share_rtfv)
 
 
-    artw_fdcs = Ocp_Artwork_Type.objects.filter(name="Share")
+    artw_fdcs = Ocp_Artwork_Type.objects.filter(name_en="Share")
     if not artw_fdcs:
-        artw_fdcs = Ocp_Artwork_Type.objects.filter(name="Membership Share")
+        artw_fdcs = Ocp_Artwork_Type.objects.filter(name_en="Membership Share")
     if not artw_fdcs:
-        artw_fdcs = Ocp_Artwork_Type.objects.filter(name="FreedomCoop Share")
+        artw_fdcs = Ocp_Artwork_Type.objects.filter(name_en="FreedomCoop Share")
     if artw_fdcs:
         artw_fdc = artw_fdcs[0]
     else:
         artw_fdc, created = Ocp_Artwork_Type.objects.get_or_create(
-            name='FreedomCoop Share',
+            name_en='FreedomCoop Share',
             parent = Type.objects.get(id=artw_sh.id)
         )
         if created:
@@ -3974,8 +4716,17 @@ def create_unit_types(**kwargs):
     artw_fdc.save()
 
 
-    arrt, c = AgentResourceRoleType.objects.get_or_create(name='Owner', is_owner=True)
-    if c: print "- created AgentResourceRoleType: "+str(arrt)
+    arrts = AgentResourceRoleType.objects.filter(is_owner=True)
+    if len(arrts) > 1:
+        for ar in arrts:
+            print("WARN! More than one is_owner? "+str(ar))
+            if ar.name_en == 'Owner':
+                arrt = ar
+    elif arrts:
+        arrt = arrts[0]
+    else:
+        arrt, c = AgentResourceRoleType.objects.get_or_create(name='Owner', is_owner=True)
+        if c: print "- created AgentResourceRoleType: "+str(arrt)
 
 
     ## BankOfTheCommons
@@ -3989,7 +4740,7 @@ def create_unit_types(**kwargs):
     else:
         boc_ag = boc_ag[0]
 
-    ocpboc_shares = Unit.objects.filter(name='BankOfTheCommons Share')
+    ocpboc_shares = Unit.objects.filter(name_en='BankOfTheCommons Share')
     if not ocpboc_shares:
         ocpboc_share, created = Unit.objects.get_or_create(
             name='BankOfTheCommons Share',
@@ -4005,7 +4756,7 @@ def create_unit_types(**kwargs):
     ocpboc_share.abbrev = 'BotC'
     ocpboc_share.save()
 
-    gen_boc_typs = Ocp_Unit_Type.objects.filter(name='BankOfTheCommons Shares')
+    gen_boc_typs = Ocp_Unit_Type.objects.filter(name_en='BankOfTheCommons Shares')
     if not gen_boc_typs:
         gen_boc_typ, created = Ocp_Unit_Type.objects.get_or_create(
             name='BankOfTheCommons Shares',
@@ -4028,9 +4779,9 @@ def create_unit_types(**kwargs):
     boc_share.ocp_unit = ocpboc_share
     boc_share.save()
 
-    share_rts = EconomicResourceType.objects.filter(name__icontains="BankOfTheCommons Share").exclude(name__icontains="Account")
+    share_rts = EconomicResourceType.objects.filter(name_en__icontains="BankOfTheCommons Share").exclude(name_en__icontains="Account")
     if not share_rts:
-        share_rts = EconomicResourceType.objects.filter(name__icontains="Bank of the Commons Share").exclude(name__icontains="Account")
+        share_rts = EconomicResourceType.objects.filter(name_en__icontains="Bank of the Commons Share").exclude(name_en__icontains="Account")
     if share_rts:
         if len(share_rts) > 1:
             raise ValidationError("There are more than 1 EconomicResourceType named: 'BankOfTheCommons Share'")
@@ -4063,9 +4814,9 @@ def create_unit_types(**kwargs):
     if created:
         print "- created ResourceTypeFacetValue: "+str(share_rtfv)
 
-    artw_bocs = Ocp_Artwork_Type.objects.filter(name__icontains="BankOfTheCommons Share").exclude(name__icontains="Account")
+    artw_bocs = Ocp_Artwork_Type.objects.filter(name_en__icontains="BankOfTheCommons Share").exclude(name_en__icontains="Account")
     if not artw_bocs:
-        artw_bocs = Ocp_Artwork_Type.objects.filter(name__icontains="Bank of the Commons Share").exclude(name__icontains="Account")
+        artw_bocs = Ocp_Artwork_Type.objects.filter(name_en__icontains="Bank of the Commons Share").exclude(name_en__icontains="Account")
     if artw_bocs:
         if len(artw_bocs) > 1:
             raise ValidationError("There are more than 1 Ocp_Artwork_Type named: 'BankOfTheCommons Share' ")
@@ -4199,6 +4950,9 @@ def check_new_rt_price(rt=None, **kwargs):
 
     if pro:
         sht = pro.shares_type()
+        if not sht:
+            print("check_new_rt_price: No Project Share Type?? rt:"+str(rt))
+            loger.error("check_new_rt_price: No Project Share Type?? rt:"+str(rt))
     else:
         print("check_new_rt_price: No Project?? rt:"+str(rt))
         loger.error("check_new_rt_price: No Project?? rt:"+str(rt))

@@ -45,7 +45,7 @@ body {
 
 
   <body style="background-image: {% if project.background_url %}url({% static project.background_url %}){% else %}url({% static 'img/photo-OCP-1600x900_green.jpg' %}){% endif %}; text-align:center; background-attachment:fixed;">
-        <p>&nbsp;</p>
+
 
     <form action="{% url 'set_language' %}" method="post" id="lang-switch">{% csrf_token %}
       <input name="next" type="hidden" value="{{ redirect_to }}" />
@@ -55,19 +55,21 @@ body {
           {% get_language_info_list for LANGUAGES as languages %}
           {% for language in languages %}
               <option value="{{ language.code }}"{% if language.code == LANGUAGE_CODE %} selected="selected"{% endif %}>
-                  {{ language.name_local }}
+                  {{ language.name_local|title }}
               </option>
           {% endfor %}
       </select>
     </form>
 
-        <h4>{% if project.agent.photo_url %}
-                <img src="{{ project.agent.photo_url }}" title="{{ project.agent.name }}">
-            {% elif project.agent.photo %}
-                <img src="{% thumbnail project.agent.photo 500x500 %}" title="{{ project.agent.name }}">
-            {% endif %}
-        </h4>
-        {% if not project.agent.photo_url and not project.agent.photo %}<h1>{{ project.agent.name }}</h1>{% endif %}
+    <p>&nbsp;<br/>&nbsp;</p>
+
+    <h4>{% if project.agent.photo_url %}
+            <img src="{{ project.agent.photo_url }}" title="{{ project.agent.name }}">
+        {% elif project.agent.photo %}
+            <img src="{% thumbnail project.agent.photo 500x500 %}" title="{{ project.agent.name }}">
+        {% endif %}
+    </h4>
+    {% if not project.agent.photo_url and not project.agent.photo %}<h1><br>{{ project.agent.name }}</h1>{% endif %}
         <br />
     <table class="landing" border="0" align="center" style="text-align:center">
       <tr>

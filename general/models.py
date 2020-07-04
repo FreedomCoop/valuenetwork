@@ -53,6 +53,7 @@ class Concept(MPTTModel):    # Abstract
         verbose_name_plural = _(u"c- Concepts")
 
 
+
 @python_2_unicode_compatible
 class Type(Concept):    # Create own ID's (TREE)
     #concept = models.OneToOneField('Concept', primary_key=True, parent_link=True, on_delete=models.CASCADE)
@@ -69,6 +70,15 @@ class Type(Concept):    # Create own ID's (TREE)
             return self.name
         else:
             return self.name+' ('+self.clas+')'
+
+    def save(self, *args, **kwargs):
+        if not self.name_ca:
+            print("save: name_ca:"+self.name_en)
+            self.name_ca = self.name_en
+        if not self.name_es:
+            print("save: name_es:"+self.name_en)
+            self.name_es = self.name_en
+        super(Type, self).save(*args, **kwargs)
 
 """
 class rel_Type_Types(models.Model):
@@ -92,7 +102,7 @@ class rel_Type_Types(models.Model):
 @python_2_unicode_compatible
 class Being(models.Model):    # Abstract
     name = models.CharField(verbose_name=_(u"Name"), max_length=200, help_text=_(u"The name of the Entity"))
-    #being_type = TreeForeignKey('Being_Type', blank=True, null=True, verbose_name=_(u"Tipus d'entitat"), on_delete=models.SET_NULL)
+    #being_type = TreeForeignKey('Being_Type', blank=True, null=True, verbose_name="Type of entity", on_delete=models.SET_NULL)
     birth_date = models.DateField(blank=True, null=True, verbose_name=_(u"Born date"), help_text=_(u"The day of starting existence"))
     death_date = models.DateField(blank=True, null=True, verbose_name=_(u"Die date"), help_text=_(u"The day of ceasing existence"))
 
@@ -259,7 +269,7 @@ class Project(MPTTModel, Human):
     email2 = models.EmailField(blank=True, verbose_name=_(u"Alternate email"))
 
     ecommerce = models.BooleanField(default=False, verbose_name=_(u"E-commerce?"))
-    #images = models.ManyToManyField('Image', blank=True, null=True, verbose_name=_(u"Imatges"))
+    #images = models.ManyToManyField('Image', blank=True, null=True, verbose_name=_(u"Images"))
 
     def _is_collective(self):
         if self.persons.count() < 2 and self.projects.count() < 2:
@@ -270,7 +280,7 @@ class Project(MPTTModel, Human):
     _is_collective.short_description = _(u"is collective?")
     collective = property(_is_collective)
 
-    #ref_persons = models.ManyToManyField('Person', blank=True, null=True, verbose_name=_(u"Persones de referència"))
+    #ref_persons = models.ManyToManyField('Person', blank=True, null=True, verbose_name=_(u"Reference Persons"))
 
     class Meta:
         verbose_name= _(u'Project')
@@ -493,11 +503,11 @@ class rel_Human_Companies(models.Model):
 '''
 class rel_Address_Jobs(models.Model):
     address = models.ForeignKey('Address')
-    job = models.ForeignKey('Job', verbose_name=_(u"Art/Ofici vinculat"))
+    job = models.ForeignKey('Job', verbose_name=_(u"related Art/Job"))
     relation = TreeForeignKey('Relation', related_name='ad_job+', blank=True, null=True, on_delete=models.SET_NULL)
     class Meta:
         verbose_name = _(u"job")
-        verbose_name_plural = _(u"Arts/Oficis vinculats")
+        verbose_name_plural = _(u"related Arts/Jobs")
     def __str__(self):
         if self.relation.gerund is None or self.relation.gerund == '':
             return self.job.__str__()
@@ -597,7 +607,7 @@ class rel_Job_Jobs(models.Model):
 @python_2_unicode_compatible
 class Space(models.Model):    # Abstact
     name = models.CharField(verbose_name=_(u"Name"), max_length=100, help_text=_(u"The name of the Space"))
-    #space_type = TreeForeignKey('Space_Type', blank=True, null=True, verbose_name=_(u"Tipus d'espai"), on_delete=models.SET_NULL)
+    #space_type = TreeForeignKey('Space_Type', blank=True, null=True, verbose_name=_(u"Type of space"), on_delete=models.SET_NULL)
     #m2 = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
     def __str__(self):
@@ -623,9 +633,9 @@ class Address(Space):    # Create own ID's
     postalcode = models.CharField(max_length=5, blank=True, null=True, verbose_name=_(u"Postal/Zip code"))
     region = TreeForeignKey('Region', blank=True, null=True, related_name='rel_addresses', verbose_name=_(u"Region"), on_delete=models.SET_NULL)
 
-    #telephone = models.CharField(max_length=20, blank=True, verbose_name=_(u"Telefon fix"))
+    #telephone = models.CharField(max_length=20, blank=True, verbose_name=_(u"Telephone"))
     ic_larder = models.BooleanField(default=False, verbose_name=_(u"Is a Larder?"))
-    #main_address = models.BooleanField(default=False, verbose_name=_(u"Adreça principal?"))
+    #main_address = models.BooleanField(default=False, verbose_name=_(u"Main address?"))
     size = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, verbose_name=_(u'Size'), help_text=_(u"Number of units (accept 2 decimals)"))
     size_unit = models.ForeignKey('Unit', blank=True, null=True, verbose_name=_(u"Unit of measure"), on_delete=models.SET_NULL)
     longitude = models.IntegerField(blank=True, null=True, verbose_name=_(u"Longitude (geo)"))
@@ -700,8 +710,8 @@ class Region_Type(Space_Type):
 #     A R T W O R K S - (Obres, Coses, Registres, Documents...)
 @python_2_unicode_compatible
 class Artwork(models.Model):    # Abstract
-    name = models.CharField(verbose_name=_(u"Name"), max_length=200, blank=True, null=True) #, help_text=_(u"El nom de la obra (Registre, Unitat, Cosa)"))
-    #artwork_type = TreeForeignKey('Artwork_Type', blank=True, verbose_name=_(u"Tipus d'Obra"), on_delete=models.SET_NULL)
+    name = models.CharField(verbose_name=_(u"Name"), max_length=200, blank=True, null=True) #, help_text=_(u"The name of the artwork (Record, Unit, Thing)"))
+    #artwork_type = TreeForeignKey('Artwork_Type', blank=True, verbose_name=_(u"Type of Artwork"), on_delete=models.SET_NULL)
     description = models.TextField(blank=True, null=True, verbose_name=_(u"Description"))
 
     def __str__(self):
@@ -803,7 +813,7 @@ class Image(Nonmaterial):
     image_image = models.ImageField(upload_to='files/images', height_field='height', width_field='width',
                                                     blank=True, null=True,
                                                     verbose_name=_(u"Image (jpg/png)"))
-    #footer = models.TextField(blank=True, null=True, verbose_name=_(u"Peu de foto"))
+    #footer = models.TextField(blank=True, null=True, verbose_name=_(u"Image caption"))
     url = models.URLField(blank=True, null=True, verbose_name=_(u"Url of the image"))
     height = models.IntegerField(blank=True, null=True, verbose_name=_(u"Height"))
     width = models.IntegerField(blank=True, null=True, verbose_name=_(u"Width"))
@@ -992,6 +1002,8 @@ class Unit_Type(Artwork_Type):
 @python_2_unicode_compatible
 class Record(Artwork):    # Create own ID's
     record_type = TreeForeignKey('Record_Type', blank=True, null=True, verbose_name=_(u"Type of Record"), on_delete=models.SET_NULL)
+    changed_date = models.DateTimeField(auto_now=True, blank=True, null=True, editable=False)
+
     class Meta:
         verbose_name= _(u'Record')
         verbose_name_plural= _(u'o- Records')
@@ -1020,7 +1032,7 @@ class UnitRatio(Record):
     record = models.OneToOneField('Record', primary_key=True, parent_link=True, on_delete=models.CASCADE)
 
     in_unit = models.ForeignKey('Unit', related_name='ratio_in', verbose_name=_(u"in Unit"), on_delete=models.CASCADE)
-    rate = models.DecimalField(max_digits=10, decimal_places=4, verbose_name=_(u"Ratio multiplier"))
+    rate = models.DecimalField(max_digits=50, decimal_places=9, verbose_name=_(u"Ratio multiplier"), default=Decimal("0.0"))
     out_unit = models.ForeignKey('Unit', related_name='ratio_out', verbose_name=_(u"out Unit"), on_delete=models.CASCADE)
     class Meta:
         verbose_name = _(u"Equivalence between Units")
@@ -1095,17 +1107,17 @@ from django.db.models.signals import post_migrate
 def create_general_types(**kwargs):
     sep = ", "
     out = "Initial basic types created: <br>"
-    being, created = Type.objects.get_or_create(name='Being', clas='Being')
+    being, created = Type.objects.get_or_create(name_en='Being', clas='Being')
     if created: out += str(being)+sep
-    artwork, created = Type.objects.get_or_create(name='Artwork', clas='Artwork')
+    artwork, created = Type.objects.get_or_create(name_en='Artwork', clas='Artwork')
     if created: out += str(artwork)+sep
-    space, created = Type.objects.get_or_create(name='Space', clas='Space')
+    space, created = Type.objects.get_or_create(name_en='Space', clas='Space')
     if created: out += str(space)+'<br>'
 
-    """human, created = Being_Type.objects.get_or_create(name='Human', clas='Human', parent=being)
+    """human, created = Being_Type.objects.get_or_create(name_en='Human', clas='Human', parent=being)
     if created: out += str(human)+": "
 
-    persons = Being_Type.objects.filter(name="Person")
+    persons = Being_Type.objects.filter(name_en="Person")
     if persons:
         if len(persons) > 1:
             out += "ERROR there's more than one 'Person' as a Being_Type ?"+'<br>'
@@ -1113,13 +1125,13 @@ def create_general_types(**kwargs):
         else:
             person = persons[0]
     else:
-        person, created = Being_Type.objects.get_or_create(name='Person', parent=human)
+        person, created = Being_Type.objects.get_or_create(name_en='Person', parent=human)
         if created: out += str(person)+sep
     person.clas = 'Person'
     person.parent = human
     person.save()
 
-    projects = Being_Type.objects.filter(name="Project")
+    projects = Being_Type.objects.filter(name_en="Project")
     if projects:
         if len(projects) > 1:
             out += "ERROR there's more than one 'Project' as a Being_Type ?"+'<br>'
@@ -1127,13 +1139,13 @@ def create_general_types(**kwargs):
         else:
             project = projects[0]
     else:
-        project, created = Being_Type.objects.get_or_create(name='Project', parent=human)
+        project, created = Being_Type.objects.get_or_create(name_en='Project', parent=human)
         if created: out += str(project)+sep
     project.clas = 'Project'
     project.parent = human
     project.save()
 
-    companys = Being_Type.objects.filter(name="Company")
+    companys = Being_Type.objects.filter(name_en="Company")
     if companys:
         if len(companys) > 1:
             out += "ERROR there's more than one 'Company' as a Being_Type ?"+'<br>'
@@ -1141,44 +1153,44 @@ def create_general_types(**kwargs):
         else:
             company = companys[0]
     else:
-        company, created = Being_Type.objects.get_or_create(name='Company', parent=human)
+        company, created = Being_Type.objects.get_or_create(name_en='Company', parent=human)
         if created: out += str(company)+'<br>'
     company.clas = 'Company'
     company.parent = human
     company.save()
 
-    material, created = Artwork_Type.objects.get_or_create(name='Material', clas='Material', parent=artwork)
+    material, created = Artwork_Type.objects.get_or_create(name_en='Material', clas='Material', parent=artwork)
     if created: out += str(material)+sep
 
-    nonmaterial, created = Artwork_Type.objects.get_or_create(name='Non-material', clas='Nonmaterial', parent=artwork)
+    nonmaterial, created = Artwork_Type.objects.get_or_create(name_en='Non-material', clas='Nonmaterial', parent=artwork)
     if created: out += str(nonmaterial)+sep"""
 
-    record, created = Artwork_Type.objects.get_or_create(name='Record', clas='Record', parent=artwork)
+    record, created = Artwork_Type.objects.get_or_create(name_en='Record', clas='Record', parent=artwork)
     if created: out += str(record)+sep
 
-    unit, created = Artwork_Type.objects.get_or_create(name='Unit', clas='Unit', parent=artwork)
+    unit, created = Artwork_Type.objects.get_or_create(name_en='Unit', clas='Unit', parent=artwork)
     if created: out += str(unit)+sep
 
-    """currency, created = Unit_Type.objects.get_or_create(name='Currency', parent=unit)
+    """currency, created = Unit_Type.objects.get_or_create(name_en='Currency', parent=unit)
     if created: out += str(currency)+sep
-    social, created = Unit_Type.objects.get_or_create(name='MutualCredit currency', parent=currency)
+    social, created = Unit_Type.objects.get_or_create(name_en='MutualCredit currency', parent=currency)
     if created: out += str(social)+sep
-    crypto, created = Unit_Type.objects.get_or_create(name='Cryptocurrency', parent=currency)
+    crypto, created = Unit_Type.objects.get_or_create(name_en='Cryptocurrency', parent=currency)
     if created: out += str(crypto)+sep
-    fiat, created = Unit_Type.objects.get_or_create(name='Fiat currency', parent=currency)
+    fiat, created = Unit_Type.objects.get_or_create(name_en='Fiat currency', parent=currency)
     if created: out += str(crypto)+'<br>'
     """
 
-    region, created = Space_Type.objects.get_or_create(name='Region', clas='Region', parent=space)
+    region, created = Space_Type.objects.get_or_create(name_en='Region', clas='Region', parent=space)
     if created: out += str(region)+sep
-    address, created = Space_Type.objects.get_or_create(name='Address', clas='Address', parent=space)
+    address, created = Space_Type.objects.get_or_create(name_en='Address', clas='Address', parent=space)
     if created: out += str(address)+'<br>'
 
-    unitratio, created = Record_Type.objects.get_or_create(name='Unit Ratio', clas='UnitRatio', parent=record)
+    unitratio, created = Record_Type.objects.get_or_create(name_en='Unit Ratio', clas='UnitRatio', parent=record)
     if created: out += str(unitratio)+sep
-    """ces, created = Record_Type.objects.get_or_create(name='Account Ces', clas='AccountCes', parent=record)
+    """ces, created = Record_Type.objects.get_or_create(name_en='Account Ces', clas='AccountCes', parent=record)
     if created: out += str(ces)+sep
-    bank, created = Record_Type.objects.get_or_create(name='Account Bank', clas='AccountBank', parent=record)
+    bank, created = Record_Type.objects.get_or_create(name_en='Account Bank', clas='AccountBank', parent=record)
     if created: out += str(bank)+sep"""
 
     print(out)

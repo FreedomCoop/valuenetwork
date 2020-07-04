@@ -9,7 +9,7 @@
 
   <head>
 
-    <link href="{% static "pinax/css/theme.css" %}" rel="stylesheet">
+    <!-- <link href="{% static "pinax/css/theme.css" %}" rel="stylesheet"> -->
     <link href="{% static "bootstrap/css/bootstrap.css" %}" rel="stylesheet">
     <link href="{% static "bootstrap/css/bootstrap-responsive.css" %}" rel="stylesheet">
     <link href="{% static "css/buttons.css" %}" rel="stylesheet">
@@ -33,7 +33,7 @@
 
     {% if project.custom_css %}
         <style>
-            {{ project.custom_css }}
+            {{ project.custom_css|safe }}
         </style>
     {% endif %}
 
@@ -95,7 +95,7 @@
         }*/
 
         $('div.control-group.error span').each(function(){
-            if($(this).text().indexOf(' login ') != -1){
+            if($(this).text().indexOf(' login ') != -1 || $(this).text().indexOf(' aquí ') != -1){
                 $(this).append(' &nbsp; <a href="{% url 'project_login' form_slug=project.fobi_slug %}" class="btn btn-primary btn-mini">{% trans "Login" %}</a>');
                 //alert($(this).text());
             }
@@ -155,8 +155,9 @@
 
   </head>
   <body style="background-image: url({% if project.background_url %}{% static project.background_url %}{% else %}{% static 'img/photo-OCP-1600x900_green.jpg' %}{% endif %}); text-align:center; background-attachment:fixed;">
-    <div style="font-weight:bold; position:absolute; left:13px; top:9px;">
-      <a href="{% url 'project_login' form_slug=project.fobi_slug %}" style="color:#734279;">{% trans "Login to" %} {{ project.agent.name }}</a>
+    <div style="position:absolute; left:13px; top:9px;">
+      <a class="btn btn-mini" href="{% url 'project_login' form_slug=project.fobi_slug %}">
+          {% trans "Login" %}</a>
     </div>
     <form action="{% url 'set_language' %}" method="post" id="lang-switch">{% csrf_token %}
       <input name="next" type="hidden" value="{{ redirect_to }}" />
@@ -166,12 +167,12 @@
         {% get_language_info_list for LANGUAGES as languages %}
         {% for language in languages %}
         <option value="{{ language.code }}"{% if language.code == LANGUAGE_CODE %} selected="selected"{% endif %}>
-          {{ language.name_local }}
+          {{ language.name_local|title }}
         </option>
         {% endfor %}
       </select>
     </form>
-
+    <p>&nbsp;<br/>&nbsp;</p>
     <div class="base-form">
       <h2>
         {% trans "Request to join:" %}

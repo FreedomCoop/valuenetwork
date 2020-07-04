@@ -11,7 +11,7 @@ class LoginRequiredMixin(object):
         self.request = request
         self.args = args
         self.kwargs = kwargs
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             return super(LoginRequiredMixin, self).dispatch(request, *args, **kwargs)
         return self.redirect_to_login()
     

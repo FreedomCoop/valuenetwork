@@ -1,5 +1,8 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 import os, sys
 from django.utils.translation import ugettext_lazy as _
+from decimal import Decimal
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 PACKAGE_ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -101,7 +104,7 @@ LOGIN_EXEMPT_URLS = [
 PROJECTS_LOGIN = {} # Fill the object in local_settings.py with custom login data by project
 
 
-MIDDLEWARE_CLASSES = [
+MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     #'django.middleware.locale.LocaleMiddleware',
@@ -123,6 +126,7 @@ ROOT_URLCONF = "valuenetwork.urls"
 WSGI_APPLICATION = "valuenetwork.wsgi.application"
 
 INSTALLED_APPS = [
+    'modeltranslation', # to provide translations of model fields
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -251,8 +255,9 @@ MULTICURRENCY = {} #Fill the dict in local_settings.py with private data.
 PAYMENT_GATEWAYS = {} # Fill the object in local_settings.py with custom gateways data by project
 
 CRYPTOS = () # Fill the list in local_settings.py with flexible price crypto units
+CRYPTO_LAPSUS = 600 # How many seconds is valid a crypto price ticker (default 10 minutes), tuned in local_settings
 CRYPTO_DECIMALS = 9
-
+DECIMALS = Decimal('0.000000000') # same 9 decimals, used for formating cryptos
 
 PINAX_NOTIFICATIONS_QUEUE_ALL = True
 PINAX_NOTIFICATIONS_BACKENDS = [
@@ -304,7 +309,13 @@ LOGGING = {
             #'maxBytes': 1024*1024*15, # 15MB
             #'backupCount': 10,
             'formatter': 'verbose'
-        }
+        },
+        'fairlogfile': {
+            'level': 'DEBUG',
+            'class':'logging.FileHandler',
+            'filename': 'fair_debug.log',
+            'formatter': 'verbose'
+        },
     },
     'loggers': {
         'django.request': {
@@ -314,6 +325,11 @@ LOGGING = {
         },
         'ocp': {
             'handlers': ['applogfile',],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'fair': {
+            'handlers': ['fairlogfile',],
             'level': 'DEBUG',
             'propagate': True,
         },
@@ -382,10 +398,17 @@ LOCALE_PATHS = [
     os.path.abspath(os.path.join(os.path.dirname(__file__), '..', "locale")),
 ]
 LANGUAGE_CODE = 'en'
-LANGUAGES = (
-  ('en',  _('English')),
-  ('es',  _('Spanish')),
-)
+LANGUAGES = [
+  ('en', _('English')),
+  ('es', _('Spanish')),
+  ('ca', _('Catalan')),
+]
+DEFAULT_LANGUAGE = LANGUAGE_CODE
+ACCOUNT_LANGUAGES = LANGUAGES
+MODELTRANSLATION_DEFAULT_LANGUAGE = 'en' # can be diferent
+MODELTRANSLATION_FALLBACK_LANGUAGES = ('es','en') # if empty, try 'es', then 'en'...
+
+MODELTRANSLATION_AUTO_POPULATE = 'default'
 
 # Captcha settings
 CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.math_challenge'

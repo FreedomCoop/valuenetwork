@@ -13,7 +13,7 @@ def login_required(func=None, redirect_field_name="next", login_url=None):
     def decorator(view_func):
         @functools.wraps(view_func, assigned=available_attrs(view_func))
         def _wrapped_view(request, *args, **kwargs):
-            if request.user.is_authenticated():
+            if request.user.is_authenticated:
                 return view_func(request, *args, **kwargs)
             return handle_redirect_to_login(
                 request,

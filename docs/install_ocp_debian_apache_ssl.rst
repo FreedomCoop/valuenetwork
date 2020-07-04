@@ -4,7 +4,7 @@ The ocp still runs on Python2 but the electrumfair wallet runs on Python3. We be
 
 - Install dependencies in the system: ::
 
-    sudo apt-get install virtualenv git libjpeg-dev zlib1g-dev build-essential
+    sudo apt-get install virtualenv git libjpeg-dev zlib1g-dev build-essential gettext
     sudo apt-get install python-setuptools python2.7-dev python-pil python-qt4
 
 - Install electrumfair and daemon dependencies in the system (python3): ::

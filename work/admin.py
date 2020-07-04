@@ -28,6 +28,8 @@ class ProjectAdmin(admin.ModelAdmin):
 
 admin.site.register(Project, ProjectAdmin)
 
+
+
 class NewFeatureAdmin(admin.ModelAdmin):
     list_display = ('name', 'deployment_date', 'description', 'url',)
 

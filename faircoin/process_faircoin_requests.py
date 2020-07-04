@@ -3,7 +3,7 @@ import time
 import logging
 from decimal import *
 
-logger = logging.getLogger("ocp")
+logger = logging.getLogger("fair")
 
 from django.conf import settings
 from django.db.models import Q
@@ -45,11 +45,11 @@ def create_address_for_agent(agent):
             if add not in used_list:
                 logger.debug("Found unused %s -- %s" %(add, efn.get_address_index(add)))
                 address = add
-                break  
+                break
         if (address is None) or (address == 'ERROR'):
                 msg = ("CAN NOT CREATE ADDRESS FOR %s" %(agent.name))
                 logger.critical(msg)
-                return None 
+                return None
     return address
 
 def create_address_for_resource(resource):

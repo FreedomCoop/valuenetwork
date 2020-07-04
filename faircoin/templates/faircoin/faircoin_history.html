@@ -62,8 +62,8 @@
               {% else %}
                 <span class="error"><b>{% trans "Not available now" %}</b></span>
               {% endif %}
-            <br />Address: <a href="https://chain.fair.to/address?address={{ resource.faircoin_address.address }}" target="_blank" >{{resource.faircoin_address.address}}</a>
-            &nbsp; &nbsp; Events: {{ events|length }}
+            <br />{% trans "Address" %}: <a href="https://chain.fair.to/address?address={{ resource.faircoin_address.address }}" target="_blank" >{{resource.faircoin_address.address}}</a>
+            &nbsp; &nbsp; {% trans "Events" %}: {{ events|length }}
 
         </p>
 
@@ -191,7 +191,7 @@
             autoWidth: true,
             order: [[1, 'desc']],
             dom: 'ftr', //'B<"clear">lfrtip',
-            paging: false,
+            paging: true,
             /*buttons: [
                 'colvis',
                 {

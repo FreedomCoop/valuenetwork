@@ -3,6 +3,7 @@ import time
 import hashlib
 import hmac
 import logging
+import json
 from random import randint
 from base64 import b64decode
 
@@ -51,6 +52,13 @@ class ChipChapAuthConnection(object):
                 self.logger.error("WARN: Multicurrency without Ticker! Can't process crypto prices (except faircoin)")
             else:
                 self.url_ticker = cdata['url_ticker']
+            #if not "url_tx_json" in cdata:
+            #    self.url_tx_json = None
+            #    print("WARN: Multicurrency without url_tx_json! Can't check crypto payments")
+            #    self.logger.error("WARN: Multicurrency without url_tx_json! Can't check crypto payments")
+            #else:
+            #    self.url_tx_json = cdata['url_tx_json']
+            self.url_fair_tx = cdata['url_fair_tx']
         else:
             self.able_to_connect = False
             self.logger.critical("Invalid configuration data to connect.")
@@ -191,10 +199,6 @@ class ChipChapAuthConnection(object):
         headers = ChipChapAuthConnection.chipchap_x_signature(
             access_key, access_secret)
 
-        params = {
-            'username': username,
-            'amount': amount,
-        }
         payment = requests.get(self.url_w2w+(unit), headers=headers, params=params)
         if int(payment.status_code) == 200:
             return payment.json()
@@ -205,3 +209,67 @@ class ChipChapAuthConnection(object):
                                  + error + " status code. Error: " + msg)
             raise ChipChapAuthError('Error ' + error, msg)
 
+    def check_payment(self, access_key, access_secret, unit, txid):
+        if not self.able_to_connect:
+            raise ChipChapAuthError('Connection Error', 'No data to connect')
+
+        mtx = None
+        txlist, balance = self.wallet_history(access_key, access_secret, 20)
+        if txlist:
+            status = txlist['status']
+            if status == 'ok':
+                for tx in txlist['data']['elements']:
+                    if tx['id'] == txid:
+                        mtx = tx
+                if not mtx:
+                    print("Can't find the mtxid in last 20, search olders??")
+                    self.logger.info("Can't find the mtxid in last 20, search olders??")
+
+        if not mtx:
+            txlist, balance = self.wallet_history(access_key, access_secret, 200)
+            if txlist:
+                status = txlist['status']
+                if status == 'ok':
+                    for tx in txlist['data']['elements']:
+                        if tx['id'] == txid:
+                            mtx = tx
+                    if not mtx:
+                        print("Can't find the mtxid in last 200, search olders??")
+                        self.logger.info("Can't find the mtxid in last 200, search olders??")
+
+        return mtx, status
+
+        """
+        headers = ChipChapAuthConnection.chipchap_x_signature(
+            access_key, access_secret)
+
+        if unit == 'fair':
+            unit = 'fac'
+            url = self.url_multi_txs # self.url_fair_tx+txid
+        else:
+            url = self.url_tx_json+(unit)+'/'+txid
+        params = {
+            'currency': unit,
+            'id': txid,
+        }
+
+        paycheck = requests.get(
+            url,
+            headers=headers)
+            #params=params)
+        print("URL: "+str(url))
+        #print("Headers: "+str(headers))
+
+        if int(paycheck.status_code) == 200:
+            self.logger.debug('Response (200) json:'+str(paycheck.json()))
+            print('Response (200) json:'+str(paycheck.json()))
+            return None, paycheck.json() # TODO
+        else:
+            error = str(paycheck.status_code)
+            #msg = paycheck.json()['message'] #json.loads(paycheck.text)
+            msg = paycheck.text
+            self.logger.error("Payment check request have returned "+error+" status code. Error: "+msg)
+            print("Payment check request have returned "+error+" status code. Error: "+msg)
+            return None, msg
+            #raise ChipChapAuthError('Error '+error, msg['message'])
+        """

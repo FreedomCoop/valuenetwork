@@ -1,7 +1,36 @@
 {% load account_tags %}
 {% load i18n %}
+
 <ul class="nav pull-right">
     {% if request.user.is_authenticated %}
+        <li class="dropdown">
+            {% get_current_language as LANGUAGE_CODE %}
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                {{ LANGUAGE_CODE }}&nbsp;
+                <i class="world-icon"></i>
+
+                <b class="caret"></b>
+            </a>
+            <ul class="subnav dropdown-menu">
+                {% get_available_languages as LANGUAGES %}
+                {% get_language_info_list for LANGUAGES as languages %}
+                {% for language in languages %}
+                    <li>
+                        {% if not language.code == LANGUAGE_CODE %}
+                            <form action="{% url 'change_language' %}" method="post" id="lang-switch">{% csrf_token %}
+                                <input name="next" type="hidden" value="{{ request.get_full_path }}" />
+                                <input name="language" type="hidden" value="{{ language.code }}" />
+                                <button class="navlink">
+                                    {{ language.name_local|title }}
+                                </button>
+                            </form>
+                        {% else %}
+                            <a href="#" data-toggle="dropdown" class="disabled">{{ language.name_local|title }}</a>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </li>
         <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
               {% if request.user.agent.agent.name %}

@@ -497,15 +497,16 @@ class APITest(TestCase):
                 '''
         result = schema.execute(query)
         allAgents = result.data['viewer']['allAgents']
-        self.assertEqual(len(allAgents), 5)
-        org1 = allAgents[1]
+        #print("- allAgents: "+unicode(allAgents))
+        self.assertEqual(len(allAgents), 7) #5)
+        org1 = allAgents[3] #1]
         self.assertEqual(org1['name'], 'org1')
         agentRelationships = org1['tps']
         supplier = agentRelationships[0]
         self.assertEqual(supplier['subject']['name'], 'supp1')
         self.assertEqual(org1['__typename'], 'Organization')
         self.assertEqual(org1['type'], 'Organization')
-        person = allAgents[0]
+        person = allAgents[2] #0]
         self.assertEqual(person['__typename'], 'Person')
         roles = person['agentRoles']
         role = roles[0]
@@ -587,7 +588,7 @@ class APITest(TestCase):
         query = '''
                 query {
                   viewer(token: "''' + token + '''") {
-                    agent(id: 2) {
+                    agent(id: 4) {
                       name
                       ownedEconomicResources(category: INVENTORY) {
                         id
@@ -809,7 +810,7 @@ class APITest(TestCase):
         query = '''
                 query {
                   viewer(token: "''' + token + '''") {
-                    agent(id: 2) {
+                    agent(id: 4) {
                       name
                       ownedEconomicResources(category: INVENTORY) {
                         id
@@ -893,7 +894,7 @@ class APITest(TestCase):
         query = '''
                 query {
                   viewer(token: "''' + token + '''") {
-                    agent(id: 1) {
+                    agent(id: 3) {
                         name
                         agentNotificationSettings {
                             id
@@ -914,6 +915,8 @@ class APITest(TestCase):
                 '''
         result5 = schema.execute(query)
         notifSettings = result5.data['viewer']['agent']['agentNotificationSettings']
+        if not notifSettings:
+            print("ERR: Can't find notifSettings to assert!")
         self.assertEqual(notifSettings[0]['id'], "1")
         self.assertEqual(notifSettings[0]['notificationType']['label'], "api_test")
 
@@ -931,7 +934,7 @@ class APITest(TestCase):
 
         result1 = schema.execute('''
                 mutation {
-                  createProcess(token: "''' + token + '''", name: "Make something cool", plannedStart: "2017-07-07", plannedFinish: "2017-07-14", scopeId: 2, planId: 1) {
+                  createProcess(token: "''' + token + '''", name: "Make something cool", plannedStart: "2017-07-07", plannedFinish: "2017-07-14", scopeId: 4, planId: 1) {
                     process {
                         name
                         scope {
@@ -945,6 +948,8 @@ class APITest(TestCase):
                   }
                 }
                 ''', context_value=MockContext())
+        if not result1.data['createProcess']:
+            print("ERR: Can't find result1.data to assert: "+unicode(result1.data))
         self.assertEqual(result1.data['createProcess']['process']['name'], "Make something cool")
         self.assertEqual(result1.data['createProcess']['process']['scope']['name'], "org1")
         self.assertEqual(result1.data['createProcess']['process']['isFinished'], False)
@@ -1001,7 +1006,7 @@ class APITest(TestCase):
 # user agent is authorized to create objects within that scope
 query($token: String) {
   viewer(token: $token) {
-    userIsAuthorizedToCreate(scopeId:23) 
+    userIsAuthorizedToCreate(scopeId:23)
   }
 }
 
@@ -2275,7 +2280,7 @@ query ($token: String) {
   viewer(token: $token) {
     agent(id: 6) {
       name
-      isMemberOf(agentId: 39) 
+      isMemberOf(agentId: 39)
     }
   }
 }
@@ -3095,7 +3100,7 @@ query ($token: String) {
 ######################### SAMPLE MUTATIONS ###########################
 
 mutation ($token: String!) {
-  createProcess(token: $token, name: "Test planned finish", plannedStart: "2017-10-01", 
+  createProcess(token: $token, name: "Test planned finish", plannedStart: "2017-10-01",
     plannedFinish: "2017-10-10", scopeId: 39, note: "testing", planId: 62) {
     process {
       id
@@ -3110,7 +3115,7 @@ mutation ($token: String!) {
 }
 
 mutation ($token: String!) {
-  updateProcess(token: $token, id: 85, 
+  updateProcess(token: $token, id: 85,
     plannedFinish: "2017-10-12", isFinished: true, planId: 62) {
     process {
       name
@@ -3133,9 +3138,9 @@ mutation ($token: String!) {
   }
 }
 
-mutation ($token: String!) {  
+mutation ($token: String!) {
   createCommitment(token: $token, action: "use", plannedStart: "2018-10-01", due: "2018-10-10",
-    scopeId: 39, note: "testing", committedResourceClassifiedAsId: 17, involvesId: 11, 
+    scopeId: 39, note: "testing", committedResourceClassifiedAsId: 17, involvesId: 11,
     committedNumericValue: "3.5", committedUnitId: 2, inputOfId: 6, planId: 52,
     providerId: 79, receiverId: 39, url: "http://www.test.coop") {
     commitment {
@@ -3241,7 +3246,7 @@ mutation ($token: String!) {
 }
 
 mutation ($token: String!) {
-  createPlanFromRecipe(token: $token, name: "More Jam!", due: "2018-06-20", 
+  createPlanFromRecipe(token: $token, name: "More Jam!", due: "2018-06-20",
     producesResourceClassificationId: 37, note: "test") {
     plan {
       id
@@ -3275,8 +3280,8 @@ mutation ($token: String!) {
 }
 
 mutation ($token: String!) {
-  createEconomicEvent(token: $token, action: "use", start: "2017-10-01", scopeId: 39, 
-    note: "testing", affectedResourceClassifiedAsId: 17, affectsId: 11, affectedNumericValue: "3.5", 
+  createEconomicEvent(token: $token, action: "use", start: "2017-10-01", scopeId: 39,
+    note: "testing", affectedResourceClassifiedAsId: 17, affectsId: 11, affectedNumericValue: "3.5",
     affectedUnitId: 2, inputOfId: 62, providerId: 79, receiverId: 39, url: "hi.com") {
     economicEvent {
       id
@@ -3317,8 +3322,8 @@ mutation ($token: String!) {
 
 #creates a resource also
 mutation ($token: String!) {
-  createEconomicEvent(token: $token, action: "produce", start: "2017-10-07", scopeId: 39, 
-    note: "testing new resource", affectedResourceClassifiedAsId: 37, affectedNumericValue: "30", 
+  createEconomicEvent(token: $token, action: "produce", start: "2017-10-07", scopeId: 39,
+    note: "testing new resource", affectedResourceClassifiedAsId: 37, affectedNumericValue: "30",
     affectedUnitId: 4, outputOfId: 67, providerId: 39, receiverId: 39, createResource: true,
     resourceNote: "new one", resourceImage: "rrr.com/image", resourceTrackingIdentifier: "test-url",
     resourceUrl: "resource.com") {
@@ -3365,7 +3370,7 @@ mutation ($token: String!) {
 }
 
 mutation ($token: String!) {
-  createEconomicEvent(token: $token, action: "work", start: "2017-10-01", scopeId: 39, 
+  createEconomicEvent(token: $token, action: "work", start: "2017-10-01", scopeId: 39,
     note: "testing no provider", affectedNumericValue: "5", affectedResourceClassifiedAsId: 61,
     inputOfId: 65, affectedUnitId: 2, requestDistribution: true) {
     economicEvent {
@@ -3409,9 +3414,9 @@ mutation ($token: String!) {
 
 #create a resource with an event
 mutation ($token: String!) {
-  createEconomicEvent(token: $token, action: "take", start: "2017-12-01", 
-    scopeId: 39, note: "creating a resource", affectedNumericValue: "5", 
-    affectedResourceClassifiedAsId: 38, affectedUnitId: 4, resourceCurrentLocationId: 7, 
+  createEconomicEvent(token: $token, action: "take", start: "2017-12-01",
+    scopeId: 39, note: "creating a resource", affectedNumericValue: "5",
+    affectedResourceClassifiedAsId: 38, affectedUnitId: 4, resourceCurrentLocationId: 7,
     resourceTrackingIdentifier: "lynn-test-1234", createResource: true) {
     economicEvent {
       id
@@ -3454,8 +3459,8 @@ mutation ($token: String!) {
 }
 
 mutation ($token: String!) {
-  updateEconomicEvent(token: $token, id: 350, start: "2017-10-02", scopeId: 39, 
-    note: "testing more", affectedResourceClassifiedAsId: 17, affectsId: 11, 
+  updateEconomicEvent(token: $token, id: 350, start: "2017-10-02", scopeId: 39,
+    note: "testing more", affectedResourceClassifiedAsId: 17, affectsId: 11,
     affectedNumericValue: "4.5", affectedUnitId: 2, inputOfId: 62, providerId: 79, receiverId: 39) {
     economicEvent {
       id
@@ -3503,7 +3508,7 @@ mutation ($token: String!) {
 }
 
 mutation ($token: String!) {
-  updateEconomicResource(token: $token, id: 128, trackingIdentifier: "xxxccc333", 
+  updateEconomicResource(token: $token, id: 128, trackingIdentifier: "xxxccc333",
     note: "testing url", resourceClassifiedAsId: 37, image: "xxx.com", url: "rrr.com") {
     economicResource {
       id
@@ -3567,7 +3572,7 @@ mutation ($token: String!) {
 }
 
 mutation ($token: String!) {
-  createPerson(token: $token, name: "anne person", note:"test", type: "Individual", primaryLocationId: 24, 
+  createPerson(token: $token, name: "anne person", note:"test", type: "Individual", primaryLocationId: 24,
     image: "https://testocp.freedomcoop.eu/site_media/media/photos/what_is_it.JPG", primaryPhone: "333-444-5555" ) {
     person {
       id
@@ -3662,7 +3667,7 @@ mutation ($token: String!) {
 }
 
 mutation ($token: String!) {
-  createAgentRelationship(token: $token, subjectId: 122, objectId: 119, 
+  createAgentRelationship(token: $token, subjectId: 122, objectId: 119,
     relationshipId: 9, note: "test") {
     agentRelationship {
       id
@@ -3681,7 +3686,7 @@ mutation ($token: String!) {
 }
 
 mutation ($token: String!) {
-  updateAgentRelationship(token: $token, id: 275, subjectId: 122, objectId: 131, 
+  updateAgentRelationship(token: $token, id: 275, subjectId: 122, objectId: 131,
     note: "test update") {
     agentRelationship {
       id

@@ -20,7 +20,16 @@
 form.action-form {
     display: inline-block;
     margin: 0 0 0 10px;
+}
+form.action-form span.help-text {
+    font-size:0.8em;
+    display:inline-block;
+    max-width:130px;
+}
+
+.exchangelink {
     float: right;
+    text-align: right;
 }
 
 .description {
@@ -115,7 +124,7 @@ a.more-link {
            &nbsp; &nbsp;
           <span style="font-weight:normal; font-size:90%;">
           {% if jn_req.agent %}
-            {% if jn_req.project.shares_type %}{% trans "Membership" %}{% else %}{% trans "Join" %}{% endif %} request:
+            {% if jn_req.project.shares_type %}{% trans "Membership request" %}{% else %}{% trans "Join request" %}{% endif %}:
               <b>{% if jn_req.state == 'new' %}{% trans "Pending" %}{% else %}{{ jn_req.state|title }}{% endif %}</b>
           {% else %}
             <span class="error">{% trans "MISSING THE OCP ACCOUNT!" %}</span>
@@ -176,7 +185,11 @@ a.more-link {
                     Total Shares: <b>{{ req.total_shares }}</b>&nbsp;
                     Payment Amount: <b>{{ req.payment_amount }}</b>&nbsp;
                     ShareUnit: <b>{{ req.payment_account_type.unit_of_price }}</b>&nbsp;
-                    AgentAssociation: <b>{{ req.agent_relation.association_type }} ({{ req.agent_relation.state }})</b>
+                    AgentAssociation: <b>{{ req.agent_relation.association_type }} ({{ req.agent_relation.state }})</b>&nbsp;
+                    Gateway: <b>{{ req.payment_gateway }}</b>&nbsp;
+                    JoiningStyle: <b>{{ req.project.joining_style }}</b>&nbsp;
+                    ExchangeType: <b>{{ req.exchange_type }}</b>&nbsp;
+                    is_flexprice: <b>{{ req.is_flexprice }}</b>
                 </em></td>
               </tr>
             {% endif %}
@@ -217,7 +230,8 @@ a.more-link {
                                    method="POST" >
                                 {% csrf_token %}
                                 <input type="hidden" name="next" value="feedback" />
-                                <input type="submit" class="btn btn-mini btn-primary" name="submit" value='{% trans "Confirm Email" %}' /> <span class="help-text">{% trans "sends random pass and creates user+agent" %}</span>
+                                <input type="submit" class="btn btn-mini btn-primary" name="submit" value='{% trans "Confirm Email" %}' />
+                                <span class="help-text">{% trans "sends random pass and creates user+agent" %}</span>
                              </form>
                       &nbsp; <form class="action-form" style="display:none;"
                                    id="delete-form{{ req.id }}"
@@ -251,7 +265,7 @@ a.more-link {
             {% if req.items_data %}
               {% for obj in req.items_data %}
                 <tr class="fobi">
-                  <th>{{ obj.key }}:</th>
+                  <th>{{ obj.key|cut:":" }}:</th>
                   {% if user_agent in req.project.agent.managers or user_agent == req.project.agent %}
                     <td class='edit'
                       id='{{ obj.ky }}'
@@ -280,12 +294,38 @@ a.more-link {
               <tr><th class="error">ERROR:</th><td>{{ req.items_data }}</td></tr>
             {% endif %}
             {% if req.pending_shares %}
-              <tr><th>{% trans "Shares Pending" %}:</th>
-                <td><span class="error"><b>{{ req.pending_shares }}</b> shares</span>
+              <tr><th>
+                  {% if req.project.joining_style == "shares" %}
+                      {% trans "Shares Pending" %}:
+                  {% elif req.project.joining_style == "subscription" %}
+                      {% trans "Payments for the Membership" %}
+                  {% endif %}
+                  </th>
+                <td><span class="error"><b>{{ req.pending_shares }}</b>
+                  {% if req.project.joining_style == "shares" %}
+                    {% trans "shares" %}
+                  {% elif req.project.joining_style == "subscription" %}
+                    {{ req.project.subscription_unit }} / {{ req.payment_regularity.key }}
+                  {% endif %}
+                  </span>
+                  <div class="exchangelink">
                   {% if req.exchange %}
-                    &nbsp; {% trans "Related exchange" %}: <b><a href="{% url "exchange_logging_work" context_agent_id=agent.id exchange_type_id=0 exchange_id=req.exchange.id %}">{{ req.exchange }}</a></b> <span class="{{ req.exchange.status }}">{{ req.exchange.status|title }}</span>
+                    <p>
+                      <b>
+                        {% if user_agent in req.project.agent.managers or user_agent == req.project.agent %}
+                          <a href="{% url "exchange_logging_work" context_agent_id=req.project.agent.id exchange_type_id=0 exchange_id=req.exchange.id %}">
+                              <!-- {{ req.exchange|show_name:jn_req.project.agent|safe }} -->
+                              {% trans "Exchange" %}</a>:
+                        {% else %}
+                          <a href="{% url "exchange_logging_work" context_agent_id=req.agent.id exchange_type_id=0 exchange_id=req.exchange.id %}">
+                              <!-- {{ req.exchange|show_name:jn_req.agent|safe }} -->
+                              {% trans "Exchange" %}</a>:
+                        {% endif %}
+                      </b> <span class="{{ req.exchange.status }}">{{ req.exchange.status }}</span>
+                    </p>
                     {% if user_agent in req.project.agent.managers %}
                       {% if not req.project.agent.need_faircoins or not req.payment_pending_amount %} &nbsp; &nbsp;
+                        {% with req.payment_unit as punit %}
                         <form
                               class="action-form"
                               id="status-form{{ req.id }}"
@@ -293,20 +333,32 @@ a.more-link {
                               method="POST" >
                             {% csrf_token %}
                             {% if req.payment_pending_amount and req.is_flexprice %}
-                                <label class="control-label required-field" for="real_amount">{{ req.payment_unit.abbrev|upper }} {% trans "Received Amount" %}:</label>
+                              <div style="text-align:left;">
+                                <label class="control-label required-field" for="real_amount">{{ punit.abbrev|upper }} {% trans "Received Amount" %}:</label>
                                 <input type="text" id="real_amount" name="real_amount" required=""><br>
-                                <label class="control-label required-field" for="tx_id">{{ req.payment_unit.abbrev|upper }} {% trans "Transaction Hash" %}:</label>
+                                <label class="control-label required-field" for="tx_id">{{ punit.abbrev|upper }} {% if punit.abbrev == 'fair' %} {% trans "Transaction ID (BotC-Wallet)" %}{% else %} {% trans "Transaction Hash (blockchain)" %}{% endif %}:</label>
                                 <input type="text" id="tx_id" name="tx_id" required=""><br>
+                              </div>
                             {% endif %}
                             <input type="hidden" name="status" value="complete">
                             <input type="submit" class="btn btn-mini btn-primary" name="submit" value='{% trans "Set as Complete" %}' {% if req.check_user_pass %}disabled="disabled"{% endif %} />
-                            <br/><span class="help-text" style="font-size:0.8em">
-                            {% if not req.payment_pending_amount %}
-                                {% trans "(The payment is done, this will only transfer the pending shares)" %}
+                            <br/><span class="help-text">
+                            {% if req.project.joining_style == "subscription" %}
+                              {% if not req.payment_pending_amount %}
+                                {% trans "(The payment is done, this will only activate the subscription)" %}
+                              {% else %}
+                                {% trans "(This will set the payment as done and activate the subscription)" %}
+                              {% endif %}
                             {% else %}
+                              {% if not req.payment_pending_amount %}
+                                {% trans "(The payment is done, this will only transfer the pending shares)" %}
+                              {% else %}
                                 {% trans "(This will set the payment as done and transfer the shares)" %}
-                            {% endif %}</span>
+                              {% endif %}
+                            {% endif %}
+                            </span>
                         </form>
+                        {% endwith %}
                       {% endif %}
                     {% endif %}
                   {% else %}
@@ -319,10 +371,11 @@ a.more-link {
                             {% csrf_token %}
                             <input type="hidden" name="status" value="pending">
                             <input type="submit" class="btn btn-mini btn-primary" name="submit" value='{% trans "Set as Pending" %}' {% if req.check_user_pass %}disabled="disabled"{% endif %} />
-                            <br/><span class="help-text" style="font-size:0.8em">({{ req.exchange_type }})</span>
+                            <br/><span class="help-text">({{ req.exchange_type }})</span>
                         </form>
                     {% endif %}
                   {% endif %}
+                  </div>
                   {% if user_agent in req.agent.managers or user_agent == req.agent or request.user.is_superuser %}
                     {% if req.payment_url %}
                         {% if req.payment_fees and req.payment_fees_payer == req.agent %}
@@ -361,12 +414,36 @@ a.more-link {
                     {% if req.payment_pending_amount and req.ratio %}
                       {% with req.payment_unit as uni %}
                         ({% if req.is_flexprice %}≈ {% endif %}{{ req.payment_pending_amount }} {{ uni.abbrev.upper }} {% trans "at exchange rate" %}:
-                        {{ req.ratio }} {{ req.project.shares_type.unit_of_price.symbol }}/{% if uni.symbol %}{{ uni.symbol }}{% else %}{{ uni.abbrev }}{% endif %})
+                        {{ req.ratio.normalize }} {{ req.project.shares_type.unit_of_price.symbol }}{{ req.project.subscription_unit.symbol }}/{% if uni.symbol %}{{ uni.symbol }}{% else %}{{ uni.abbrev }}{% endif %})
                       {% endwith %}
                     {% else %}
                         ({{ req.payment_pending_amount }} {{ req.payment_unit.abbrev.upper }})
                     {% endif %}
                   {% endif %}
+                </td>
+              </tr>
+            {% endif %}
+            {% if req.subscription_resource %}
+              <tr>
+                <th>{% trans "Subscription" %}:</th>
+                <td>
+                    <b>{{ req.subscription_resource.identifier }}</b> &nbsp;
+                    {% if req.pending_shares %}
+                        <span class="error">{% trans "Expired by" %} {{ req.subscription_resource.expiration_date }}</span>
+                    {% else %}
+                        <span class="complete">{% trans "Valid" %}</span> {% trans "until" %} {{ req.subscription_resource.expiration_date }}
+                    {% endif %}
+                    {% if req.exchange and req.exchange.status == 'complete' %}
+                        &nbsp; Related <b>
+                        {% if user_agent in jn_req.project.agent.managers or user_agent == jn_req.project.agent %}
+                          <a href="{% url "exchange_logging_work" context_agent_id=jn_req.project.agent.id exchange_type_id=0 exchange_id=req.exchange.id %}">
+                        {% else %}
+                          <a href="{% url "exchange_logging_work" context_agent_id=jn_req.agent.id exchange_type_id=0 exchange_id=req.exchange.id %}">
+                        {% endif %}
+                              {% trans "Exchange" %}
+                        </a></b>
+
+                    {% endif %}
                 </td>
               </tr>
             {% endif %}
@@ -389,8 +466,13 @@ a.more-link {
                           {% endif %}
                       {% endif %}
                       {% if req.exchange and not req.pending_shares %}
-                        &nbsp; {% trans "Related exchange" %}: <b><a href="{% url "exchange_logging_work" context_agent_id=agent.id exchange_type_id=0 exchange_id=req.exchange.id %}">
-                              {{ req.exchange|show_name:user_agent|safe }}</a></b> <span class="{{ req.exchange.status }}">{{ req.exchange.status|title }}</span>
+                        &nbsp; {% trans "Related exchange" %}: <b>
+                        {% if user_agent in jn_req.project.agent.managers or user_agent == jn_req.project.agent %}
+                          <a href="{% url "exchange_logging_work" context_agent_id=jn_req.project.agent.id exchange_type_id=0 exchange_id=req.exchange.id %}">{{ req.exchange|show_name:jn_req.project.agent|safe }}</a>
+                        {% else %}
+                          <a href="{% url "exchange_logging_work" context_agent_id=jn_req.agent.id exchange_type_id=0 exchange_id=req.exchange.id %}">{{ req.exchange|show_name:jn_req.agent|safe }}</a>
+                        {% endif %}
+                        </b> <span class="{{ req.exchange.status }}">{{ req.exchange.status|title }}</span>
                         {% if user_agent in req.project.agent.managers or user_agent == req.project.agent %}
                           {% if not req.project.agent.need_faircoins and not req.exchange.status == 'complete' and not req.is_flexprice %} &nbsp; &nbsp;
                             <form
@@ -401,7 +483,7 @@ a.more-link {
                                 {% csrf_token %}
                                 <input type="hidden" name="status" value="complete">
                                 <input type="submit" class="btn btn-mini btn-primary" name="submit" value='{% trans "Set as Complete" %}' {% if req.check_user_pass %}disabled="disabled"{% endif %} />
-                                <br/><span class="help-text" style="font-size:0.8em">{% trans "(This will only set the shares as transfered)" %}</span>
+                                <br/><span class="help-text">{% trans "(This will only set the shares as transfered)" %}</span>
                             </form>
                           {% endif %}
                         {% endif %}
@@ -415,7 +497,7 @@ a.more-link {
                                 {% csrf_token %}
                                 <input type="hidden" name="status" value="pending">
                                 <input type="submit" class="btn btn-mini btn-primary" name="submit" value='{% trans "Set as Pending" %}' {% if req.check_user_pass %}disabled="disabled"{% endif %} />
-                                <br/><span class="help-text" style="font-size:0.8em">({{ req.exchange_type }})</span>
+                                <br/><span class="help-text">({{ req.exchange_type }})</span>
                             </form>
                         {% endif %}
                       {% endif %}
@@ -423,7 +505,7 @@ a.more-link {
               </tr>
             {% endif %}
 
-            {% if req.project.agent.need_multicurrency %}
+            {% if 'multicurrency' in req.project.services or req.payment_gateway == 'botcw' %}
               <tr><th>{% trans "Multicurrency Account" %}:</th>
                 <td>
                 {% if req.agent %}
@@ -433,8 +515,9 @@ a.more-link {
                     {% if req.agent.multicurrencyauth_set.all %}
                         {% for mauth in req.agent.multicurrencyauth_set.all %}
                           {% if mauth.auth_user == req.multiwallet_user %}
+                            {% with mauth.auth_user as auser %}
                             <a href="{% url 'multicurrency_history' agent_id=req.agent.id oauth_id=mauth.id %}"
-                               class="btn btn-info btn-mini">{% trans "Read '" %}{{ mauth.auth_user }}{% trans "' Multiwallet" %}</a>
+                               class="btn btn-info btn-mini">{% blocktrans %}Read '{{ auser }}' Multiwallet{% endblocktrans %}</a>
                             &nbsp; <span class="help-text">{{ out_text|safe }}</span>
                             {% if pay_form %} &nbsp; &nbsp;
                                 <form id="payForm" action="{% url 'authpayment' agent_id=req.agent.id %}" method="POST" style="display:inline;">
@@ -443,6 +526,7 @@ a.more-link {
                                     <input type="submit" class="btn btn-primary" name="submit" value="{% trans "Transfer" %} {{ req.payment_pending_to_pay }} {{ req.payment_unit.symbol }} {% trans "to" %} {{ req.project.agent.nick }}" />
                                 </form>
                             {% endif %}
+                            {% endwith %}
                           {% elif req.multiwallet_user %}
                             <b>{{ req.multiwallet_user }}</b> &nbsp;
                             <span class="error">&lt;- ERROR?</span> &nbsp; {{ mauth.auth_user }}
@@ -550,7 +634,7 @@ a.more-link {
         {% get_comment_count for jn_req as num_comm  %}
         {% if num_comm > 0 %}
           <div class="row-fluid">
-            {% trans "You have " %} {{ num_comm }} {% trans " comments:" %}
+            {% blocktrans count comms=num_comm %}You have only one comment{% plural %}You have {{ comms }} comments{% endblocktrans %}:
             {% get_comment_list for jn_req as comment_list %}
               <dl id="comments">
                 {% for comment in comment_list %}
@@ -577,7 +661,7 @@ a.more-link {
             {{ form.timestamp }}
             {{ form.security_hash }}
             <input type="hidden" name="next" value="{% url 'project_feedback' agent.id jn_req.id %}" />
-            <input type="submit" class="btn btn-primary" value="Add comment" id="id_submit" />
+            <input type="submit" class="btn btn-primary" value="{% trans "Add comment" %}" id="id_submit" />
           </form>
         </div>
       {% endif %}
@@ -602,6 +686,19 @@ a.more-link {
       $('#resend').click(function(){
           $(this).text(' S e n d i n g . . . ');
           $('body').attr('style', 'pointer-events:none; opacity:0.5; width:100%;');
+      });
+
+      $('.fobi th').each(function(e) {
+        $(this).expander({
+            slicePoint:       30,  // default is 100
+            expandSpeed: 0,
+            expandEffect: 'show',
+            collapseSpeed: 0,
+            collapseEffect: 'hide',
+            expandPrefix:     ' ', // default is '... '
+            expandText:       '[...]', // default is 'read more'
+            userCollapseText: '[^]'  // default is 'read less'
+        });
       });
 
       /*$('th, td').each(function(e) {

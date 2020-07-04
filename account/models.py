@@ -37,7 +37,7 @@ class Account(models.Model):
     
     @classmethod
     def for_request(cls, request):
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             try:
                 account = Account._default_manager.get(user=request.user)
             except Account.DoesNotExist:

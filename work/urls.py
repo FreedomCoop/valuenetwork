@@ -129,14 +129,17 @@ urlpatterns = [
 
     url(r'^payment-url/(?P<paymode>.+)/(?P<join_request_id>\d+)/$', work.views.payment_url, name="payment_url"),
 
+    url(r'^create-subscription-exchange-types/(?P<agent_id>\d+)/$', work.views.create_subscription_exchange_types, name="create_subscription_exchange_types"),
     url(r'^create-shares-exchange-types/(?P<agent_id>\d+)/$', work.views.create_shares_exchange_types, name="create_shares_exchange_types"),
     url(r'^create-project-shares/(?P<agent_id>\d+)/$', work.views.create_project_shares, name="create_project_shares"),
 
-    url(r'^share-payment/(?P<agent_id>\d+)/$', work.views.share_payment, name="share_payment"),
+    url(r'^share-payment-fair/(?P<agent_id>\d+)/$', work.views.share_payment_fair, name="share_payment_fair"),
     url(r"^validate-nick/$", work.views.validate_nick, name="validate_nick"),
     url(r"^validate-username/$", work.views.validate_username, name="validate_username"),
     #url(r"^validate-email/$", work.views.validate_email, name="validate_email"),
     url(r"^validate-name/$", work.views.validate_name, name="validate_name"),
+
+    url(r"^change-language/$", work.views.change_language, name="change_language"),
 
     url(r'^new-features/$', work.views.new_features, name='new_features'),
 
