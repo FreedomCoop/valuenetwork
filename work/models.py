@@ -3757,9 +3757,19 @@ def create_unit_types(**kwargs):
 
     #   F a i r C o i n
 
-    ocp_fair, created = Unit.objects.get_or_create(name_en='FairCoin', unit_type='value')
-    if created:
-        print "- created a main ocp Unit: 'FairCoin'!"
+    ocp_fairs = Unit.objects.filter(name='FairCoin')
+    if not ocp_fairs:
+        ocp_fairs = Unit.objects.filter(name='Faircoin')
+    if ocp_fairs:
+        if len(ocp_fairs) > 1:
+            print("ERROR: More than one Unit named 'Faircoin'!! please delete the non-used one and retry: "+str(ocp_fairs))
+            raise ValidationError("ERROR: More than one Unit named 'Faircoin'!! please delete the non-used one and retry"+str(ocp_fairs))
+        else:
+            ocp_fair = ocp_fairs[0]
+    else:
+        ocp_fair, created = Unit.objects.get_or_create(name_en='FairCoin', unit_type='value')
+        if created:
+            print("- created a main ocp Unit: 'FairCoin'!")
     ocp_fair.abbrev = 'fair'
     ocp_fair.unit_type = 'value'
     ocp_fair.symbol = "ƒ"
