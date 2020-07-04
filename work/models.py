@@ -3763,7 +3763,12 @@ def create_unit_types(**kwargs):
     if ocp_fairs:
         if len(ocp_fairs) > 1:
             print("ERROR: More than one Unit named 'Faircoin'!! please delete the non-used one and retry: "+str(ocp_fairs))
-            raise ValidationError("ERROR: More than one Unit named 'Faircoin'!! please delete the non-used one and retry"+str(ocp_fairs))
+            if len(ocp_fairs) == 2:
+                if ocp_fairs[0].id < ocp_fairs[1].id:
+                    print("DELETED the more recent Unit: "+str(ocp_fairs[1]))
+                    ocp_fairs[1].delete()
+                    ocp_fair = ocp_fairs[0]
+            #raise ValidationError("ERROR: More than one Unit named 'Faircoin'!! please delete the non-used one and retry"+str(ocp_fairs))
         else:
             ocp_fair = ocp_fairs[0]
     else:
@@ -4252,15 +4257,32 @@ def create_unit_types(**kwargs):
 
     #    E u r o s
 
-    ocp_euro, created = Unit.objects.get_or_create(
-        name='Euro',
-        unit_type='value',
-        abbrev='eur'
-    )
-    if created:
-        print "- created Unit: 'Euro'"
+    ocp_euros = Unit.objects.filter(name='Euro')
+    if ocp_euros:
+        if len(ocp_euros) > 1:
+            print("ERROR: More than one Unit named 'Euro'!! please delete the non-used one and retry: "+str(ocp_euros))
+            if len(ocp_euros) == 2:
+                if ocp_euros[0].id < ocp_euros[1].id:
+                    print("DELETED the more recent Unit: "+str(ocp_euros[1]))
+                    ocp_euros[1].delete()
+                    ocp_euro = ocp_euros[0]
+            #raise ValidationError("ERROR: More than one Unit named 'Euro'!! please delete the non-used one and retry"+str(ocp_euros))
+        else:
+            ocp_euro = ocp_euros[0]
+    else:
+        ocp_euro, created = Unit.objects.get_or_create(
+            name='Euro',
+            unit_type='value',
+            abbrev='eur'
+        )
+        if created:
+            print "- created Unit: 'Euro'"
+    ocp_euro.name = 'Euro'
+    ocp_euro.unit_type = 'value'
+    ocp_euro.abbrev = 'eur'
     ocp_euro.symbol = '€'
     ocp_euro.save()
+
     gen_fiat_typ, created = Ocp_Unit_Type.objects.get_or_create(
         name_en='Fiat Currency',
         parent=gen_curr_typ
