@@ -299,3 +299,4 @@ class DeleteOrganization(AuthedMutation):
                 raise PermissionDenied("Organization has activity or relationships and cannot be deleted.")
 
         return DeleteOrganization(organization=formatAgent(agent))
+
