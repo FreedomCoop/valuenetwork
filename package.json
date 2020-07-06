@@ -1,7 +1,7 @@
 {
   "repository": {
     "type": "git",
-    "url": "https://github.com/pinax/pinax-project"
+    "url": "https://github.com/FreedomCoop/valuenetwork"
   },
   "scripts": {
     "clean": "rm -rf static/dist && mkdir -p static/dist/js && mkdir -p static/dist/css && mkdir -p static/dist/images",
