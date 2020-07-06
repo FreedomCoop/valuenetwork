@@ -22,8 +22,30 @@
         border-radius: 0;
     }
 
-    .dataTables_filter {
+    /*.dataTables_filter {
         float: right;
+    }*/
+
+    table, table th, table td {
+        border: none;
+    }
+
+
+    div.dataTables_filter, div.dt-buttons, div.dataTables_info, div.dataTables_length, div.row > div.col > div.dataTables_paginate {
+        margin-top: 10px;
+    }
+    div.dataTables_wrapper div.dataTables_filter {
+        float: right;
+    }
+
+    div.dataTables_wrapper div.dt-buttons {
+        float: right;
+    }
+
+    table#fairtxs.table-bordered.dataTable th, table#fairtxs.table-bordered.dataTable td {
+        border-bottom: none;
+        border-left: none;
+        border-left-width: 1px;
     }
 
 </style>
@@ -68,7 +90,7 @@
         </p>
 
 
-        <table id="fairtxs" style="width: 100%;" class="table table-bordered table-hover table-condensed order-column stripe" >
+        <table id="fairtxs" style="width: 100%;" class="table table-bordered table-hover table-condensed cell-border order-column stripe" >
             <thead>
                 {% if request.user.is_superuser %}
                     <th>(ev)</th>
@@ -146,22 +168,26 @@
                 {% endfor %}
             </tbody>
         </table>
-    <div class="pagination">
-        <span class="step-links">
-            {% if events.has_previous %}
-                <a href="?page={{ events.previous_page_number }}">{% trans "previous" %}</a>
-            {% endif %}
+        <div class="pagination">
+            <span class="step-links">
+                {% if events.has_previous %}
+                    <a href="?page={{ events.previous_page_number }}">{% trans "previous" %}</a>
+                {% endif %}
 
-            <span class="current">
-                {% trans "Page" %} {{ events.number }} {% trans "of" %} {{ events.paginator.num_pages }}.
+                <span class="current">
+                    {% trans "Page" %} {{ events.number }} {% trans "of" %} {{ events.paginator.num_pages }}.
+                </span>
+
+                {% if events.has_next %}
+                    <a href="?page={{ events.next_page_number }}">{% trans "next" %}</a>
+                {% endif %}
             </span>
 
-            {% if events.has_next %}
-                <a href="?page={{ events.next_page_number }}">{% trans "next" %}</a>
-            {% endif %}
-        </span>
+        </div>
+        <p>
+            &nbsp;
+        </p>
     </div>
-  </div>
 </div>
 {% endblock %}
 
@@ -170,12 +196,11 @@
     <script type="text/javascript" src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.10.0/jquery.validate.min.js"></script>
     <script type="text/javascript" src="{% static "js/jquery.jeditable.mini.js" %}"></script>
 
-
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs/jszip-2.5.0/dt-1.10.18/b-1.5.2/b-colvis-1.5.1/b-html5-1.5.2/r-2.2.2/datatables.min.css"/>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/r-2.2.5/datatables.min.css"/>
 
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/v/bs/jszip-2.5.0/dt-1.10.18/b-1.5.2/b-colvis-1.5.1/b-html5-1.5.2/r-2.2.2/datatables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/v/bs4/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/r-2.2.5/datatables.min.js"></script>
 
 {% endblock %}
 
@@ -190,9 +215,9 @@
             stateSave: true,
             autoWidth: true,
             order: [[1, 'desc']],
-            dom: 'ftr', //'B<"clear">lfrtip',
-            paging: true,
-            /*buttons: [
+            dom: '<"row no-gutters"<"col"ir><"col"f><"col"B>><"row no-gutters bigbox"t>', //ftr', //'B<"clear">lfrtip',
+            paging: false,
+            buttons: [
                 'colvis',
                 {
                     extend: 'pdf',
@@ -207,7 +232,7 @@
                     }
                 },
             ],
-            "columnDefs": [
+            /*"columnDefs": [
                 {
                     // The `data` parameter refers to the data for the cell (defined by the
                     // `data` option, which defaults to the column being worked with, in

@@ -52,11 +52,17 @@
     margin: 2px;
 }
 
+.table-transparent {
+    border: none;
+}
+.table-transparent th, .table-transparent td {
+    border: none;
+}
 .table-transparent th {
     background: none;
     text-align: right;
     padding: 4px 8px;
-    width: 40%;
+    /*width: 40%;*/
 }
 
 </style>
@@ -248,7 +254,7 @@
 
 	        </div>
 
-	        <div id="coins" class="col-sm span6">
+	        <div id="coins" class="col-sm span6 secondcol">
 
                 {% if payment_due %}
                     <div class="share-explanation">

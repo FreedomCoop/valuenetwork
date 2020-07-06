@@ -13479,11 +13479,12 @@ class EconomicEvent(models.Model):
             tx = self.faircoin_transaction.tx_hash
             if tx:
                 confirmations, timestamp = faircoin_utils.get_confirmations(tx)
-                if confirmations > 0:
-                    if state != "broadcast":
-                        new_state = "broadcast"
-                if confirmations > 2:
-                    new_state = "confirmed"
+                if confirmations:
+                    if confirmations > 0:
+                        if state != "broadcast":
+                            new_state = "broadcast"
+                    if confirmations > 2:
+                        new_state = "confirmed"
         if new_state:
             state = new_state
             fairtx = self.faircoin_transaction
