@@ -125,7 +125,7 @@ class Agent(graphene.Interface):
 
     event_people_count = graphene.Int(year=graphene.Int(), month=graphene.Int())
 
-    def resolve_primary_location(self, context, **kwargs): #args, *rargs):
+    def resolve_primary_location(self, context, **args): #args, *rargs):
         return self.primary_location
 
     def resolve_owned_economic_resources(self, context, **args): #args, context, info):

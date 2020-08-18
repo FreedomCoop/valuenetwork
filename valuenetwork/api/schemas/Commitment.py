@@ -21,7 +21,7 @@ class Query(object): #graphene.AbstractType):
 
     all_commitments = graphene.List(Commitment)
 
-    def resolve_commitment(self, args, *rargs):
+    def resolve_commitment(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id is not None:
             event = CommitmentProxy.objects.get(pk=id)
@@ -29,7 +29,7 @@ class Query(object): #graphene.AbstractType):
                 return event
         return None
 
-    def resolve_all_commitments(self, args, context, info):
+    def resolve_all_commitments(self, context, **args): #args, context, info):
         return CommitmentProxy.objects.all()
 
 
@@ -57,8 +57,8 @@ class CreateCommitment(AuthedMutation):
 
     commitment = graphene.Field(lambda: Commitment)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         action = args.get('action')
         input_of_id = args.get('input_of_id')
         output_of_id = args.get('output_of_id')
@@ -145,10 +145,10 @@ class CreateCommitment(AuthedMutation):
             order=deliverable_for,
             independent_demand=plan,
             order_item=None, #order_item,
-            created_by=context.user,
+            created_by=info.context.user,
         )
 
-        user_agent = AgentUser.objects.get(user=context.user).agent
+        user_agent = AgentUser.objects.get(user=info.context.user).agent
         is_authorized = user_agent.is_authorized(object_to_mutate=commitment)
         if is_authorized:
             commitment.save_api()
@@ -180,8 +180,8 @@ class UpdateCommitment(AuthedMutation):
 
     commitment = graphene.Field(lambda: Commitment)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         id = args.get('id')
         action = args.get('action')
         input_of_id = args.get('input_of_id')
@@ -235,7 +235,7 @@ class UpdateCommitment(AuthedMutation):
             if url:
                 commitment.url = url
 
-            user_agent = AgentUser.objects.get(user=context.user).agent
+            user_agent = AgentUser.objects.get(user=info.context.user).agent
             is_authorized = user_agent.is_authorized(object_to_mutate=commitment)
             if is_authorized:
                 commitment.save_api()
@@ -251,13 +251,13 @@ class DeleteCommitment(AuthedMutation):
 
     commitment = graphene.Field(lambda: Commitment)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         id = args.get('id')
         commitment = CommitmentProxy.objects.get(pk=id)
         if commitment:
             if commitment.is_deletable():
-                user_agent = AgentUser.objects.get(user=context.user).agent
+                user_agent = AgentUser.objects.get(user=info.context.user).agent
                 is_authorized = user_agent.is_authorized(object_to_mutate=commitment)
                 if is_authorized:
                     commitment.delete()

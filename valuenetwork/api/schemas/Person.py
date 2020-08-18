@@ -22,7 +22,7 @@ class Query(object): #graphene.AbstractType):
 
     # load any person
 
-    def resolve_person(self, args, context, info):
+    def resolve_person(self, context, **args): #args, context, info):
         id = args.get('id')
         if id is not None:
             person = EconomicAgent.objects.get(pk=id)
@@ -33,7 +33,6 @@ class Query(object): #graphene.AbstractType):
 
     # load all people
 
-    def resolve_all_people(self, args, context, info):
+    def resolve_all_people(self, context, **args): #args, context, info):
         people = EconomicAgent.objects.filter(agent_type__party_type="individual")
         return formatAgentList(people)
-

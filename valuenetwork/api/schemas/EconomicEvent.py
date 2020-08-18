@@ -29,7 +29,7 @@ class Query(object): #graphene.AbstractType):
                                              start_date=graphene.String(),
                                              end_date=graphene.String())
 
-    def resolve_economic_event(self, args, *rargs):
+    def resolve_economic_event(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id is not None:
             event = EconomicEventProxy.objects.get(pk=id)
@@ -37,10 +37,10 @@ class Query(object): #graphene.AbstractType):
                 return event
         return None
 
-    def resolve_all_economic_events(self, args, context, info):
+    def resolve_all_economic_events(self, context, **args): #args, context, info):
         return EconomicEventProxy.objects.all()
 
-    def resolve_filtered_economic_events(self, args, context, info):
+    def resolve_filtered_economic_events(self, context, **args): #args, context, info):
         provider_id = args.get('provider_id')
         receiver_id = args.get('receiver_id')
         resource_classified_as_id = args.get('resource_classified_as_id')
@@ -89,8 +89,8 @@ class CreateEconomicEvent(AuthedMutation):
 
     economic_event = graphene.Field(lambda: EconomicEvent)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         action = args.get('action')
         input_of_id = args.get('input_of_id')
         output_of_id = args.get('output_of_id')
@@ -138,7 +138,7 @@ class CreateEconomicEvent(AuthedMutation):
         if provider_id:
             provider = EconomicAgent.objects.get(pk=provider_id)
         elif action == "work":
-            user_agent = AgentUser.objects.get(user=context.user)
+            user_agent = AgentUser.objects.get(user=info.context.user)
             provider = user_agent.agent
         elif commitment:
             provider = commitment.from_agent
@@ -202,7 +202,7 @@ class CreateEconomicEvent(AuthedMutation):
                     current_location=current_location,
                     notes=resource_note,
                     url=resource_url,
-                    created_by=context.user,
+                    created_by=info.context.user,
                     #location
                 )
 
@@ -221,13 +221,13 @@ class CreateEconomicEvent(AuthedMutation):
             url=url,
             commitment=commitment,
             is_contribution=request_distribution,
-            created_by=context.user,
+            created_by=info.context.user,
         )
 
-        user_agent = AgentUser.objects.get(user=context.user).agent
+        user_agent = AgentUser.objects.get(user=info.context.user).agent
         is_authorized = user_agent.is_authorized(object_to_mutate=economic_event)
         if is_authorized:
-            economic_event.save_api(user=context.user, create_resource=create_resource)
+            economic_event.save_api(user=info.context.user, create_resource=create_resource)
             #find the first "owner" type resource-agent role, use it for a relationship so inventory will show up #TODO: make more coherent when VF does so
             if create_resource:
                 roles = AgentResourceRoleType.objects.filter(is_owner=True)
@@ -266,8 +266,8 @@ class UpdateEconomicEvent(AuthedMutation):
 
     economic_event = graphene.Field(lambda: EconomicEvent)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         id = args.get('id')
         action = args.get('action')
         input_of_id = args.get('input_of_id')
@@ -321,12 +321,12 @@ class UpdateEconomicEvent(AuthedMutation):
                 economic_event.url = url
             if fulfills_commitment_id:
                 economic_event.commitment = Commitment.objects.get(pk=fulfills_commitment_id)
-            economic_event.changed_by = context.user
+            economic_event.changed_by = info.context.user
 
-            user_agent = AgentUser.objects.get(user=context.user).agent
+            user_agent = AgentUser.objects.get(user=info.context.user).agent
             is_authorized = user_agent.is_authorized(object_to_mutate=economic_event)
             if is_authorized:
-                economic_event.save_api(user=context.user, old_quantity=old_quantity, old_resource=old_resource)
+                economic_event.save_api(user=info.context.user, old_quantity=old_quantity, old_resource=old_resource)
             else:
                 raise PermissionDenied('User not authorized to perform this action.')
 
@@ -339,12 +339,12 @@ class DeleteEconomicEvent(AuthedMutation):
 
     economic_event = graphene.Field(lambda: EconomicEvent)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         id = args.get('id')
         economic_event = EconomicEventProxy.objects.get(pk=id)
         if economic_event:
-            user_agent = AgentUser.objects.get(user=context.user).agent
+            user_agent = AgentUser.objects.get(user=info.context.user).agent
             is_authorized = user_agent.is_authorized(object_to_mutate=economic_event)
             if is_authorized:
                 economic_event.delete_api()

@@ -18,7 +18,7 @@ class Query(object): #graphene.AbstractType):
 
     all_places = graphene.List(Place)
 
-    def resolve_place(self, args, *rargs):
+    def resolve_place(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id is not None:
             place = Location.objects.get(pk=id)
@@ -26,7 +26,7 @@ class Query(object): #graphene.AbstractType):
                 return place
         return None
 
-    def resolve_all_places(self, args, context, info):
+    def resolve_all_places(self, context, **args): #args, context, info):
         return Location.objects.all()
 
 

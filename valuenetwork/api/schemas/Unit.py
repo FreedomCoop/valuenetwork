@@ -16,7 +16,7 @@ class Query(object): #graphene.AbstractType):
 
     all_units = graphene.List(Unit)
 
-    def resolve_unit(self, args, *rargs):
+    def resolve_unit(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id is not None:
             unit = UnitProxy.objects.get(pk=id)
@@ -26,5 +26,5 @@ class Query(object): #graphene.AbstractType):
 
     # load all items
 
-    def resolve_all_units(self, args, context, info):
+    def resolve_all_units(self, context, **args): #args, context, info):
         return UnitProxy.objects.all()

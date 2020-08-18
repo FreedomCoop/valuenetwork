@@ -17,7 +17,7 @@ class Query(object): #graphene.AbstractType):
 
     all_process_classifications = graphene.List(ProcessClassification)
 
-    def resolve_process_classification(self, args, *rargs):
+    def resolve_process_classification(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id is not None:
             pt = ProcessType.objects.get(pk=id)
@@ -25,5 +25,5 @@ class Query(object): #graphene.AbstractType):
                 return pt
         return None
 
-    def resolve_all_process_classifications(self, args, context, info):
+    def resolve_all_process_classifications(self, context, **args): #args, context, info):
         return ProcessType.objects.all()

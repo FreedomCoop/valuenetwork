@@ -21,7 +21,7 @@ class Query(object): #graphene.AbstractType):
 
     # load single item
 
-    def resolve_plan(self, args, *rargs):
+    def resolve_plan(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id is not None:
             plan = Order.objects.get(pk=id)
@@ -31,7 +31,7 @@ class Query(object): #graphene.AbstractType):
 
     # load all items
 
-    def resolve_all_plans(self, args, context, info):
+    def resolve_all_plans(self, context, **args): #args, context, info):
         return Order.objects.rand_orders()
 
 
@@ -43,8 +43,8 @@ class CreatePlan(AuthedMutation):
 
     plan = graphene.Field(lambda: Plan)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         name = args.get('name')
         due = args.get('due')
         note = args.get('note')
@@ -57,10 +57,10 @@ class CreatePlan(AuthedMutation):
             name=name,
             due_date=due,
             description=note,
-            created_by=context.user,
+            created_by=info.context.user,
         )
 
-        user_agent = AgentUser.objects.get(user=context.user).agent
+        user_agent = AgentUser.objects.get(user=info.context.user).agent
         is_authorized = user_agent.is_authorized(object_to_mutate=plan)
         if is_authorized:
             plan.save()
@@ -79,8 +79,8 @@ class CreatePlanFromRecipe(AuthedMutation):
 
     plan = graphene.Field(lambda: Plan)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         produces_resource_classification_id = args.get('produces_resource_classification_id')
         due = args.get('due')
         name = args.get('name')
@@ -89,10 +89,10 @@ class CreatePlanFromRecipe(AuthedMutation):
         rc = EconomicResourceType.objects.get(pk=produces_resource_classification_id)
         scope = rc.main_producing_process_type().context_agent
 
-        user_agent = AgentUser.objects.get(user=context.user).agent
+        user_agent = AgentUser.objects.get(user=info.context.user).agent
         is_authorized = user_agent.is_authorized(context_agent_id=scope.id)
         if is_authorized:
-            plan = rc.generate_mfg_work_order(order_name=name, due_date=due, created_by=context.user)
+            plan = rc.generate_mfg_work_order(order_name=name, due_date=due, created_by=info.context.user)
             if note:
                 plan.description = note
                 plan.save()
@@ -111,8 +111,8 @@ class UpdatePlan(AuthedMutation):
 
     plan = graphene.Field(lambda: Plan)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         id = args.get('id')
         name = args.get('name')
         due = args.get('due')
@@ -128,7 +128,7 @@ class UpdatePlan(AuthedMutation):
                 due_date = datetime.datetime.strptime(due, '%Y-%m-%d').date()
                 plan.due_date=due_date
 
-            user_agent = AgentUser.objects.get(user=context.user).agent
+            user_agent = AgentUser.objects.get(user=info.context.user).agent
             is_authorized = user_agent.is_authorized(object_to_mutate=plan)
             if is_authorized:
                 plan.save()
@@ -144,13 +144,13 @@ class DeletePlan(AuthedMutation):
 
     plan = graphene.Field(lambda: Plan)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         id = args.get('id')
         plan = Order.objects.get(pk=id)
         if plan:
             if plan.is_deletable():
-                user_agent = AgentUser.objects.get(user=context.user).agent
+                user_agent = AgentUser.objects.get(user=info.context.user).agent
                 is_authorized = user_agent.is_authorized(object_to_mutate=plan)
                 if is_authorized:
                     plan.delete_api()

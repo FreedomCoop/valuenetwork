@@ -17,7 +17,7 @@ class Query(object): #graphene.AbstractType):
     all_organization_classifications = graphene.List(OrganizationClassification)
 
 
-    def resolve_organization_classification(self, args, *rargs):
+    def resolve_organization_classification(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id is not None:
             oc = AgentType.objects.get(pk=id)
@@ -25,5 +25,5 @@ class Query(object): #graphene.AbstractType):
                 return oc
         return None
 
-    def resolve_all_organization_classifications(self, args, context, info):
+    def resolve_all_organization_classifications(self, context, **args): #args, context, info):
         return AgentType.objects.exclude(party_type="individual")

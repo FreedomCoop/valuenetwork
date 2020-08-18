@@ -23,7 +23,7 @@ class AgentRelationshipRole(DjangoObjectType):
 
     class Meta:
         model = AgentAssociationType
-        fields = ('id', 'label', 'inverse_label')
+        fields = ('id', 'label', 'inverse_label', 'name', 'plural_name')
 
     def resolve_category(self, args, *rargs):
         return self.category

@@ -35,8 +35,9 @@ class Query(object): #graphene.AbstractType):
         raise PermissionDenied("Cannot find requested agent")
 
     def resolve_agent(self, context, **args): #args, *rargs):
-        #print(ide)
         id = args.get('id') #ide.id
+        print('ID: '+str(self.agent))
+
         if id is not None:
             agent = EconomicAgent.objects.get(pk=id)
             if agent:
@@ -64,8 +65,8 @@ class CreateOrganization(AuthedMutation):
 
     organization = graphene.Field(lambda: Organization)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         #import pdb; pdb.set_trace()
         name = args.get('name')
         image = args.get('image')
@@ -100,10 +101,10 @@ class CreateOrganization(AuthedMutation):
             primary_location = location,
             phone_primary = primary_phone,
             email = email,
-            created_by=context.user,
+            created_by=info.context.user,
         )
 
-        user_agent = AgentUser.objects.get(user=context.user).agent
+        user_agent = AgentUser.objects.get(user=info.context.user).agent
         is_authorized = user_agent.is_authorized(object_to_mutate=agent)
         if is_authorized:
             agent.save()
@@ -124,8 +125,8 @@ class CreatePerson(AuthedMutation):
 
     person = graphene.Field(lambda: Person)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         #import pdb; pdb.set_trace()
         name = args.get('name')
         image = args.get('image')
@@ -158,10 +159,10 @@ class CreatePerson(AuthedMutation):
             primary_location = location,
             phone_primary = primary_phone,
             email = email,
-            created_by=context.user,
+            created_by=info.context.user,
         )
 
-        user_agent = AgentUser.objects.get(user=context.user).agent
+        user_agent = AgentUser.objects.get(user=info.context.user).agent
         is_authorized = user_agent.is_authorized(object_to_mutate=agent)
         if is_authorized:
             agent.save()
@@ -181,8 +182,8 @@ class UpdatePerson(AuthedMutation):
 
     person = graphene.Field(lambda: Person)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         id = args.get('id')
         name = args.get('name')
         image = args.get('image')
@@ -203,7 +204,7 @@ class UpdatePerson(AuthedMutation):
             if email:
                 agent.email = email
 
-            user_agent = AgentUser.objects.get(user=context.user).agent
+            user_agent = AgentUser.objects.get(user=info.context.user).agent
             is_authorized = user_agent.is_authorized(object_to_mutate=agent)
             if is_authorized:
                 agent.save()
@@ -223,8 +224,8 @@ class UpdateOrganization(AuthedMutation):
 
     organization = graphene.Field(lambda: Organization)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         id = args.get('id')
         name = args.get('name')
         image = args.get('image')
@@ -245,7 +246,7 @@ class UpdateOrganization(AuthedMutation):
             if email:
                 agent.email = email
 
-            user_agent = AgentUser.objects.get(user=context.user).agent
+            user_agent = AgentUser.objects.get(user=info.context.user).agent
             is_authorized = user_agent.is_authorized(object_to_mutate=agent)
             if is_authorized:
                 agent.save()
@@ -261,13 +262,13 @@ class DeletePerson(AuthedMutation):
 
     person = graphene.Field(lambda: Person)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         id = args.get('id')
         agent = EconomicAgent.objects.get(pk=id)
         if agent:
             if agent.is_deletable():
-                user_agent = AgentUser.objects.get(user=context.user).agent
+                user_agent = AgentUser.objects.get(user=info.context.user).agent
                 #is_authorized = user_agent.is_authorized(context_agent_id=agent.id) TODO: what should be the rule?
                 #if is_authorized:
                 agent.delete()
@@ -284,13 +285,13 @@ class DeleteOrganization(AuthedMutation):
 
     organization = graphene.Field(lambda: Organization)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         id = args.get('id')
         agent = EconomicAgent.objects.get(pk=id)
         if agent:
             if agent.is_deletable():
-                user_agent = AgentUser.objects.get(user=context.user).agent
+                user_agent = AgentUser.objects.get(user=info.context.user).agent
                 #is_authorized = user_agent.is_authorized(context_agent_id=agent.id) TODO: what should be the rule?
                 #if is_authorized:
                 agent.delete()

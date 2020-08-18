@@ -17,7 +17,7 @@ class Query(object): #graphene.AbstractType):
     all_agent_relationship_roles = graphene.List(AgentRelationshipRole)
 
 
-    def resolve_agent_relationship_role(self, args, *rargs):
+    def resolve_agent_relationship_role(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id is not None:
             arr = AgentAssociationType.objects.get(pk=id)
@@ -25,5 +25,5 @@ class Query(object): #graphene.AbstractType):
                 return arr
         return None
 
-    def resolve_all_agent_relationship_roles(self, args, context, info):
+    def resolve_all_agent_relationship_roles(self, context, **args): #args, context, info):
         return AgentAssociationType.objects.all()

@@ -16,11 +16,10 @@ class Query(object): #graphene.AbstractType):
 
     # resolvers
 
-    def resolve_fulfillment(self, args, *rargs):
+    def resolve_fulfillment(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id is not None:
             ff = FulfillmentProxy.objects.get(pk=id)
             if ff:
                 return ff
         return None
-

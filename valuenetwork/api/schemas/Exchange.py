@@ -18,7 +18,7 @@ class Query(object): #graphene.AbstractType):
 
     # load single item
 
-    def resolve_exchange_agreement(self, args, *rargs):
+    def resolve_exchange_agreement(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id is not None:
             exchange = Exchange.objects.get(pk=id)
@@ -28,5 +28,5 @@ class Query(object): #graphene.AbstractType):
 
     # load all items
 
-    def resolve_all_exchange_agreements(self, args, context, info):
+    def resolve_all_exchange_agreements(self, context, **args): #args, context, info):
         return Exchange.objects.all()

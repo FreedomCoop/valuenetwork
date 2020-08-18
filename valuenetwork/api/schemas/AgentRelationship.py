@@ -23,7 +23,7 @@ class Query(object): #graphene.AbstractType):
 
     all_agent_relationships = graphene.List(AgentRelationship)
 
-    def resolve_agent_relationship(self, args, *rargs):
+    def resolve_agent_relationship(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id is not None:
             ar = AgentAssociation.objects.get(pk=id)
@@ -31,7 +31,7 @@ class Query(object): #graphene.AbstractType):
                 return ar
         return None
 
-    def resolve_all_agent_relationships(self, args, context, info):
+    def resolve_all_agent_relationships(self, context, **args): #args, context, info):
         return AgentAssociation.objects.all()
 
 
@@ -44,8 +44,8 @@ class CreateAgentRelationship(AuthedMutation):
 
     agent_relationship = graphene.Field(lambda: AgentRelationship)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         subject_id = args.get('subject_id')
         object_id = args.get('object_id')
         relationship_id = args.get('relationship_id')
@@ -61,7 +61,7 @@ class CreateAgentRelationship(AuthedMutation):
             description=note,
         )
 
-        user_agent = AgentUser.objects.get(user=context.user).agent
+        user_agent = AgentUser.objects.get(user=info.context.user).agent
         is_authorized = user_agent.is_authorized(object_to_mutate=agent_relationship)
         if is_authorized:
             agent_relationship.save()
@@ -81,8 +81,8 @@ class UpdateAgentRelationship(AuthedMutation):
 
     agent_relationship = graphene.Field(lambda: AgentRelationship)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         id = args.get('id')
         subject_id = args.get('subject_id')
         object_id = args.get('object_id')
@@ -100,7 +100,7 @@ class UpdateAgentRelationship(AuthedMutation):
             if note:
                 agent_relationship.description = note
 
-            user_agent = AgentUser.objects.get(user=context.user).agent
+            user_agent = AgentUser.objects.get(user=info.context.user).agent
             is_authorized = user_agent.is_authorized(object_to_mutate=agent_relationship)
             if is_authorized:
                 agent_relationship.save()

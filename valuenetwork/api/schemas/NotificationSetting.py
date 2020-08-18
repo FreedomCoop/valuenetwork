@@ -24,7 +24,7 @@ class Query(object): #graphene.AbstractType):
 
     all_notification_types = graphene.List(NotificationType)
 
-    def resolve_notification_setting(self, args, *rargs):
+    def resolve_notification_setting(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id is not None:
             notice = NoticeSetting.objects.get(pk=id)
@@ -32,10 +32,10 @@ class Query(object): #graphene.AbstractType):
                 return notice
         return None
 
-    def resolve_all_notification_settings(self, args, context, info):
+    def resolve_all_notification_settings(self, context, **args): #args, context, info):
         return NoticeSetting.objects.all()
 
-    def resolve_notification_type(self, args, *rargs):
+    def resolve_notification_type(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id is not None:
             notice = NoticeType.objects.get(pk=id)
@@ -43,7 +43,7 @@ class Query(object): #graphene.AbstractType):
                 return notice
         return None
 
-    def resolve_all_notification_types(self, args, context, info):
+    def resolve_all_notification_types(self, context, **args): #args, context, info):
         nts = NoticeType.objects.all()
         admin_nt_labels = ["work_skill_suggestion", "comment_join_request", "comment_membership_request", "work_new_account", "work_join_request", "work_membership_request"]
         show_nts = []
@@ -61,8 +61,8 @@ class CreateNotificationSetting(AuthedMutation):
 
     notification_setting = graphene.Field(lambda: NotificationSetting)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         agent_id = args.get('agent_id')
         notification_type_id = args.get('notification_type_id')
         send = args.get('send')
@@ -71,7 +71,7 @@ class CreateNotificationSetting(AuthedMutation):
             agent = EconomicAgent.objects.get(pk=agent_id)
             user = agent.my_user()
         else:
-            user = context.user
+            user = info.context.user
         notification_type = NoticeType.objects.get(pk=notification_type_id)
         notification_setting = NoticeSetting(
             send=send,
@@ -80,11 +80,11 @@ class CreateNotificationSetting(AuthedMutation):
         )
 
         #non-standard auth
-        user_agent = AgentUser.objects.get(user=context.user).agent
+        user_agent = AgentUser.objects.get(user=info.context.user).agent
         is_authorized = False
         if user_agent.is_superuser():
             is_authorized = True
-        if user == context.user:
+        if user == info.context.user:
             is_authorized = True
         if is_authorized:
             notification_setting.save()
@@ -101,8 +101,8 @@ class UpdateNotificationSetting(AuthedMutation):
 
     notification_setting = graphene.Field(lambda: NotificationSetting)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         id = args.get('id')
         send = args.get('send')
 
@@ -111,11 +111,11 @@ class UpdateNotificationSetting(AuthedMutation):
             notification_setting.send = send
 
             #non-standard auth
-            user_agent = AgentUser.objects.get(user=context.user).agent
+            user_agent = AgentUser.objects.get(user=info.context.user).agent
             is_authorized = False
             if user_agent.is_superuser():
                 is_authorized = True
-            if notification_setting.user == context.user:
+            if notification_setting.user == info.context.user:
                 is_authorized = True
             if is_authorized:
                 notification_setting.save()

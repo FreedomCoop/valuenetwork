@@ -24,5 +24,5 @@ class QuantityValue(DjangoObjectType):
         model = QuantityValueProxy
         fields = ('numeric_value', 'unit')
 
-    def resolve_unit(self, args, *rargs):
+    def resolve_unit(self, context, **args): #args, *rargs):
         return self.unit

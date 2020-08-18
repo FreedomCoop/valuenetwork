@@ -18,7 +18,7 @@ class Query(object): #graphene.AbstractType):
 
     # load single item
 
-    def resolve_transfer(self, args, *rargs):
+    def resolve_transfer(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id is not None:
             transfer = TransferProxy.objects.get(pk=id)
@@ -28,5 +28,5 @@ class Query(object): #graphene.AbstractType):
 
     # load all items
 
-    def resolve_all_transfers(self, args, context, info):
+    def resolve_all_transfers(self, context, **args): #args, context, info):
         return TransferProxy.objects.all()

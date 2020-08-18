@@ -23,8 +23,8 @@ class NotificationSetting(DjangoObjectType):
         model = NoticeSetting
         fields = ('id', 'send')
 
-    def resolve_agent(self, args, *rargs):
+    def resolve_agent(self, context, **args): #args, *rargs):
         return formatAgent(self.user.agent.agent)
 
-    def resolve_notification_type(self, args, *rargs):
+    def resolve_notification_type(self, context, **args): #args, *rargs):
         return self.notice_type

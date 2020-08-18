@@ -19,7 +19,7 @@ class Query(object): #graphene.AbstractType):
 
     # resolve methods
 
-    def resolve_quantity_value(self, args, *rargs):
+    def resolve_quantity_value(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id is not None:
             qv = QuantityValueProxy.objects.get(pk=id)

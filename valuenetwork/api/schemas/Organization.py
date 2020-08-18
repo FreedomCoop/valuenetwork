@@ -51,7 +51,7 @@ class Query(object): #graphene.AbstractType):
 
     # load any organisation
 
-    def resolve_organization(self, args, context, info):
+    def resolve_organization(self, context, **args): #args, context, info):
         id = args.get('id')
         if id is not None:
             org = EconomicAgent.objects.get(pk=id)
@@ -64,12 +64,12 @@ class Query(object): #graphene.AbstractType):
 
     # load all organizations
 
-    def resolve_all_organizations(self, args, context, info):
+    def resolve_all_organizations(self, context, **args): #args, context, info):
         return formatAgentList(EconomicAgent.objects.exclude(agent_type__party_type="individual"))
 
     # organizations with Freedom Coop filtering options
 
-    def resolve_fc_organizations(self, args, context, info):
+    def resolve_fc_organizations(self, context, **args): #args, context, info):
         joining_style = args.get("joining_style")
         visibility = args.get("visibility")
         orgs = Project.objects.all()
@@ -86,5 +86,5 @@ class Query(object): #graphene.AbstractType):
 
     organization_types = graphene.List(OrganizationType)
 
-    def resolve_organization_types(self, args, context, info):
+    def resolve_organization_types(self, context, **args): #args, context, info):
         return AgentType.objects.exclude(party_type="individual")

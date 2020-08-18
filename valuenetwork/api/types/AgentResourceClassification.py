@@ -18,8 +18,8 @@ class AgentResourceClassification(DjangoObjectType):
         model = AgentResourceType
         fields = ('id',)
 
-    def resolve_agent(self, args, *rargs):
+    def resolve_agent(self, context, **args): #args, *rargs):
         return formatAgent(self.agent)
 
-    def resolve_resource_classification(self, args, *rargs):
+    def resolve_resource_classification(self, context, **args): #args, *rargs):
         return self.resource_type

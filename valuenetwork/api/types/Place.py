@@ -20,8 +20,8 @@ class Place(DjangoObjectType):
 
     place_agents = graphene.List(lambda: types.Agent)
 
-    def resolve_place_resources(self, args, context, info):
+    def resolve_place_resources(self, context, **args): #args, context, info):
         return self.resources()
 
-    def resolve_place_agents(self, args, context, info):
+    def resolve_place_agents(self, context, **args): #args, context, info):
         return formatAgentList(self.agents())

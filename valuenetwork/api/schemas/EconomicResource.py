@@ -3,7 +3,7 @@
 #
 
 import graphene
-from valuenetwork.valueaccounting.models import EconomicResource as EconomicResourceProxy, EconomicResourceType, AgentUser, Location
+from valuenetwork.valueaccounting.models import EconomicResource as EconomicResourceProxy, EconomicResourceType, AgentUser, Location, EconomicAgent
 from valuenetwork.api.types.EconomicResource import EconomicResource
 from six import with_metaclass
 from django.contrib.auth.models import User
@@ -19,6 +19,8 @@ class Query(object): #graphene.AbstractType):
                                        id=graphene.Int())
 
     all_economic_resources = graphene.List(EconomicResource)
+
+    agent_economic_resources = graphene.List(EconomicResource, agent_id=graphene.Int())
 
     #not implementing this yet, unclear if we ever will want everything in an instance, instead of by agent
     #search_economic_resources = graphene.List(EconomicResource,
@@ -36,7 +38,21 @@ class Query(object): #graphene.AbstractType):
         return None
 
     def resolve_all_economic_resources(self, context, **args): #args, context, info):
-        resources = EconomicResourceProxy.objects.all()
+        print("resolve_all_economic_resources?")
+        resources = EconomicResourceProxy.objects.agent_economic_resources(context)
+        #for resource in resources:
+            #resource.current_quantity = self._current_quantity(quantity=resource.quantity, unit=resource.unit)
+        return resources
+
+    def resolve_agent_economic_resources(self, context, **args): #args, context, info):
+        print("resolve_agent_economic_resources?")
+        id = args.get('agent_id')
+        resources = None
+        if id is not None:
+            agent = EconomicAgent.objects.get(pk=id)
+            if agent:
+                resources = agent.agent_resource_roles.values('resource') #EconomicResourceProxy.objects.agent_economic_resources(context)
+                                # .resource_relationships.
         #for resource in resources:
             #resource.current_quantity = self._current_quantity(quantity=resource.quantity, unit=resource.unit)
         return resources
@@ -79,7 +95,7 @@ class CreateEconomicResource(AuthedMutation):
             photo_url=image,
             identifier=tracking_identifier,
             notes=note,
-            created_by=context.user,
+            created_by=info.context.user,
             #location
         )
         economic_resource.save()
@@ -122,9 +138,9 @@ class UpdateEconomicResource(AuthedMutation):
                 economic_resource.resource_type=EconomicResourceType.objects.get(pk=resource_classified_as_id)
             if current_location_id:
                 economic_resource.current_location=Location.objects.get(pk=current_location_id)
-            economic_resource.changed_by=context.user
+            economic_resource.changed_by=info.context.user
 
-            user_agent = AgentUser.objects.get(user=context.user).agent
+            user_agent = AgentUser.objects.get(user=info.context.user).agent
             is_authorized = user_agent.is_authorized(object_to_mutate=economic_resource)
             if is_authorized:
                 economic_resource.save()

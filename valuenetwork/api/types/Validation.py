@@ -19,8 +19,8 @@ class Validation(DjangoObjectType):
         fields = ('id', 'validation_date', 'note')
 
 
-    def resolve_validated_by(self, args, *rargs):
+    def resolve_validated_by(self, context, **args): #args, *rargs):
         return formatAgent(self.validated_by)
 
-    def resolve_economic_event(self, args, *rargs):
+    def resolve_economic_event(self, context, **args): #args, *rargs):
         return self.event
