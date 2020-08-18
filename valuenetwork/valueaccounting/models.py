@@ -5536,6 +5536,12 @@ class EconomicResourceManager(models.Manager):
     def all_economic_resources(self):
         return EconomicResource.objects.all()
 
+    def agent_economic_resources(self, agent):
+        if agent:
+            return agent.resource_relationships.values('resource')
+        loger.debug("- Missing agent context!")
+        print("- Missing agent context!")
+        return None
     #def search(self, agent_id=None, search_string):
     #    agent = None
     #    if agent_id:
