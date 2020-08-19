@@ -250,6 +250,24 @@ def remove_exponent(num):
         print("Is a FLOAT?? "+str(num))
     return num
 
+def set_lang_defaults(agent):
+
+    if not agent.name_en and agent.name:
+        agent.name_en = agent.name
+    if not agent.nick_en and agent.nick:
+        agent.nick_en = agent.nick
+    if not agent.email_en and agent.email:
+        agent.email_en = agent.email
+    if not agent.url_en and agent.url:
+        agent.url_en = agent.url
+    if not agent.phone_primary_en and agent.phone_primary:
+        agent.phone_primary_en = agent.phone_primary
+    if not agent.photo_url_en and agent.photo_url:
+        agent.photo_url_en = agent.photo_url
+    if not agent.address_en and agent.address:
+        agent.address_en = agent.address
+
+    return agent
 
 
 """

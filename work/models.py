@@ -592,7 +592,7 @@ class JoinRequest(models.Model):
 
     agent = models.ForeignKey(EconomicAgent,
         verbose_name=_('agent'), related_name='project_join_requests',
-        blank=True, null=True, on_delete=models.SET_NULL,
+        blank=True, null=True, on_delete=models.CASCADE,
         help_text=_("this join request became this EconomicAgent"))
 
     fobi_data = models.OneToOneField(SavedFormDataEntry,
@@ -694,12 +694,13 @@ class JoinRequest(models.Model):
         self.items_data = None
         if self.fobi_data and self.fobi_data.pk:
             self.entries = SavedFormDataEntry.objects.filter(pk=self.fobi_data.pk).select_related('form_entry')
-            entry = self.entries[0]
-            self.data = json.loads(entry.saved_data)
-            self.items = list(self.data.items())
-            self.items_data = []
-            for key in self.fobi_items_keys():
-                self.items_data.append(self.data.get(key))
+            if self.entries:
+                entry = self.entries[0]
+                self.data = json.loads(entry.saved_data)
+                self.items = self.data.items()
+                self.items_data = []
+                for key in self.fobi_items_keys():
+                    self.items_data.append(self.data.get(key))
         return self.items_data
 
     def payment_regularity(self):
@@ -2615,6 +2616,23 @@ class JoinRequest(models.Model):
                 pass
             if not agent.is_individual():
                 agent.is_context=True
+
+            # or import utils set_lang_defaults(agent) avoiding the circular import
+            if not agent.name_en and agent.name:
+                agent.name_en = agent.name
+            if not agent.nick_en and agent.nick:
+                agent.nick_en = agent.nick
+            if not agent.email_en and agent.email:
+                agent.email_en = agent.email
+            if not agent.url_en and agent.url:
+                agent.url_en = agent.url
+            if not agent.phone_primary_en and agent.phone_primary:
+                agent.phone_primary_en = agent.phone_primary
+            if not agent.photo_url_en and agent.photo_url:
+                agent.photo_url_en = agent.photo_url
+            if not agent.address_en and agent.address:
+                agent.address_en = agent.address
+
             agent.save()
             self.agent = agent
             self.save()
@@ -5097,4 +5115,3 @@ def migrate_freedomcoop_memberships(**kwargs):
 
 post_migrate.connect(migrate_freedomcoop_memberships)
 """
-

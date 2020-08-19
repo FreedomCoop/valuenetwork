@@ -1898,6 +1898,8 @@ def members_agent(request, agent_id):
                 usr.email = agent.email
                 usr.save()
 
+        # ensure the english string is set
+        agent = set_lang_defaults(agent)
 
         agent.save()
         #print("- saved agent "+str(agent))
@@ -2068,6 +2070,10 @@ def members_agent(request, agent_id):
 
     dups = check_duplicate_agents(request, agent)
 
+    fixes = check_empty_langs(request, agent)
+    if fixes:
+        print("Fixed "+str(fixes)+" emapty strings for agent: "+agent.name)
+
     asso_childs = agent.has_associates.filter(association_type__association_behavior__in=['child','peer'], state="active").count() #.order_by(Lower('is_associate__name'))
     asso_chil = agent.has_associates.filter(association_type__association_behavior__in=['child','peer'], state="active").first()
     if user_is_agent or user_agent in agent.managers():
@@ -2087,6 +2093,20 @@ def members_agent(request, agent_id):
 
     asso_states = ['active','inactive','potential']
     asso_behaviors = [i[0] for i in ASSOCIATION_BEHAVIOR_CHOICES]
+
+    if hasattr(agent, 'project') and agent.project.is_moderated():
+        if not agent.email and user_agent in agent.managers():
+            messages.error(request, _("Please provide an email for the project to use as a remitent for the moderated joining process notifications!"))
+        proshacct = agent.project.shares_account_type()
+        for ass in has_associations:
+            ag = ass.is_associate
+            ag.jn_reqs = ag.project_join_requests.filter(project=agent.project)
+            ag.oldshares = ag.owned_shares(agent)
+            ag.newshares = 0
+            acc = ag.owned_shares_accounts(proshacct)
+            if acc:
+                ag.newshares = int(acc[0].price_per_unit)
+
 
     assobj = {'childs':asso_childs,
               'chil':asso_chil,
@@ -2144,6 +2164,7 @@ def members_agent(request, agent_id):
         "units": Unit.objects.filter(unit_type='value').exclude(name_en__icontains="share"),
     })
 
+
 @login_required
 def view_agents_list(request, agent_id):
     assocs = None
@@ -2192,6 +2213,111 @@ def view_agents_list(request, agent_id):
             'user_agent': user_agent,
             'no_shares': ['child', 'peer']
         })
+
+
+def check_empty_langs(request, agent):
+    fixed = 0
+    if agent.photo_url == 'None':
+        agent.photo_url = ''
+        agent.save()
+        print("Fixed 'None' as string in the photo_url (now is '') ! "+agent.name)
+        loger.info("Fixed 'None' as string in the photo_url (now is '') ! "+agent.name)
+
+    for lan, nom in settings.LANGUAGES:
+        #print('lan: '+lan+'  name: '+getattr(agent, 'name_'+lan, 'EMPTY?'))
+        imgurl = getattr(agent, 'photo_url_'+lan, None)
+        if imgurl == 'None':
+            setattr(agent, 'photo_url_'+lan, agent.photo_url)
+            agent.save()
+            print("Fixed 'None' as string in the photo_url (now is '"+agent.photo_url+"') ! "+agent.name)
+            loger.info("Fixed 'None' as string in the photo_url (now is '"+agent.photo_url+"') ! "+agent.name)
+
+        if not getattr(agent, 'name_'+lan, None):
+            langs = settings.LANGUAGES[:]
+            langs.remove((lan, nom))
+            for ln, nm in langs:
+                nam = getattr(agent, 'name_'+ln, None)
+                if nam and not getattr(agent, 'name_'+lan, None):
+                    setattr(agent, 'name_'+lan, nam)
+                    agent.save()
+                    loger.info("FIXED 'name_"+lan+"' from 'name_"+ln+"'! "+nam)
+                    messages.warning(request, "FIXED 'name_"+lan+"' from 'name_"+ln+"' ! "+nam)
+                    fixed += 1
+
+        if not getattr(agent, 'nick_'+lan, None):
+            langs = settings.LANGUAGES[:]
+            langs.remove((lan, nom))
+            for ln, nm in langs:
+                nam = getattr(agent, 'nick_'+ln, None)
+                if nam and not getattr(agent, 'nick_'+lan, None):
+                    setattr(agent, 'nick_'+lan, nam)
+                    agent.save()
+                    loger.info("FIXED 'nick_"+lan+"' from 'nick_"+ln+"'! "+nam)
+                    messages.warning(request, "FIXED 'nick_"+lan+"' from 'nick_"+ln+"' ! "+nam)
+                    fixed += 1
+
+        if not getattr(agent, 'email_'+lan, None):
+            langs = settings.LANGUAGES[:]
+            langs.remove((lan, nom))
+            for ln, nm in langs:
+                nam = getattr(agent, 'email_'+ln, None)
+                if nam and not getattr(agent, 'email_'+lan, None):
+                    setattr(agent, 'email_'+lan, nam)
+                    agent.save()
+                    loger.info("FIXED 'email_"+lan+"' from 'email_"+ln+"'! "+nam)
+                    messages.warning(request, "FIXED 'email_"+lan+"' from 'email_"+ln+"' ! "+nam)
+                    fixed += 1
+
+        if not getattr(agent, 'url_'+lan, None):
+            langs = settings.LANGUAGES[:]
+            langs.remove((lan, nom))
+            for ln, nm in langs:
+                nam = getattr(agent, 'url_'+ln, None)
+                if nam and not getattr(agent, 'url_'+lan, None):
+                    setattr(agent, 'url_'+lan, nam)
+                    agent.save()
+                    loger.info("FIXED 'url_"+lan+"' from 'url_"+ln+"'! "+nam)
+                    messages.warning(request, "FIXED 'url_"+lan+"' from 'url_"+ln+"' ! "+nam)
+                    fixed += 1
+
+        if not getattr(agent, 'photo_url_'+lan, None):
+            langs = settings.LANGUAGES[:]
+            langs.remove((lan, nom))
+            for ln, nm in langs:
+                nam = getattr(agent, 'photo_url_'+ln, None)
+                if nam and not getattr(agent, 'photo_url_'+lan, None):
+                    setattr(agent, 'photo_url_'+lan, nam)
+                    agent.save()
+                    loger.info("FIXED 'photo_url_"+lan+"' from 'photo_url_"+ln+"'! "+nam)
+                    messages.warning(request, "FIXED 'photo_url_"+lan+"' from 'photo_url_"+ln+"' ! "+nam)
+                    fixed += 1
+
+        if not getattr(agent, 'phone_primary_'+lan, None):
+            langs = settings.LANGUAGES[:]
+            langs.remove((lan, nom))
+            for ln, nm in langs:
+                nam = getattr(agent, 'phone_primary_'+ln, None)
+                if nam and not getattr(agent, 'phone_primary_'+lan, None):
+                    setattr(agent, 'phone_primary_'+lan, nam)
+                    agent.save()
+                    loger.info("FIXED 'phone_primary_"+lan+"' from 'phone_primary_"+ln+"'! "+nam)
+                    messages.warning(request, "FIXED 'phone_primary_"+lan+"' from 'phone_primary_"+ln+"' ! "+nam)
+                    fixed += 1
+
+        if not getattr(agent, 'address_'+lan, None):
+            langs = settings.LANGUAGES[:]
+            langs.remove((lan, nom))
+            for ln, nm in langs:
+                nam = getattr(agent, 'address_'+ln, None)
+                if nam and not getattr(agent, 'address_'+lan, None):
+                    setattr(agent, 'address_'+lan, nam)
+                    agent.save()
+                    loger.info("FIXED 'address_"+lan+"' from 'address_"+ln+"'! "+nam)
+                    messages.warning(request, "FIXED 'address_"+lan+"' from 'address_"+ln+"' ! "+nam)
+                    fixed += 1
+
+    return fixed
+
 
 
 @login_required
@@ -2599,8 +2725,8 @@ def repair_duplicate_agents(request, agent):
         for co in copis:
             users = co.users.all()
             if users and request.user.is_superuser:
-                if len(users) > 1 or not str(users[0].user) == str(co.nick):
-                    usrs = ' (user'+('s!' if len(users)>1 else '')+': '+(', '.join([str(us.user) for us in users]))+')'
+                if len(users) > 1 or not unicode(users[0].user) == unicode(co.nick):
+                    usrs = ' (user'+('s!' if len(users)>1 else '')+': '+(', '.join([unicode(us.user) for us in users]))+')'
                 else:
                     usrs = ' (=user)'
             else:

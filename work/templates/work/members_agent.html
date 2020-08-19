@@ -264,15 +264,27 @@
             {% endif %}
 
             {% if user.is_staff and agent.is_deletable %}
-                <form
-                    style="display: inline;"
-                    class="delete-agent-form indent"
-                    id="deleteAgentForm"
-                    action="{% url "delete_agent" agent_id=agent.id %}"
-                    method="POST" >
-                    {% csrf_token %}
-                    <button style="display: inline;"  class="btn btn-warning btn-mini" title="Delete Agent" >{% trans "Delete" %}</button>
-                </form>
+                {% if agent.project_join_requests.count == 1 and user_agent in agent.project_join_requests.first.project.agent.managers %}
+                    <form
+                        style="display: inline;"
+                        class="delete-agent-form indent"
+                        id="deleteRequestAgentUserForm"
+                        action="{% url "delete_request_agent_and_user" join_request_id=agent.project_join_requests.first.id %}"
+                        method="POST" >
+                        {% csrf_token %}
+                        <button style="display: inline;"  class="btn btn-warning btn-mini" title="Delete Agent, User and Request" >{% trans "Delete Agent+User+Request" %}</button>
+                    </form>
+                {% else %}
+                    <form
+                        style="display: inline;"
+                        class="delete-agent-form indent"
+                        id="deleteAgentForm"
+                        action="{% url "delete_agent" agent_id=agent.id %}"
+                        method="POST" >
+                        {% csrf_token %}
+                        <button style="display: inline;"  class="btn btn-warning btn-mini" title="Delete Agent" >{% trans "Delete Agent" %}</button>
+                    </form>
+                {% endif %}
             {% endif %}
 
             {% if False and user.is_staff and user_form %}
@@ -429,7 +441,7 @@
                       {% if agent.photo and photo_size %}
                         {% if agent.photo.readable %}
                           <img src="{% thumbnail agent.photo photo_size %}" style="width:auto; max-width:100%;" />
-                        {% elif agent.photo.url %}
+                        {% elif agent.photo.url and not agent.photo.url == 'None' %}
                           <img src="{{ agent.photo.url }}" style="width:auto; max-width:100%;" />
                         {% else %}
                           <span class="error">{% trans "Error: can't read the image." %}</span>
@@ -442,13 +454,13 @@
                         <a href="#uploadPicture" role="button" class="btn btn-primary btn-mini" data-toggle="modal"
                            style="float:right; margin-top:5px;">{% if agent.photo or agent.photo_url %}{% trans "Change" %}{% else %}{% trans "Set" %}{% endif %}</a>
 
-                        {% if not agent.photo_url == agent.photo_url_en %}
+                        {% if not agent.photo_url == agent.photo_url_en and agent.photo_url_en %}
                           <br><span class="small">(en: <img src="{{ agent.photo_url_en }}" /> )</span>
                         {% endif %}
-                        {% if not agent.photo_url == agent.photo_url_es %}
+                        {% if not agent.photo_url == agent.photo_url_es and agent.photo_url_es %}
                           <br><span class="small">(es: <img src="{{ agent.photo_url_es }}" /> )</span>
                         {% endif %}
-                        {% if not agent.photo_url == agent.photo_url_ca %}
+                        {% if not agent.photo_url == agent.photo_url_ca and agent.photo_url_ca %}
                           <br><span class="small">(ca: <img src="{{ agent.photo_url_ca }}" /> )</span>
                         {% endif %}
                       {% endif %}
