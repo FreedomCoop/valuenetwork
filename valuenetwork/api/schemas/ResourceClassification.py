@@ -38,7 +38,7 @@ class Query(object): #graphene.AbstractType):
     all_facets = graphene.List(Facet)
 
 
-    def resolve_resource_classification(self, args, *rargs):
+    def resolve_resource_classification(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id is not None:
             rt = EconomicResourceType.objects.get(pk=id)
@@ -46,14 +46,14 @@ class Query(object): #graphene.AbstractType):
                 return rt
         return None
 
-    def resolve_all_resource_classifications(self, args, context, info):
+    def resolve_all_resource_classifications(self, context, **args): #args, context, info):
         return EconomicResourceType.objects.all()
 
-    def resolve_resource_classifications_by_process_category(self, args, context, info):
+    def resolve_resource_classifications_by_process_category(self, context, **args): #args, context, info):
         cat = args.get('category')
         return EconomicResourceType.objects.filter(behavior=cat)
 
-    def resolve_resource_classifications_by_action(self, args, context, info):
+    def resolve_resource_classifications_by_action(self, context, **args): #args, context, info):
         action = args.get('action')
         if action == Action.WORK:
             return EconomicResourceType.objects.filter(behavior="work")
@@ -69,11 +69,11 @@ class Query(object): #graphene.AbstractType):
             return EconomicResourceType.objects.filter(Q(behavior="produced")|Q(behavior="used")|Q(behavior="cited")|Q(behavior="consumed"))
         return None
 
-    def resolve_resource_classifications_by_facet_values(self, args, context, info):
+    def resolve_resource_classifications_by_facet_values(self, context, **args): #args, context, info):
         fvs = args.get('facet_values')
         return EconomicResourceType.objects.resource_types_by_facet_values(fvs)
 
-    def resolve_facet(self, args, *rargs):
+    def resolve_facet(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id:
             facet = FacetProxy.objects.get(pk=id)
@@ -81,9 +81,9 @@ class Query(object): #graphene.AbstractType):
                 return facet
         return None
 
-    def resolve_all_facets(self, args, context, info):
+    def resolve_all_facets(self, context, **args): #args, context, info):
         return FacetProxy.objects.all()
 
-    def resolve_all_recipes(self, args, context, info):
+    def resolve_all_recipes(self, context, **args): #args, context, info):
         return EconomicResourceType.objects.resource_types_with_recipes()
 

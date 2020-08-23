@@ -1539,7 +1539,7 @@ class EconomicAgent(models.Model):
                 if shr:
                     rt = shr.resource_type
               if not rt:
-                if tx.transfer_type == ex.ttpay() and ex.join_request:
+                if tx.transfer_type == ex.ttpay() and hasattr(ex, 'join_request') and ex.join_request:
                     #print("TX: "+str(ex.join_request.payment_unit()))
                     rt = ex.join_request.payment_unit_rt()
               if rt:
@@ -2183,13 +2183,13 @@ class AgentUser(models.Model):
 
 
 ASSOCIATION_BEHAVIOR_CHOICES = (
-    ('supplier', 'supplier'),
-    ('customer', 'customer'),
+    ('manager', 'manager'),
+    ('custodian', 'custodian'),
     ('member', 'member'),
     ('child', 'child'),
-    ('custodian', 'custodian'),
-    ('manager', 'manager'),
-    ('peer', 'peer')
+    ('peer', 'peer'),
+    ('supplier', 'supplier'),
+    ('customer', 'customer')
 )
 
 class AgentAssociationTypeManager(models.Manager):
@@ -9275,9 +9275,74 @@ class Exchange(models.Model):
                 slot.total_com_unit = slot.total_unit
             elif hasattr(self, 'join_request'):
                 pass #print(#"has jreq, is ok? "+str(self))
-            else:
-              print("- don't find rts? ex:"+str(self.id)+" slot:"+str(slot.id)+" "+str(slot)+" tot:"+str(slot.total)+" tot_com:"+str(slot.total_com)+" com_unit:"+str(slot.total_com_unit))
-              loger.info("- don't find rts? ex:"+str(self.id)+" slot:"+str(slot.id)+" "+str(slot)+" tot:"+str(slot.total)+" tot_com:"+str(slot.total_com)+" com_unit:"+str(slot.total_com_unit))
+
+            for tr in self.transfers.all():
+                if tr.transfer_type == slot:
+                    for ev in tr.events.all():
+                        if ev.resource:
+                            if not slot.total_unit:
+                                slot.total_unit = str(ev.resource)
+                            else:
+                                if not str(slot.total_unit).lower() in str(ev.resource).lower() and not str(ev.resource).lower() in str(slot.total_unit).lower():
+                                    if isinstance(slot.total_unit, Unit) and not slot.total_unit.name_en == 'Each':
+                                        slot.total_unit = str(slot.total_unit.abbrev)+' of '+str(ev.resource)
+                                    elif not '<em' in str(slot.total_unit):
+                                        slot.total_unit = str(slot.total_unit)+' of '+str(ev.resource)
+                            if isinstance(slot.total_unit, Unit) and not slot.total_unit.name_en in ['Each','Hours']:
+                                slot.total_unit = str(slot.total_unit.abbrev)+' of '+str(ev.resource)
+                            print("-- transf evt res: "+str(ev.resource))
+                        elif ev.resource_type:
+                            if not slot.total_unit:
+                                slot.total_unit = str(ev.resource_type)
+                            else:
+                                if not str(slot.total_unit).lower() in str(ev.resource_type).lower() and not str(ev.resource_type).lower() in str(slot.total_unit).lower():
+                                    if isinstance(slot.total_unit, Unit) and not slot.total_unit.name_en in ['Each','Hours']:
+                                        slot.total_unit = str(slot.total_unit.abbrev)+' of '+str(ev.resource_type)
+                                        slot.total_com_unit = slot.total_unit
+                                    elif not '<em' in str(slot.total_unit):
+                                        slot.total_unit = str(slot.total_unit)+' of '+str(ev.resource_type)
+                            if isinstance(slot.total_unit, Unit) and not slot.total_unit.name_en == 'Each':
+                                slot.total_unit = str(slot.total_unit.abbrev)+' of '+str(ev.resource_type)
+                            print("-- transf evt resTyp: "+str(ev.resource_type))
+                        if ev.description:
+                            slot.total_unit = str(slot.total_unit)+' <em class="inlist small">'+ev.description+'</em>'
+
+                    if slot.total_unit and not slot.total_com_unit:
+                        slot.total_com_unit = slot.total_unit
+                    #print("- transf coms: "+str(tr.commitments.all()))
+                    for ev in tr.commitments.all():
+                        if ev.resource:
+                            if not slot.total_com_unit:
+                                slot.total_com_unit = str(ev.resource)
+                            else:
+                                if not str(slot.total_com_unit).lower() in str(ev.resource).lower() and not str(ev.resource).lower() in str(slot.total_com_unit).lower():
+                                    if isinstance(slot.total_com_unit, Unit):
+                                        slot.total_com_unit = str(slot.total_com_unit.abbrev)+' of '+str(ev.resource)
+                                    elif not '<em' in str(slot.total_com_unit):
+                                        slot.total_com_unit = str(slot.total_com_unit)+' of '+str(ev.resource)
+                            #if isinstance(slot.total_com_unit, Unit):
+                            #    slot.total_com_unit = str(slot.total_com_unit.abbrev)+' of '+str(ev.resource)
+                            print("-- transf com res: "+str(ev.resource))
+                        elif ev.resource_type:
+                            if not slot.total_com_unit:
+                                slot.total_com_unit = str(ev.resource_type)
+                            else:
+                                if not str(ev.resource_type).lower() in str(slot.total_com_unit).lower():
+                                  if str(slot.total_com_unit).lower() in str(ev.resource_type).lower():
+                                    slot.total_com_unit = str(ev.resource_type)
+                                  else:
+                                    if isinstance(slot.total_com_unit, Unit):
+                                        slot.total_com_unit = str(slot.total_com_unit.abbrev)+' of '+str(ev.resource_type)
+                                    elif not '<em' in str(slot.total_com_unit):
+                                        slot.total_com_unit = str(slot.total_com_unit)+' of '+str(ev.resource_type)
+                            #if isinstance(slot.total_com_unit, Unit):
+                            #    slot.total_com_unit = str(slot.total_com_unit.abbrev)+' of '+str(ev.resource_type)
+                            print("-- transf("+str(tr.id)+") com("+str(ev.id)+") resTyp: "+str(ev.resource_type))
+                        if ev.description:
+                            slot.total_com_unit = str(slot.total_com_unit)+' <em class="inlist small">'+ev.description+'</em>'
+
+                print("- don't find rts? ex:"+str(self.id)+" slot:"+str(slot.id)+" "+str(slot)+" tot:"+str(slot.total)+" tot_com:"+str(slot.total_com)+" com_unit:"+str(slot.total_com_unit))
+                loger.info("- don't find rts? ex:"+str(self.id)+" slot:"+str(slot.id)+" "+str(slot)+" tot:"+str(slot.total)+" tot_com:"+str(slot.total_com)+" com_unit:"+str(slot.total_com_unit))
 
             if not memslot:
               if slot.is_incoming(self, context_agent): #is_reciprocal:

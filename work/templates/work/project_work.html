@@ -21,6 +21,10 @@
   margin: 0;
 }
 
+input#id_start_date, input#id_end_date {
+    width: 110px;
+}
+
 li {
     list-style-type: none;
 }
@@ -100,7 +104,7 @@ h3 {
 }*/
 
 #todoModal textarea, .changeModal textarea, .commitmentModal textarea, .procModal textarea {
-  width: 400px;
+  /*width: 400px;*/
   height: 70px;
 }
 
@@ -191,50 +195,54 @@ th, td {
 {% block body_base %}
     <div class="container-fluid">
         {% include "_messages.html" %}
-	    <div>
-		    <legend>
-		        {% trans "Your projects tasks" %}
 
-                <div class="subnav">
+		<legend>
+		    {% trans "Your projects tasks" %}
 
-                    {% if request.user.is_staff %}<a class="indent" href="{% url "order_list" %}">{% trans "Open Orders" %}</a>{% endif %}
-                    <a class="indent" href="{% url "your_projects" %}">{% trans "Your Projects" %}</a>
-                </div>
-            </legend>
-
-	        <form id="dateForm" action="." method="POST" >
+            <div class="subnav">
+                {% if request.user.is_staff %}<a class="indent" href="{% url "order_list" %}">{% trans "Open Orders" %}</a>{% endif %}
+                <a class="indent" href="{% url "your_projects" %}">{% trans "Your Projects" %}</a>
+            </div>
+        </legend>
+        <div class="row no-gutters">
+            <div class="col-12">
+              <div class="miniform">
+              <form id="dateForm" action="." method="POST" >
                 {% csrf_token %}
-                <div id="div_id_start_date" class="control-group" style="display: inline;" >
-                    <label for="id_start_date" class="control-label required-field" style="display: inline; vertical-align: text-bottom;" >
-                        {% trans "Show work scheduled during " %}
+                <div class="row no-gutters">
+
+                <div id="div_id_start_date" class="col-md-auto col-sm-7 control-group" style="" >
+                    <label for="id_start_date" class="control-label required-field" style="display: contents; vertical-align: text-bottom;" >
+                        {% trans "Show work scheduled from" %}
                     </label>
-                    <div class="controls" style="display: inline;" >
+                    <div class="controls" style="display: inline; margin-right:5px;" >
                         {{ date_form.start_date }}
                     </div>
                 </div>
-                <div id="div_id_end_date" class="control-group" style="display: inline;" >
-                    <label for="id_end_date" class="control-label required-field" style="display: inline;  vertical-align: text-bottom; " >
-                        {% trans " through " %}
-                    </label>
-                    <div class="controls" style="display: inline;" >
-                        {{ date_form.end_date }}
-                    </div>
+                <div id="div_id_end_date" class="col-md-auto col-sm-5 control-group" style="margin-bottom: 10px;" >
+                    <label for="id_end_date" class="control-label required-field" style="display: contents;  vertical-align: text-bottom;" >
+                        {% trans "to" %}</label>&nbsp;<span class="controls" style="display: inline;" >{{ date_form.end_date }} &nbsp;</span>
                 </div>
-                <div id="div_id_context_agent" class="control-group" style="display: inline;" >
-                    <label for="id_context_agent" class="control-label" style="display: inline;  vertical-align: text-bottom; " >
+                <div id="div_id_context_agent" class="col-md-auto col-sm-12 control-group" style="display: inline;" >
+                    <label for="id_context_agent" class="control-label" style="display: contents;  vertical-align: text-bottom; " >
                         {% trans "for project" %}
                     </label>
                     <div class="controls" style="display: inline;" >
                         {{ ca_form.context_agent }}
                     </div>
                 </div>&nbsp;
-                <input type="submit" name="submit" class="btn btn-info" style="display: inline; vertical-align: top;" value="{% trans 'Reload' %}" />
+                <div class="col-12">
+                    <input type="submit" name="submit" class="btn btn-info" style="display: inline; vertical-align: top;" value="{% trans 'Reload' %}" />
+                    <a href=#todos id="todolink" style="float:right;"> Simple Tasks <span id="arrow">&#8595;</span></a>
+                </div>
+                </div>
+	          </form>
+              </div>
+            </div>
+        </div>
 
-                <a href=#todos id="todolink"> Simple Tasks <span id="arrow">&#8595;</span></a>
-
-	        </form>
-
-
+        <div class="row">
+            <div class="col-12">
               <div class="infobox">
                 <h3>
                   {% trans "Process Task List:" %}
@@ -265,9 +273,13 @@ th, td {
 
 
 						            <div class="modal hide fade procModal" id="procModal{{ process.id }}" tabindex="-1" role="dialog" aria-labelledby="proc-label" aria-hidden="true">
-							            <div class="modal-header">
-								            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+							          <div class="modal-dialog">
+                                      <div class="modal-content">
+                                        <div class="modal-header">
 								            <h3 id="proc-label">{% trans "Add Notes and Change Dates" %}</h3>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
 							            </div>
 							            <div class="modal-body">
 								            <form id="procForm{{ process.id }}" enctype="multipart/form-data" action="." method="POST" >
@@ -279,7 +291,9 @@ th, td {
 				                                <button class="btn btn-primary" id="chg-proc{{ process.id }}">{% trans "Save" %}</button>
 								              </div>
 								            </form>
-                          </div>
+                                        </div>
+                                      </div>
+                                      </div>
 						            </div>
                                   {% endif %}
 
@@ -342,10 +356,11 @@ th, td {
                       {% trans "No processes scheduled for this date range and project selection." %}
                    </div>
                 {% endif %}
+              </div>
+            </div>
+        </div>
 
-          </div>
-
-	        <div class="row-fluid" id="todos">
+	    <div class="row-fluid" id="todos">
 		  	    <div class="span12 todos infobox">
 			        <h3>
 			            {% trans "Simple Task List:" %}
@@ -356,25 +371,6 @@ th, td {
 								    {% trans "Add a task" %}
 							    </a>
 						    </div>
-
-						    <div class="modal hide fade todoModal" id="todoModal" tabindex="-1" role="dialog" aria-labelledby="todo-label" aria-hidden="true">
-							    <div class="modal-header">
-								    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-								    <h3 id="todo-label">{% trans "Add a task" %}</h3>
-							    </div>
-							    <div class="modal-body">
-
-								    <form class="todoForm" id="todoForm" action="{% url "work_add_todo" %}" method="POST" >
-									    {% csrf_token %}
-									    {{ todo_form|as_bootstrap }}
-									    <input type="hidden" name="next" value="{% url "project_work" %}" />
-								      <div class="modal-footer">
-									    <button class="btn" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
-									    <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Add" %}' />
-								      </div>
-								    </form>
-						      </div>
-						     </div>
 			            {% endif %}
 {% comment %}
 			            <a href="{% url "open_todos" %}">{% trans "Unfinished Tasks" %}</a>&nbsp;&nbsp;&nbsp;&nbsp;
@@ -506,9 +502,13 @@ th, td {
                                         {% endif %}
                                         {% if agent == todo.to_agent %}
                                             <div class="modal hide fade changeModal" id="changeModal-{{ todo.id }}" tabindex="-1" role="dialog" aria-labelledby="change-label" aria-hidden="true">
-				                                <div class="modal-header">
-					                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+				                              <div class="modal-dialog">
+                                              <div class="modal-content">
+                                                <div class="modal-header">
 					                                <h3 id="change-label">{% trans "Change task" %}</h3>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
 				                                </div>
 				                                <div class="modal-body">
 
@@ -521,7 +521,9 @@ th, td {
 						                                <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Change" %}' />
 					                                  </div>
 					                                </form>
-			                                  </div>
+			                                    </div>
+                                              </div>
+                                              </div>
 		                                    </div>
                                          {% endif %}
 	                                 </td>
@@ -532,13 +534,38 @@ th, td {
 		            </table>
 			    </div>
 
-		    </div>
+		</div>
+        {% if agent %}
+                <div class="modal hide fade" id="todoModal" tabindex="-1" role="dialog" aria-labelledby="todo-label" aria-hidden="true">
+					<div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+								    <h3 id="todo-label">{% trans "Add a task" %}</h3>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+							    </div>
+							    <div class="modal-body">
 
-	    </div>
-    </div>
+								    <form class="todoForm" id="todoForm" action="{% url "work_add_todo" %}" method="POST" >
+									    {% csrf_token %}
+									    {{ todo_form|as_bootstrap }}
+									    <input type="hidden" name="next" value="{% url "project_work" %}" />
+								      <div class="modal-footer">
+									    <button class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
+									    <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Add" %}' />
+								      </div>
+								    </form>
+						        </div>
+                            </div>
+                    </div>
+				</div>
+        {% endif %}
+	</div>
 {% endblock %}
 {% block extra_script %}
-    <script src="https://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+    <!-- <script src="https://code.jquery.com/ui/1.9.2/jquery-ui.js"></script> -->
+    <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
 	<script type="text/javascript" src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.10.0/jquery.validate.min.js"></script>
 	<script src="{% static 'js/chosen.jquery.js' %}"></script>
 {% endblock %}
@@ -552,15 +579,15 @@ th, td {
 
 		$('#work').addClass('active');
 
-    var ObjChosSingle = {
-        allow_single_deselect: true,
-        width: "250px",
-        disable_search_threshold: 6,
-    };
+        var ObjChosSingle = {
+            allow_single_deselect: true,
+            width: "250px",
+            disable_search_threshold: 6,
+        };
 
 		//$(".chzn-select").chosen( ObjChosSingle );
 
-		$("textarea").resizable();
+		//$("textarea").resizable();
 
 		$( "#help" ).toggle( function(){
             $('#help-content').show("slide", { direction: "right" }, "slow" );
@@ -573,7 +600,7 @@ th, td {
 		$('.date-entry').datepicker({ dateFormat: "yy-mm-dd" });
 
         // from https://stackoverflow.com/questions/9047703/fixed-position-navbar-obscures-anchors
-		$("body").on("click", "a", function() {
+		/*$("body").on("click", "a", function() {
             fromTop = 150;
             href = $(this).attr("href");
 
@@ -585,7 +612,7 @@ th, td {
                     return false;
                 }
             }
-        });
+        });*/
 
 		jQuery.validator.setDefaults({
 		    success: function(label) {
@@ -725,7 +752,7 @@ th, td {
 	}); // end document.ready
 
     $(".context-selector").change(getResourceTypes);
-	    
+
 	function getResourceTypes(event)
     {
         var selectedContext = event.target.value;
@@ -751,9 +778,9 @@ th, td {
                     $(resourceTypeFieldId).append('<option value="' + id + '">' + name + '</option>')
                 }
             });
-            
+
     }
-    
+
 	function saveTime(event)
 	{
         var timeInput = event.target;

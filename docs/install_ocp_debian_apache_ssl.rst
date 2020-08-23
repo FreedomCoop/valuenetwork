@@ -1,15 +1,18 @@
 This is a howto for installing ocp in a debian/ubuntu system.
 
-The ocp still runs on Python2 but the electrumfair wallet runs on Python3. We better create a 'ocp' linux user with py2 for the app and a 'wallet' linux user with py3 for the wallet.
+The ocp now runs on Python3 like the electrumfair wallet.
 
-- Install dependencies in the system: ::
-
-    sudo apt-get install virtualenv git libjpeg-dev zlib1g-dev build-essential gettext
-    sudo apt-get install python-setuptools python2.7-dev python-pil python-qt4
+#- Install dependencies in the system: ::
+#
+#    # sudo apt-get install virtualenv git libjpeg-dev zlib1g-dev build-essential gettext
+#    # sudo apt-get install python-setuptools python2.7-dev python-pil python-qt4
 
 - Install electrumfair and daemon dependencies in the system (python3): ::
 
-    sudo apt-get install python3-setuptools python3-pyqt5 python3-pip
+    sudo apt-get install python3-setuptools python3-pyqt5 python3-pip python3-venv npm git libapache2-mod-wsgi-py3
+
+- If you want to add a Faircoin Wallet service: ::
+
     sudo pip3 install https://download.faircoin.world/electrum/ElectrumFair-3.0.5.tar.gz
     sudo pip install jsonrpclib
 
@@ -42,35 +45,66 @@ Be carefull if you already have an electrum-fair wallet installed with the same 
 If daemon runs ok, *daemon_service status* returns *Running*.
 For ocp instances in production, better to move daemon_service to */etc/init.d/* and daemon.conf to */etc/*
 
-- Create virtual enviroment and update pip and setuptools: ::
+
+- With the 'ocp' user, create virtual enviroment, update pip and setuptools: ::
 
     cd [installation dir]
-    virtualenv env
+    python3 -m venv py3
     cd valuenetwork
-    source ../env/bin/activate
+    source ../py3/bin/activate
     pip install --upgrade pip
     pip install --upgrade setuptools
 
 - Install ocp python dependencies: ::
 
     pip install -U -r requirements.txt --trusted-host dist.pinaxproject.com
-    pip install --no-deps easy_thumbnails
-    pip install Image
 
 - Create database, load some data, run tests and start with dev server: ::
 
-    python manage.py makemigrations
-    python manage.py migrate
+    ./manage.py makemigrations
+    ./manage.py migrate
 
-(Note: these fixtures are broken now. Will be fixed, but in the meantime, get a test database from somebody.) ::
+- Create npm build system and compile css+js: ::
 
-    python manage.py loaddata ./fixtures/starters.json
-    python manage.py loaddata ./fixtures/help.json
+    npm install
+    npm run complie
+    npm run optimize
 
-    python manage.py test valuenetwork.valueaccounting.tests
-    python manage.py runserver
+- If static files are served from another directory when in production, you'll need to copy the npm results to the right place, e.g. (../static/): ::
+
+    cp static/dist/css/app.css ../static/css/app.css
+    cp static/dist/js/site.js ../static/js/site.js
+
+- Also every static file needs to be copied to the server's static folder with the same structure, e.g.: ::
+
+    cp -r ocp/static/css/* ../static/css/
+    cp -r ocp/static/js/* ../static/js/
+    cp -r ocp/static/img/* ../static/img/
+
+
+- To check all and run the tests: ::
+
+    ./manage.py check
+    ./manage.py test
+
+- To start a local server for development, the new way is (recompiling statics): ::
+
+    npm run dev
+
+and the old way (non recompiling), just in case: ::
+
+    ./manage.py runserver
 
 - Check everything is ok in http://127.0.0.1:8000 with web browser.
+
+- To load data in the db, the fixtures files are too old and will fail, but in the meantime, get a test database from somebody.
+
+- To add a superuser in an empty db: ::
+
+    ./manage.py createsuperuser
+
+
+If you are deplying in a server with apache:
 
 - Stop the dev web server: ctrl+c
 
@@ -101,7 +135,7 @@ Apache2 and wsgi configuration
 
 This is a sample of the file: ::
 
-    WSGIPythonPath /absolute/path/to/installation/valuenetwork:/absolute/path/to/installation/env/lib/python2.7/site-packages
+    WSGIPythonPath /absolute/path/to/installation/valuenetwork:/absolute/path/to/installation/py3/lib/python3.6/site-packages
 
     <IfModule mod_ssl.c>
         <VirtualHost _default_:443>
@@ -112,18 +146,18 @@ This is a sample of the file: ::
             ErrorLog ${APACHE_LOG_DIR}/error.log
             CustomLog ${APACHE_LOG_DIR}/access.log combined
 
-            WSGIScriptAlias / /absolute/path/to/installation/valuenetwork/valuenetwork/wsgi.py:/absolute/path/to/installation/env/lib/python2.7/site-packages
+            WSGIScriptAlias / /absolute/path/to/installation/valuenetwork/ocp/wsgi.py:/absolute/path/to/installation/py3/lib/python3.6/site-packages
 
             Alias /site_media/static/ /absolute/path/to/installation/static/
             Alias /static/ /absolute/path/to/installation/static/
 
-            <Directory /absolute/path/to/installation/valuenetwork/valuenetwork/>
+            <Directory /absolute/path/to/installation/valuenetwork/ocp/>
                 <Files wsgi.py>
                     Require all granted
                 </Files>
             </Directory>
 
-            <Directory /absolute/path/to/installation/env/lib/python2.7/site-packages/>
+            <Directory /absolute/path/to/installation/py3/lib/python3.6/site-packages/>
                 Require all granted
             </Directory>
 
@@ -137,12 +171,12 @@ This is a sample of the file: ::
 
 - Modify wsgi.py: ::
 
-    valuenetwork/wsgi.py
+    ocp/wsgi.py
 
 Add to the file: ::
 
     import sys
-    sys.path.append('/absolute/path/to/installation/env/lib/python2.7/site-packages')
+    sys.path.append('/absolute/path/to/installation/py3/lib/python3.6/site-packages')
     sys.path.append('/absolute/path/to/installation/valuenetwork/')
 
 If you get a *forbidden* error, make sure that apache has permission to access to the application, by checking directory and wsgi.py file permissions for user www-data and/or adding to /etc/apache2/apache2.conf: ::

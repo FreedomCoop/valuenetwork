@@ -57,37 +57,37 @@ class Commitment(DjangoObjectType):
     #def resolve_process(self, args, *rargs):
     #    return self.process
 
-    def resolve_input_of(self, args, *rargs):
+    def resolve_input_of(self, context, **args): #args, *rargs):
         return self.input_of
 
-    def resolve_output_of(self, args, *rargs):
+    def resolve_output_of(self, context, **args): #args, *rargs):
         return self.output_of
 
-    def resolve_provider(self, args, *rargs):
+    def resolve_provider(self, context, **args): #args, *rargs):
         return formatAgent(self.provider)
 
-    def resolve_receiver(self, args, *rargs):
+    def resolve_receiver(self, context, **args): #args, *rargs):
         return formatAgent(self.receiver)
 
-    def resolve_scope(self, args, *rargs):
+    def resolve_scope(self, context, **args): #args, *rargs):
         return formatAgent(self.scope)
 
-    def resolve_involves(self, args, *rargs):
+    def resolve_involves(self, context, **args): #args, *rargs):
         return self.involves
 
-    def resolve_resource_classified_as(self, args, *rargs):
+    def resolve_resource_classified_as(self, context, **args): #args, *rargs):
         return self.resource_classified_as
 
-    def resolve_committed_quantity(self, args, *rargs):
+    def resolve_committed_quantity(self, context, **args): #args, *rargs):
         return QuantityValueProxy(numeric_value=self.quantity, unit=self.unit_of_quantity)
 
-    def resolve_plan(self, args, *rargs):
+    def resolve_plan(self, context, **args): #args, *rargs):
         return self.independent_demand
 
-    def resolve_for_plan_deliverable(self, args, *rargs):
+    def resolve_for_plan_deliverable(self, context, **args): #args, *rargs):
         return self.order_item
 
-    def resolve_fulfilled_by(self, args, context, info):
+    def resolve_fulfilled_by(self, context, **args): #args, context, info):
         events = self.fulfillment_events.all()
         request_distribution = args.get('request_distribution')
         if request_distribution != None:
@@ -102,7 +102,7 @@ class Commitment(DjangoObjectType):
             fulfillments.append(fulfill)
         return fulfillments
 
-    def resolve_involved_agents(self, args, context, info):
+    def resolve_involved_agents(self, context, **args): #args, context, info):
         involved = []
         if self.provider:
             involved.append(formatAgent(self.provider))
@@ -112,17 +112,17 @@ class Commitment(DjangoObjectType):
                 involved.append(formatAgent(event.provider))
         return list(set(involved))
 
-    def resolve_is_deletable(self, args, *rargs):
+    def resolve_is_deletable(self, context, **args): #args, *rargs):
         return self.is_deletable()
 
-    def resolve_user_is_authorized_to_update(self, args, context, *rargs):
-        token = rargs[0].variable_values['token']
+    def resolve_user_is_authorized_to_update(self, context, **args): #args, context, *rargs):
+        token = args[0].variable_values['token']
         context.user = _authUser(token)
         user_agent = AgentUser.objects.get(user=context.user).agent
         return user_agent.is_authorized(object_to_mutate=self)
 
-    def resolve_user_is_authorized_to_delete(self, args, context, *rargs):
-        token = rargs[0].variable_values['token']
+    def resolve_user_is_authorized_to_delete(self, context, **args): #args, context, *rargs):
+        token = args[0].variable_values['token']
         context.user = _authUser(token)
         user_agent = AgentUser.objects.get(user=context.user).agent
         return user_agent.is_authorized(object_to_mutate=self)

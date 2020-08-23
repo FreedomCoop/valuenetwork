@@ -580,10 +580,11 @@ class JoinRequest(models.Model):
     name = models.CharField(_('Name'), max_length=255)
     surname = models.CharField(_('Surname (for individual join requests)'), max_length=255, blank=True)
     requested_username = models.CharField(_('Username'), max_length=32, help_text=_("If you have already an account in OCP, you can login before filling this form to have this project in the same account, or you can choose another username and email to have it separate."))
-    email_address = models.EmailField(_('Email address *'), max_length=96,)
+    email_address = models.EmailField(_('Email address'), max_length=96,)
     #    help_text=_("this field is optional, but we can't contact you via email without it"))
     phone_number = models.CharField(_('Phone number'), max_length=32, blank=True, null=True)
     address = models.CharField(_('Town/Region where you are based'), max_length=255, blank=True, null=True)
+    website = models.CharField(_('Website'), max_length=255, blank=True, null=True)
     #native_language = models.CharField(_('Languages'), max_length=255, blank=True)
 
     #description = models.TextField(_('Description'),
@@ -591,7 +592,7 @@ class JoinRequest(models.Model):
 
     agent = models.ForeignKey(EconomicAgent,
         verbose_name=_('agent'), related_name='project_join_requests',
-        blank=True, null=True, on_delete=models.SET_NULL,
+        blank=True, null=True, on_delete=models.CASCADE,
         help_text=_("this join request became this EconomicAgent"))
 
     fobi_data = models.OneToOneField(SavedFormDataEntry,
@@ -672,6 +673,9 @@ class JoinRequest(models.Model):
         fobi_keys = []
         if self.fobi_data and self.fobi_data.pk:
             self.entries = SavedFormDataEntry.objects.filter(pk=self.fobi_data.pk).select_related('form_entry')
+            if not self.entries:
+                loger.debug("++ jnreq:"+str(self.id)+" has no fobi entries ?? ++")
+                return fobi_keys
             entry = self.entries[0]
             form_headers = json.loads(entry.form_data_headers)
             for elem in self.fobi_data.form_entry.formelemententry_set.all().order_by('position'):
@@ -693,12 +697,13 @@ class JoinRequest(models.Model):
         self.items_data = None
         if self.fobi_data and self.fobi_data.pk:
             self.entries = SavedFormDataEntry.objects.filter(pk=self.fobi_data.pk).select_related('form_entry')
-            entry = self.entries[0]
-            self.data = json.loads(entry.saved_data)
-            self.items = list(self.data.items())
-            self.items_data = []
-            for key in self.fobi_items_keys():
-                self.items_data.append(self.data.get(key))
+            if self.entries:
+                entry = self.entries[0]
+                self.data = json.loads(entry.saved_data)
+                self.items = self.data.items()
+                self.items_data = []
+                for key in self.fobi_items_keys():
+                    self.items_data.append(self.data.get(key))
         return self.items_data
 
     def payment_regularity(self):
@@ -1282,7 +1287,7 @@ class JoinRequest(models.Model):
         pendamo = amountpay
         if shtype and amispay > 0 and amountpay:
             pendamo = decimal.Decimal(amountpay) - amispay
-        if pendamo < 0:
+        if not pendamo or pendamo < 0:
             pendamo = 0
         return round(pendamo, settings.CRYPTO_DECIMALS)
 
@@ -1903,12 +1908,15 @@ class JoinRequest(models.Model):
         unit_rt = self.payment_unit_rt()
         subtyp = self.project.subscription_rt()
         shtype = self.project.shares_type()
+        pendshrs = self.pending_shares()
         shrunit = None
         if account_type:
             shrunit = account_type.unit_of_price
         if shtype:
             shunit = shtype.unit_of_price
-            amount2 = shtype.price_per_unit * self.pending_shares()
+            amount2 = shtype.price_per_unit * pendshrs
+            if not pendshrs:
+                amount2 = 0
         elif subtyp:
             shunit = self.subscription_unit()
             amount2 = amount
@@ -2611,6 +2619,23 @@ class JoinRequest(models.Model):
                 pass
             if not agent.is_individual():
                 agent.is_context=True
+
+            # or import utils set_lang_defaults(agent) avoiding the circular import
+            if not agent.name_en and agent.name:
+                agent.name_en = agent.name
+            if not agent.nick_en and agent.nick:
+                agent.nick_en = agent.nick
+            if not agent.email_en and agent.email:
+                agent.email_en = agent.email
+            if not agent.url_en and agent.url:
+                agent.url_en = agent.url
+            if not agent.phone_primary_en and agent.phone_primary:
+                agent.phone_primary_en = agent.phone_primary
+            if not agent.photo_url_en and agent.photo_url:
+                agent.photo_url_en = agent.photo_url
+            if not agent.address_en and agent.address:
+                agent.address_en = agent.address
+
             agent.save()
             self.agent = agent
             self.save()
@@ -5093,4 +5118,3 @@ def migrate_freedomcoop_memberships(**kwargs):
 
 post_migrate.connect(migrate_freedomcoop_memberships)
 """
-

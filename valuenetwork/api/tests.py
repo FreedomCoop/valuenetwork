@@ -16,7 +16,7 @@ logger = logging.basicConfig()
 class MockContext:
     user = None
 
-@unittest.skip("API test skipping")
+#@unittest.skip("API test skipping")
 class APITest(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -27,12 +27,13 @@ class APITest(TestCase):
         django.setup()
 
     def setUp(self):
+        print("API test: setUp")
         # agent data
         at_person = AgentType.objects.get(name="Individual")
         at_org = AgentType.objects.get(name="Organization")
         aat_member = AgentAssociationType.objects.get(identifier="member")
         aat_supplier = AgentAssociationType.objects.get(identifier="supplier")
-        test_user, _ = User.objects.get_or_create(username='testUser11222')
+        test_user = User.objects.create_user('testUser11222','user@test.com', '123456') #, _ = User.objects.get_or_create(username='testUser11222')
         test_user.set_password('123456')
         test_user.save()
         test_agent, _ = EconomicAgent.objects.get_or_create(nick='testUser11222', agent_type=at_person)
@@ -390,7 +391,7 @@ class APITest(TestCase):
         proc3_e1.save()
 
     def test_basic_me_query(self):
-
+        print("API test: test_basic_me_query")
         result = schema.execute('''
         mutation {
           createToken(username: "testUser11222", password: "123456") {
@@ -413,6 +414,7 @@ class APITest(TestCase):
         self.assertEqual('testUser11222', result.data['viewer']['myAgent']['name'])
 
     def test_change_password(self):
+        print("API test: test_change_password")
 
         result = schema.execute('''
                 mutation {
@@ -436,11 +438,13 @@ class APITest(TestCase):
                 }
                 '''
         result = schema.execute(query)
+        #print("result: "+str(result))
         self.assertEqual(None, result.data['viewer'])
         self.assertTrue(len(result.errors) == 1)
         self.assertEqual('Invalid password', str(result.errors[0]))
 
     def test_agents_and_relationships(self):
+        print("API test: test_agents_and_relationships")
         result = schema.execute('''
                 mutation {
                   createToken(username: "testUser11222", password: "123456") {
@@ -515,6 +519,7 @@ class APITest(TestCase):
         self.assertEqual(role['label'], 'is member of')
 
     def test_resources_and_resource_types(self):
+        print("API test: test_resources_and_resource_types")
         result = schema.execute('''
                 mutation {
                   createToken(username: "testUser11222", password: "123456") {
@@ -576,6 +581,7 @@ class APITest(TestCase):
         self.assertEqual(prodres1['trackingIdentifier'], 'a-product')
 
     def test_agent_other_queries(self):
+        print("API test: test_agent_other_queries")
         result = schema.execute('''
                 mutation {
                   createToken(username: "testUser11222", password: "123456") {
@@ -638,6 +644,7 @@ class APITest(TestCase):
         self.assertEqual(plans[0]['name'], 'order1')
 
     def test_orders_processes_commitments_events(self):
+        print("API test: test_orders_processes_commitments_events")
         result = schema.execute('''
                 mutation {
                   createToken(username: "testUser11222", password: "123456") {
@@ -798,6 +805,7 @@ class APITest(TestCase):
         self.assertEqual(process['processClassifiedAs']['name'], 'pt1')
 
     def test_plan(self):
+        print("API test: test_plan")
         result = schema.execute('''
                 mutation {
                   createToken(username: "testUser11222", password: "123456") {
@@ -860,6 +868,7 @@ class APITest(TestCase):
         self.assertEqual(plans[0]['name'], 'order1')
 
     def test_notification_settings(self):
+        print("API test: test_notification_settings")
         result = schema.execute('''
                 mutation {
                   createToken(username: "testUser11222", password: "123456") {
@@ -923,6 +932,7 @@ class APITest(TestCase):
         self.assertEqual(notifSettings[0]['notificationType']['label'], "api_test")
 
     def test_create_update_delete_process(self):
+        print("API test: test_create_update_delete_process")
         result = schema.execute('''
                 mutation {
                   createToken(username: "testUser11222", password: "123456") {
@@ -934,6 +944,7 @@ class APITest(TestCase):
         token = call_result['token']
         test_agent = EconomicAgent.objects.get(name="testUser11222")
 
+        #print("token: "+str(token))
         result1 = schema.execute('''
                 mutation {
                   createProcess(token: "''' + token + '''", name: "Make something cool", plannedStart: "2017-07-07", plannedFinish: "2017-07-14", scopeId: 4, planId: 1) {
@@ -949,9 +960,9 @@ class APITest(TestCase):
                     }
                   }
                 }
-                ''', context_value=MockContext())
-        if not result1.data['createProcess']:
-            print("ERR: Can't find result1.data to assert: "+str(result1.data))
+                ''', context_value=test_agent.user()) #MockContext())
+        if not result1.data or not result1.data['createProcess']:
+            print("ERR: Can't find result1.data to assert: "+str(result1))
         self.assertEqual(result1.data['createProcess']['process']['name'], "Make something cool")
         self.assertEqual(result1.data['createProcess']['process']['scope']['name'], "org1")
         self.assertEqual(result1.data['createProcess']['process']['isFinished'], False)
@@ -974,8 +985,10 @@ class APITest(TestCase):
                             }
                         }
                     }
-                    ''', context_value=MockContext())
+                    ''', context_value=test_agent.user()) #MockContext())
 
+        if not result2.data or not result2.data['updateProcess']:
+            print("ERR: Can't find result2.data to assert: "+str(result2))
         self.assertEqual(result2.data['updateProcess']['process']['name'], "Make something cool")
         self.assertEqual(result2.data['updateProcess']['process']['scope']['name'], "org1")
         self.assertEqual(result2.data['updateProcess']['process']['isFinished'], True)
@@ -990,7 +1003,10 @@ class APITest(TestCase):
                             }
                         }
                     }
-                    ''', context_value=MockContext())
+                    ''', context_value=test_agent.user()) #MockContext())
+
+        if not result3.data or not result3.data['deleteProcess']:
+            print("ERR: Can't find result3.data to assert: "+str(result3))
 
         proc = None
         try:

@@ -5,11 +5,12 @@
 {% load bootstrap_tags %}
 {% load mptt_tags %}
 {% load filters %}
+{% load comments %}
 
 {% block head_title %}{% trans "Exchanges" %}{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="https://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" />
+<link rel="stylesheet" href="{% static 'css/jquery-ui.css' %}" /> <!-- https://code.jquery.com/ui/1.12.1/themes/base/ -->
 <link rel="stylesheet" href="{% static 'css/chosen.css' %}" />
 <link rel="stylesheet" href="{% static 'css/skin-lion/ui.fancytree.min.css' %}" />
 
@@ -164,6 +165,14 @@ small {
   font-size: 90%;
 }
 
+td.alignright {
+    text-align: right;
+}
+
+td {
+    line-height: 1.2em;
+}
+
 #exchangeTypeForm {
   /*min-height: 20px;*/
 }
@@ -223,6 +232,7 @@ hr {
   /*max-height: 97px;*/
 }
 .miniform {
+    margin-bottom: 0;
   /*margin-left: 0px;
   float: left;*/
 }
@@ -379,7 +389,7 @@ hr {
                 {% endif %}
               {% endif %}
               {% if request.user.agent.agent.need_projects %}
-                  <a class="indent" href="{% url "your_projects" %}">{% trans "Your Projects" %}</a>
+                  <!-- <a class="indent" href="{% url "your_projects" %}">{% trans "Your Projects" %}</a> -->
               {% endif %}
             </div>
         </legend>
@@ -551,31 +561,35 @@ hr {
         </h3>
         <table id="exchanges" style="width: 100%;" class="table table-bordered table-hover table-condensed cell-border order-column stripe" >
         <thead>
-            <th>{% trans "State" %}</th>
+            <th>{% trans "State" %} / {% trans "Actions" %}</th>
             <th>{% trans "Date" %}</th>
-            <th>{% trans "Action" %}</th>
             <th>{% trans "Agent" %}</th>
             <th class="give">{% trans "Give" %}<br/>
                 <span class="sub-th">{% trans "Qty" %}</span>
             </th>
             <th class="give"><br/><span class="sub-th">{% trans "Resource" %}</span></th>
             <th class="give"><br/><span class="sub-th">{% trans "Last date" %}</span></th>
-            <th class="receive">{% trans "Receive" %}<br/>
+            <th class="receive" style="padding-right:5px;">{% trans "Receive" %}<br/>
                 <span class="sub-th">{% trans "Qty" %}</span>
             </th>
             <th class="receive"><br/><span class="sub-th">{% trans "Resource" %}</span></th>
             <th class="receive"><br/><span class="sub-th">{% trans "Last date" %}</span></th>
         </thead>
         <tbody>
+        {% comment %}
         {% for x in exchanges %}
             {% if request.user.agent.agent in context_agent.managers or request.user.agent.agent == context_agent or request.user.is_superuser %}
                 <tr>
                     <td>
-
-                            <a href="{% url "exchange_logging_work" context_agent_id=context_agent.id exchange_type_id=0 exchange_id=x.id %}"
-                               class="{{ x.statuss }}" >
-                                {{ x.statuss|title }}
-                            </a>
+                        <a href="{% url "exchange_logging_work" context_agent_id=context_agent.id exchange_type_id=0 exchange_id=x.id %}"
+                           class="{{ x.statuss }}" >
+                            {{ x.statuss|title }}
+                        </a>
+                        {% if x.join_request %}
+                            {% get_comment_count for x.join_request as ncom %}
+                            <a href="{% url "project_feedback" agent_id=context_agent.id join_request_id=x.join_request.id %}"
+                               class="btn-mini-icon"><i class="icon-comment" style="margin: 2px 3px 0px -1px;"></i>{{ ncom }}</a>
+                        {% endif %}
 
                         {% if user == x.created_by or user.is_superuser%}
                             <!-- <a class="btn btn-info btn-mini" href="{% url "exchange_logging_work" context_agent_id=context_agent.id exchange_type_id=0 exchange_id=x.id %}">{% trans "Change" %}</a> -->
@@ -595,18 +609,6 @@ hr {
                     </td>
                     <td>
                         {{ x.start_date|date:"Y-m-d" }}
-                    </td>
-                    <td>
-                        {{ x.exchange_type|show_name:context_agent|safe }}
-                        {% if x.join_request %}
-                            {% trans "shares" %}
-                            <a href="{% url "project_feedback" agent_id=context_agent.id join_request_id=x.join_request.id %}"
-                               style="font-weight:bold;">
-                            {% trans "Request" %}
-                            </a>
-                        {% else %}
-
-                        {% endif %}
                     </td>
                     <td class="agent">
                         {% if x.join_request %}
@@ -693,7 +695,7 @@ hr {
                                   {% elif x.transfers.all|length == 1 %}
                                     {% with x.transfers.all|first as tx %}
                                       {% if tx.from_agent == context_agent %}
-                                        <span class="{{ tx.status }}">&#9679;</span>
+                                        <span class="{{ tx.status }}">&#9899;</span>
                                         {% if tx.quantity %}
                                             {{ tx.quantity }}
                                             {% if tx.actual_quantity and not tx.actual_quantity == tx.quantity %}({{ tx.actual_quantity }}){% endif %}
@@ -717,7 +719,7 @@ hr {
                         {% elif x.transfers.all %} tr!
                             {% for tx in x.transfers.all %}
                                 {% if tx.from_agent == context_agent or x.join_request.project.agent == context_agent and not tx.from_agent %}
-                                    <span class="{{ tx.status }}">&#9679;</span>
+                                    <span class="{{ tx.status }}">&#9899;</span>
                                         {% if tx.quantity %}
                                             {{ tx.quantity }}
                                             {% if tx.actual_quantity and not tx.actual_quantity == tx.quantity %}({{ tx.actual_quantity }}){% endif %}
@@ -772,7 +774,7 @@ hr {
                         {% if x.slots %}
                             {% for slot in x.slots %}
                                 {% if context_agent in slot.agents_from %}
-                                    <span class="{{ slot.status }}">&#9679;</span> {{ slot.last_date }}
+                                    <span class="{{ slot.status }}">&#9899;</span> {{ slot.last_date }}
                                 {% endif %}
                             {% endfor %}
                         {% endif %}
@@ -840,7 +842,7 @@ hr {
                         {% elif x.transfers.all %} tr!
                             {% for tx in x.transfers.all %}
                                 {% if tx.to_agent == context_agent or x.join_request.agent == context_agent and not tx.to_agent %}
-                                    <span class="{{ tx.status }}">&#9679;</span>
+                                    <span class="{{ tx.status }}">&#9899;</span>
                                     {% if tx.quantity %}
                                         {{ tx.quantity }}
                                         {% if tx.actual_quantity and not tx.actual_quantity == tx.quantity %}({{ tx.actual_quantity }}){% endif %}
@@ -891,7 +893,7 @@ hr {
                         {% if x.slots %}
                             {% for slot in x.slots %}
                                 {% if context_agent in slot.agents_to %}
-                                    <span class="{{ slot.status }}">&#9679;</span> {{ slot.last_date }}
+                                    <span class="{{ slot.status }}">&#9899;</span> {{ slot.last_date }}
                                 {% endif %}
                             {% endfor %}
                         {% endif %}
@@ -899,6 +901,7 @@ hr {
                 </tr>
             {% endif %}
 		{% endfor %}
+        {% endcomment %}
         </tbody>
         </table>
       {% endif %}
@@ -1268,18 +1271,20 @@ hr {
 {% endblock %}
 
 {% block extra_script %}
-	<!-- <script src="https://code.jquery.com/ui/1.9.2/jquery-ui.js"></script> -->
-  <script src="https://code.jquery.com/jquery-1.12.1.min.js"></script>
-  <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+	<!-- <script src="https://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+  <script src="https://code.jquery.com/jquery-1.12.1.min.js"></script> -->
+
+  <script src="{% static 'js/jquery-ui.min.js' %}"></script> <!-- https://code.jquery.com/ui/1.12.1/jquery-ui.min.js -->
   <script src="{% static 'js/chosen.jquery.js' %}"></script>
   <script src="{% static 'js/jquery.fancytree-all.min.js' %}"></script>
-  <script src="{% static 'js/ocp-trees.js' %}"></script>
+  <script type="text/javascript" charset="utf8" src="{% static 'js/ocp-trees.js' %}"></script>
+  <script type="text/javascript" charset="utf8" src="{% static 'js/jquery.expander.min.js' %}"></script>
 
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/r-2.2.5/datatables.min.css"/>
+<link rel="stylesheet" type="text/css" href="{% static 'css/datatables.min.css' %}"/> <!-- https://cdn.datatables.net/v/bs4/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/r-2.2.5/ -->
 
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/v/bs4/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/r-2.2.5/datatables.min.js"></script>
+<script type="text/javascript" src="{% static 'js/pdfmake.min.js' %}"></script> <!-- https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/ -->
+<script type="text/javascript" src="{% static 'js/vfs_fonts.js' %}"></script> <!-- https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/ -->
+<script type="text/javascript" src="{% static 'js/datatables.min.js' %}"></script> <!-- https://cdn.datatables.net/v/bs4/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/r-2.2.5/ -->
 
 {% endblock %}
 
@@ -1290,45 +1295,80 @@ hr {
 
   $(document).ready(function(){
 
-    $("#exchanges").DataTable({
-        stateSave: true,
-        autoWidth: true,
-        order: [[1, 'desc']],
-        dom: '<"col"rf><"row no-gutters"<"bigbox"t>><"row"<"col"l><"col"p><"col"B>>', //'B<"clear">lfrtip',
-        buttons: [
-            'colvis',
-            {
-                extend: 'pdf',
-                exportOptions: {
-                    columns: ':visible'
-                }
-            },
-            {
-                extend: 'csv',
-                exportOptions: {
-                    columns: ':visible'
-                }
-            },
-        ],
-        "columnDefs": [
-            {
-                // The `data` parameter refers to the data for the cell (defined by the
-                // `data` option, which defaults to the column being worked with, in
-                // this case `data: 0`.
-                "render": function ( data, type, row ) {
-                    //arr = data.split(', ');
-                    //if (arr.length == 2){
-                    //    return arr[1]+', '+arr[0];
-                    //} else {
-                    //    return data +' ('+ row+')';
-                    //}
-                    return data
-                },
-                "targets": 1
+    $("#exchanges")
+        .on( 'processing.dt', function ( e, settings, processing ) {
+            $('#exchanges_processing').css('border', '0').css('top','16px').css('left','167px').css( 'display', processing ? 'block' : 'none' );
+            $('.table-condensed').attr('style', processing ? 'pointer-events:none; opacity:0.5;' : 'pointer-events:inherit; opacity:1;');
+            if(!processing){
+                update_longs();
             }
-        ]
-    });
+        } )
+        .DataTable({
+            "stateSave": true,
+            "autoWidth": true,
+            "order": [[1, 'desc']],
+            "dom": '<"row no-gutters"<"col"ri><"col right alignright"l>><"row no-gutters bigbox"t><"row no-gutters"<"col left"p><"col"B>>',//'irftBpl', //'B<"clear">lfrtip',
+            "buttons": [
+                'colvis',
+                {
+                    extend: 'pdf',
+                    exportOptions: {
+                        columns: ':visible'
+                    }
+                },
+                {
+                    extend: 'csv',
+                    exportOptions: {
+                        columns: ':visible'
+                    }
+                },
+            ],
 
+            "lengthMenu": [[5, 10, 50, 100, 500], [5, 10, 50, 100, 500]],
+
+            "processing": true,
+            "serverSide": true,
+            "ajax": {
+                "url": "{% url 'exchange_list_json' agent_id=context_agent.id start=start end=end %}",
+                "type": "POST"
+            },
+            "language": {
+                "processing": "<img src='{% static 'img/loading.gif' %}' />"
+            },
+
+            "columns": [
+                { "orderable": false }, // actions
+                null, //{ "data": "exchange_date" },
+                { "orderable": false,
+                  "type": "html" }, //{ "data": "agent" },
+                { className: "alignright",
+                  "orderable": false }, //{ "data": "give_qty" },
+                { className: "textlong",
+                  "orderable": false }, //{ "data": "give_resource" },
+                { "orderable": false }, //{ "data": "give_lastdate" },
+                { className: "alignright",
+                  "orderable": false }, //{ "data": "receive_qty",
+                { className: "textlong",
+                  "orderable": false }, //{ "data": "receive_resource",
+                { "orderable": false }, //{ "data": "receive_lastdate",
+            ],
+        });
+
+    function update_longs(){
+        $('.textlong').each(function(e) {
+            $(this).expander({
+                    slicePoint:       50,  // default is 100
+                    expandSpeed: 0,
+                    expandEffect: 'show',
+                    collapseSpeed: 0,
+                    collapseEffect: 'hide',
+                    expandPrefix:     ' ', // default is '... '
+                    expandText:       '&nbsp; <span style="font-weight:bold">+</span>', // default is 'read more'
+                    userCollapseText: '&nbsp; <span style="font-weight:bold">&ndash;</span>'  // default is 'read less'
+            });
+        });
+    };
+    update_longs();
 
     $( "#help" ).toggle( function(){
         $('#help-content').show("slide", { direction: "right" }, "slow" );
@@ -1338,7 +1378,7 @@ hr {
         $( "#help" ).text("Show Help");
     });
 
-		$('.date-entry').datepicker({ dateFormat: "yy-mm-dd" });
+	$('.datepicker').datepicker({ dateFormat: "yy-mm-dd" });
 
     $('#tabs').removeAttr('style').tabs({
       classes: {

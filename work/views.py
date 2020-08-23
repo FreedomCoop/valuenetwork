@@ -1357,8 +1357,11 @@ def run_fdc_scripts(request, agent):
         raise ValidationError("This is only intended for Freedom Coop agent migration")
     fdc = agent
     if not hasattr(fdc, 'project'): return
-    #print("............ start run_fdc_scripts .............")
+    user_agent = get_agent(request)
+
+    print("............ start run_fdc_scripts ("+str(agent)+") .............")
     loger.info("............ start run_fdc_scripts ("+str(agent)+") .............")
+    user_agent = get_agent(request)
     acctyp = fdc.project.shares_account_type()
     shrtyp = fdc.project.shares_type()
     oldshr = EconomicResourceType.objects.membership_share()
@@ -1569,9 +1572,10 @@ def run_fdc_scripts(request, agent):
                                 loger.info("- Created new association as FdC candidate: "+str(agas))
                                 messages.info(request, "- Created new association as FdC candidate: "+str(agas))
                 else:
-                    print("- Found FdC shares of agent "+str(ag)+" (with a membership request) but not found any relation with FdC or its parent: SKIP repair")
-                    loger.info("- Found FdC shares of agent "+str(ag)+" (with a membership request) but not found any relation with FdC or its parent: SKIP repair")
-                    messages.warning(request, "- Found FdC shares of agent "+str(ag)+" (with a membership request) but not found any relation with FdC or its parent: SKIP repair")
+                    if user_agent == agent or user_agent in agent.managers() or request.user.is_staff:
+                        print("- Found FdC shares of agent "+str(ag)+" (with a membership request) but not found any relation with FdC or its parent: SKIP repair")
+                        loger.info("- Found FdC shares of agent "+str(ag)+" (with a membership request) but not found any relation with FdC or its parent: SKIP repair")
+                        messages.warning(request, "- Found FdC shares of agent "+str(ag)+" (with a membership request) but not found any relation with FdC or its parent: SKIP repair")
 
 
         else: # is found in candidates or participants
@@ -1638,7 +1642,7 @@ def run_fdc_scripts(request, agent):
     if pend and request.user.agent.agent in fdc.managers():
         messages.error(request, "Membership Requests pending to MIGRATE to the new generic JoinRequest system: <b>"+str(pend)+"</b>", extra_tags='safe')
 
-    #print("............ end run_fdc_scripts .............")
+    print("............ end run_fdc_scripts ("+str(agent)+") .............")
     loger.info("............ end run_fdc_scripts ("+str(agent)+") .............")
 
 
@@ -1668,11 +1672,11 @@ def your_projects(request):
         for aat in node.agent_association_types():
           #if aat.association_behavior != "child":
           aat.assoc_count = node.associate_count_of_type(aat.identifier)
-          assoc_list = node.all_has_associates_by_type(aat.identifier)
-          for assoc in assoc_list:
-            association = AgentAssociation.objects.filter(is_associate=assoc, has_associate=node, association_type=aat)[0]#
-            assoc.state = association.state
-          aat.assoc_list = assoc_list
+          #assoc_list = node.all_has_associates_by_type(aat.identifier)
+          #for assoc in assoc_list:
+          # association = AgentAssociation.objects.filter(is_associate=assoc, has_associate=node, association_type=aat)[0]#
+          # assoc.state = association.state
+          #aat.assoc_list = assoc_list
           if not aat in aats:
             aats.append(aat)
         node.aats = aats
@@ -1774,6 +1778,12 @@ def members_agent(request, agent_id):
         if req.project.agent == agent:
           user_agent.req = req
           break
+
+    user_agent.assos = user_agent.is_associate_of.filter(has_associate=agent)
+    if user_agent.assos:
+        if len(user_agent.assos) > 1:
+            print("- WARN: agent with multiple Relations with the context! "+str(user_agent.assos))
+            loger.warning("- WARN: agent with multiple Relations with the context! "+str(user_agent.assos))
 
     try:
         project = agent.project
@@ -1889,6 +1899,8 @@ def members_agent(request, agent_id):
                 usr.email = agent.email
                 usr.save()
 
+        # ensure the english string is set
+        agent = set_lang_defaults(agent)
 
         agent.save()
         #print("- saved agent "+str(agent))
@@ -1916,9 +1928,13 @@ def members_agent(request, agent_id):
     if not agent.username():
         init = {"username": agent.nick,}
         user_form = UserCreationForm(initial=init)
-    has_associations = agent.all_has_associates().order_by('association_type__name', 'state', Lower('is_associate__name'))
-    is_associated_with = agent.all_is_associates().order_by('association_type__name', 'state', Lower('is_associate__name'))
+
     assn_form = AssociationForm(agent=agent)
+
+    is_associated_with = agent.all_is_associates().order_by('association_type__name', 'state', Lower('is_associate__name'))
+
+    has_associations = None #agent.all_has_associates().order_by('association_type__name', 'state', Lower('is_associate__name'))
+
 
     headings = []
     member_hours_recent = []
@@ -1934,6 +1950,9 @@ def members_agent(request, agent_id):
     et_work = EventType.objects.get(name="Time Contribution")
 
     if agent.is_individual():
+
+        has_associations = agent.has_associates.all().order_by('association_type__name', 'state', Lower('is_associate__name'))
+
         contributions = agent.given_events.filter(is_contribution=True)
         agents_stats = {}
         for ce in contributions:
@@ -1965,12 +1984,16 @@ def members_agent(request, agent_id):
                 skill.thanks = True
 
     elif agent.is_context_agent():
+
+        #has_associations = agent.has_associates.all()
+
         try:
           fobi_name = get_object_or_404(FormEntry, slug=agent.project.fobi_slug)
           entries = agent.project.join_requests.filter(agent__isnull=True, state='new').order_by('request_date')
         except:
           entries = []
 
+        """
         subs = agent.with_all_sub_agents()
         end = datetime.date.today()
         #end = end - datetime.timedelta(days=77)
@@ -2022,6 +2045,7 @@ def members_agent(request, agent_id):
                 member_hours_roles.append(row)
             member_hours_roles.sort(key=lambda x: x[0])
             roles_height = len(member_hours_roles) * 20
+        """
 
     #artwork = get_object_or_404(Artwork_Type, clas="Material")
     add_skill_form = AddUserSkillForm(agent=agent, data=request.POST or None)
@@ -2047,43 +2071,54 @@ def members_agent(request, agent_id):
 
     dups = check_duplicate_agents(request, agent)
 
-    asso_childs = []
-    asso_declin = []
-    asso_candid = []
-    asso_coords = []
-    asso_members = []
+    fixes = check_empty_langs(request, agent)
+    if fixes:
+        print("Fixed "+str(fixes)+" emapty strings for agent: "+agent.name)
+
+    asso_childs = agent.has_associates.filter(association_type__association_behavior__in=['child','peer'], state="active").count() #.order_by(Lower('is_associate__name'))
+    asso_chil = agent.has_associates.filter(association_type__association_behavior__in=['child','peer'], state="active").first()
+    if user_is_agent or user_agent in agent.managers():
+        asso_declin = agent.has_associates.filter(state="inactive").count() #.order_by(Lower('is_associate__name'))
+        asso_decl = agent.has_associates.filter(state="inactive").first()
+        asso_candid = agent.has_associates.filter(state="potential").count() #.order_by(Lower('is_associate__name'))
+        asso_cand = agent.has_associates.filter(state="potential").first()
+    else:
+        asso_declin = 0
+        asso_decl = None
+        asso_candid = 0
+        asso_cand = None
+    asso_coords = agent.has_associates.filter(association_type__association_behavior__in=['manager','custodian'], state="active").count() #.order_by(Lower('is_associate__name'))
+    asso_coor = agent.has_associates.filter(association_type__association_behavior__in=['manager','custodian'], state="active").first()
+    asso_members = agent.has_associates.filter(association_type__association_behavior='member', state="active").count() #.order_by(Lower('is_associate__name'))
+    asso_memb = agent.has_associates.filter(association_type__association_behavior='member', state="active").first()
+
+    asso_states = ['active','inactive','potential']
+    asso_behaviors = [i[0] for i in ASSOCIATION_BEHAVIOR_CHOICES]
 
     if hasattr(agent, 'project') and agent.project.is_moderated():
         if not agent.email and user_agent in agent.managers():
             messages.error(request, _("Please provide an email for the project to use as a remitent for the moderated joining process notifications!"))
-        proshacct = agent.project.shares_account_type()
-        for ass in has_associations:
-            ag = ass.is_associate
-            ag.jn_reqs = ag.project_join_requests.filter(project=agent.project)
-            ag.oldshares = ag.owned_shares(agent)
-            ag.newshares = 0
-            acc = ag.owned_shares_accounts(proshacct)
-            if acc:
-                ag.newshares = int(acc[0].price_per_unit)
-
-            if ass.state == 'inactive':
-                asso_declin.append(ass)
-            elif ass.state == 'potential':
-                asso_candid.append(ass)
-            elif ass.state == 'active':
-                if ass.association_type.association_behavior in ['manager', 'custodian'] or ass.association_type.identifier == 'manager':
-                    asso_coords.append(ass)
-                elif ass.association_type.association_behavior == 'member':
-                    asso_members.append(ass)
-                else:
-                    asso_childs.append(ass)
 
     assobj = {'childs':asso_childs,
+              'chil':asso_chil,
               'declins':asso_declin,
+              'decl':asso_decl,
               'candids':asso_candid,
+              'cand':asso_cand,
               'coords':asso_coords,
-              'members':asso_members
-             }
+              'coor':asso_coor,
+              'members':asso_members,
+              'memb':asso_memb,
+              'behaviors':asso_behaviors,
+              'states':asso_states}
+
+    if not has_associations:
+        has_associations = asso_childs + asso_members + asso_candid + asso_declin
+
+    if hasattr(agent, 'project') and agent.project.is_moderated():
+        if not agent.email and user_agent in agent.managers():
+            messages.error(request, _("Please provide an email for the project to use as a remitent for the moderated joining process notifications!"))
+
 
     print("--------- end members_agent ("+str(agent)+") ----------")
     loger.info("--------- end members_agent ("+str(agent)+") ----------")
@@ -2104,12 +2139,12 @@ def members_agent(request, agent_id):
         "assobj": assobj,
         "is_associated_with": is_associated_with,
         "headings": headings,
-        "member_hours_recent": member_hours_recent,
-        "member_hours_stats": member_hours_stats,
-        "member_hours_roles": member_hours_roles,
+        #"member_hours_recent": member_hours_recent,
+        #"member_hours_stats": member_hours_stats,
+        #"member_hours_roles": member_hours_roles,
         "individual_stats": individual_stats,
         "roles_height": roles_height,
-        "help": get_help("members_agent"),
+        #"help": get_help("members_agent"),
         "form_entries": entries,
         "fobi_name": fobi_name,
         "add_skill_form": add_skill_form,
@@ -2119,6 +2154,161 @@ def members_agent(request, agent_id):
         "related_rts": related_rts,
         "units": Unit.objects.filter(unit_type='value').exclude(name_en__icontains="share"),
     })
+
+
+@login_required
+def view_agents_list(request, agent_id):
+    assocs = None
+    agent = get_object_or_404(EconomicAgent, id=agent_id)
+    user_agent = get_agent(request)
+    if not user_agent or not user_agent.is_participant: # or not agent in user_agent.related_all_agents(): # or not user_agent.is_active_freedom_coop_member:
+        return render(request, 'work/no_permission.html')
+
+    if request.POST:
+        behavior = request.POST['behavior']
+        state = request.POST['state']
+        number = int(request.POST['number'])
+        ready = int(request.POST['ready'])
+
+        ofset = 10    # TUNE as wished
+
+        maxim = ready+ofset
+        if maxim > number:
+            maxim = number
+
+        if behavior == 'child':
+            behaviors = [behavior, 'peer']
+        elif behavior == 'manager':
+            behaviors = [behavior, 'custodian']
+        else:
+            behaviors = [behavior]
+        #print('ready: '+str(ready)+' maxim:'+str(maxim))
+        assocs = agent.has_associates.filter(association_type__association_behavior__in=behaviors,
+                                             state=state).order_by(Lower('is_associate__name'))[ready:maxim]
+
+    if hasattr(agent, 'project') and agent.project.is_moderated():
+        proshacct = agent.project.shares_account_type()
+        for ass in assocs:
+            ag = ass.is_associate
+            ag.jn_reqs = ag.project_join_requests.filter(project=agent.project)
+            if proshacct:
+                ag.oldshares = ag.owned_shares(agent)
+                ag.newshares = 0
+                acc = ag.owned_shares_accounts(proshacct)
+                if acc:
+                    ag.newshares = int(acc[0].price_per_unit)
+
+    return render(request, 'work/_agent_list.html', {
+            'assocs': assocs,
+            'agent': agent,
+            'user_agent': user_agent,
+            'no_shares': ['child', 'peer']
+        })
+
+
+def check_empty_langs(request, agent):
+    fixed = 0
+    if agent.photo_url == 'None':
+        agent.photo_url = ''
+        agent.save()
+        print("Fixed 'None' as string in the photo_url (now is '') ! "+agent.name)
+        loger.info("Fixed 'None' as string in the photo_url (now is '') ! "+agent.name)
+
+    for lan, nom in settings.LANGUAGES:
+        #print('lan: '+lan+'  name: '+getattr(agent, 'name_'+lan, 'EMPTY?'))
+        imgurl = getattr(agent, 'photo_url_'+lan, None)
+        if imgurl == 'None':
+            setattr(agent, 'photo_url_'+lan, agent.photo_url)
+            agent.save()
+            print("Fixed 'None' as string in the photo_url (now is '"+agent.photo_url+"') ! "+agent.name)
+            loger.info("Fixed 'None' as string in the photo_url (now is '"+agent.photo_url+"') ! "+agent.name)
+
+        if not getattr(agent, 'name_'+lan, None):
+            langs = settings.LANGUAGES[:]
+            langs.remove((lan, nom))
+            for ln, nm in langs:
+                nam = getattr(agent, 'name_'+ln, None)
+                if nam and not getattr(agent, 'name_'+lan, None):
+                    setattr(agent, 'name_'+lan, nam)
+                    agent.save()
+                    loger.info("FIXED 'name_"+lan+"' from 'name_"+ln+"'! "+nam)
+                    messages.warning(request, "FIXED 'name_"+lan+"' from 'name_"+ln+"' ! "+nam)
+                    fixed += 1
+
+        if not getattr(agent, 'nick_'+lan, None):
+            langs = settings.LANGUAGES[:]
+            langs.remove((lan, nom))
+            for ln, nm in langs:
+                nam = getattr(agent, 'nick_'+ln, None)
+                if nam and not getattr(agent, 'nick_'+lan, None):
+                    setattr(agent, 'nick_'+lan, nam)
+                    agent.save()
+                    loger.info("FIXED 'nick_"+lan+"' from 'nick_"+ln+"'! "+nam)
+                    messages.warning(request, "FIXED 'nick_"+lan+"' from 'nick_"+ln+"' ! "+nam)
+                    fixed += 1
+
+        if not getattr(agent, 'email_'+lan, None):
+            langs = settings.LANGUAGES[:]
+            langs.remove((lan, nom))
+            for ln, nm in langs:
+                nam = getattr(agent, 'email_'+ln, None)
+                if nam and not getattr(agent, 'email_'+lan, None):
+                    setattr(agent, 'email_'+lan, nam)
+                    agent.save()
+                    loger.info("FIXED 'email_"+lan+"' from 'email_"+ln+"'! "+nam)
+                    messages.warning(request, "FIXED 'email_"+lan+"' from 'email_"+ln+"' ! "+nam)
+                    fixed += 1
+
+        if not getattr(agent, 'url_'+lan, None):
+            langs = settings.LANGUAGES[:]
+            langs.remove((lan, nom))
+            for ln, nm in langs:
+                nam = getattr(agent, 'url_'+ln, None)
+                if nam and not getattr(agent, 'url_'+lan, None):
+                    setattr(agent, 'url_'+lan, nam)
+                    agent.save()
+                    loger.info("FIXED 'url_"+lan+"' from 'url_"+ln+"'! "+nam)
+                    messages.warning(request, "FIXED 'url_"+lan+"' from 'url_"+ln+"' ! "+nam)
+                    fixed += 1
+
+        if not getattr(agent, 'photo_url_'+lan, None):
+            langs = settings.LANGUAGES[:]
+            langs.remove((lan, nom))
+            for ln, nm in langs:
+                nam = getattr(agent, 'photo_url_'+ln, None)
+                if nam and not getattr(agent, 'photo_url_'+lan, None):
+                    setattr(agent, 'photo_url_'+lan, nam)
+                    agent.save()
+                    loger.info("FIXED 'photo_url_"+lan+"' from 'photo_url_"+ln+"'! "+nam)
+                    messages.warning(request, "FIXED 'photo_url_"+lan+"' from 'photo_url_"+ln+"' ! "+nam)
+                    fixed += 1
+
+        if not getattr(agent, 'phone_primary_'+lan, None):
+            langs = settings.LANGUAGES[:]
+            langs.remove((lan, nom))
+            for ln, nm in langs:
+                nam = getattr(agent, 'phone_primary_'+ln, None)
+                if nam and not getattr(agent, 'phone_primary_'+lan, None):
+                    setattr(agent, 'phone_primary_'+lan, nam)
+                    agent.save()
+                    loger.info("FIXED 'phone_primary_"+lan+"' from 'phone_primary_"+ln+"'! "+nam)
+                    messages.warning(request, "FIXED 'phone_primary_"+lan+"' from 'phone_primary_"+ln+"' ! "+nam)
+                    fixed += 1
+
+        if not getattr(agent, 'address_'+lan, None):
+            langs = settings.LANGUAGES[:]
+            langs.remove((lan, nom))
+            for ln, nm in langs:
+                nam = getattr(agent, 'address_'+ln, None)
+                if nam and not getattr(agent, 'address_'+lan, None):
+                    setattr(agent, 'address_'+lan, nam)
+                    agent.save()
+                    loger.info("FIXED 'address_"+lan+"' from 'address_"+ln+"'! "+nam)
+                    messages.warning(request, "FIXED 'address_"+lan+"' from 'address_"+ln+"' ! "+nam)
+                    fixed += 1
+
+    return fixed
+
 
 
 @login_required
@@ -2526,8 +2716,8 @@ def repair_duplicate_agents(request, agent):
         for co in copis:
             users = co.users.all()
             if users and request.user.is_superuser:
-                if len(users) > 1 or not str(users[0].user) == str(co.nick):
-                    usrs = ' (user'+('s!' if len(users)>1 else '')+': '+(', '.join([str(us.user) for us in users]))+')'
+                if len(users) > 1 or not unicode(users[0].user) == unicode(co.nick):
+                    usrs = ' (user'+('s!' if len(users)>1 else '')+': '+(', '.join([unicode(us.user) for us in users]))+')'
                 else:
                     usrs = ' (=user)'
             else:
@@ -3470,6 +3660,8 @@ def project_update_payment_status(request, project_slug=None):
         raise ValidationError("Can't find a project or request:POST: "+str(request.POST))
         return HttpResponse('error')
 
+
+
 from django.middleware import csrf
 
 @login_required
@@ -3506,37 +3698,117 @@ def join_requests(request, agent_id):
         if user_agent == project.agent or user_agent in project.agent.managers():
             managing = True
         #req = requests.last()
+
         for req in requests:
             #print("--- req1: "+str(req)+" ----")
             if req.fobi_data and req.fobi_data.pk:
                 fobi_keys = req.fobi_items_keys()
                 fobi_headers = req.form_headers
-                """req.entries = SavedFormDataEntry.objects.filter(pk=req.fobi_data.pk).select_related('form_entry')
-                entry = req.entries[0]
-                form_headers = json.loads(entry.form_data_headers)
-                for elem in req.fobi_data.form_entry.formelemententry_set.all().order_by('position'):
-                    data = json.loads(elem.plugin_data)
-                    nam = data.get('name')
-                    if nam:
-                        if not nam in form_headers:
-                            form_headers[nam] = data.get('label')
-                        if not form_headers[nam] in fobi_headers:
-                            fobi_headers.append(form_headers[nam])
-                        if not nam in fobi_keys:
-                            fobi_keys.append(nam)
-                    else:
-                        pass
-                        #raise ValidationError("Not found '%(nam)s' in req %(req)s. elem.plugin_data: %(data)s", params={'nam':nam, 'data':str(data), 'req':req.id})
-                if len(fobi_headers) and len(fobi_keys) == len(fobi_headers):
-                    break
-                """
+                break
 
-        com_content_type = ContentType.objects.get(model="joinrequest")
-        csrf_token = csrf.get_token(request)
-        csrf_token_field = '<input type="hidden" name="csrfmiddlewaretoken" value="'+csrf_token+'"> '
 
-        for req in requests:
-            #print("----- start req: "+str(req)+" ----")
+    if project.is_moderated() and not agent.email:
+        messages.error(request, _("Please provide an email for the \"{0}\" project to use as a remitent for the moderated joining process notifications!").format(agent.name))
+
+    print("-------------- end join_requests ("+str(agent)+") (user:"+str(user_agent)+") ----------------")
+    loger.debug("-------------- end join_requests ("+str(agent)+") (user:"+str(user_agent)+") ----------------")
+
+    return render(request, "work/join_requests.html", {
+        "help": get_help("join_requests"),
+        "requests": requests,
+        "state_form": state_form,
+        "state": state,
+        "agent_form": agent_form,
+        "project": project,
+        "fobi_headers": fobi_headers,
+    })
+
+
+
+from django_datatables_view.base_datatable_view import BaseDatatableView
+
+class JoinreqListJson(BaseDatatableView):
+
+    # define the columns that will be returned
+    columns = ['actions', 'request_date', 'name', 'requested_username', 'type_of_user', 'email_address', 'phone_number', 'address', 'website']
+
+    order_columns = ['', 'request_date', 'name', 'requested_username', 'type_of_user', 'email_address', '', '', '']
+
+    # set max limit of records returned, this is used to protect our site if someone tries to attack our site
+    # and make it return huge amount of data
+    max_display_length = 500
+
+    def get(self, request, agent_id, *args, **kwargs):
+        self.user_agent = request.user.agent.agent
+        if not hasattr(self, 'agent'):
+            agent_id = self.kwargs['agent_id']
+            self.agent = EconomicAgent.objects.get(id=agent_id)
+        if not hasattr(self, 'state'):
+            self.state = self.kwargs['state']
+        if not hasattr(self, 'csrf_token_field'):
+            csrf_token = csrf.get_token(request)
+            self.csrf_token_field = '<input type="hidden" name="csrfmiddlewaretoken" value="'+csrf_token+'"> '
+        if not hasattr(self, 'com_content_type'):
+            self.com_content_type = ContentType.objects.get(model="joinrequest")
+
+        if hasattr(self.agent, 'project') and self.agent.project:
+            if not hasattr(self, 'proshrtyps'):
+                self.proshrtyps = self.agent.project.share_types()
+            if not hasattr(self, 'subscrunit'):
+                self.subscrunit = self.agent.project.subscription_unit()
+            self.fobi_keys = self.agent.project.fobi_items_keys()
+            if self.fobi_keys:
+                for key in self.fobi_keys:
+                    if not key in self.columns:
+                        #print("add col: "+key)
+                        self.columns.append(key)
+                    if not key in self.order_columns:
+                        #print("add ord-col: "+key)
+                        self.order_columns.append(key)
+
+        else:
+            self.proshrtyps = None
+            self.subscrunit = None
+
+        return super().get(request, *args, **kwargs)
+
+    def get_initial_queryset(self):
+        if self.agent.project:
+            return self.agent.project.join_requests.filter(state=self.state)
+        else:
+            return None
+
+    def filter_queryset(self, qs):
+
+        return qs
+
+    def render_column(self, row, column):
+        # We want to render user as a custom column
+        if column == 'actions':
+            row.actions += "JELOW"
+            return row.actions #escape('{0} {1}'.format(row.customer_firstname, row.customer_lastname))
+        else:
+            return super(JoinreqListJson, self).render_column(row, column)
+
+    def prepare_results(self, qs):
+        # prepare list with output column data
+        # queryset is already paginated here
+        #print('--- prepare results (start) ----') #cols: '+str(self.columns))
+        project = self.agent.project
+        agent_form = JoinAgentSelectionForm(project=project)
+
+        fobi_slug = project.fobi_slug
+        fobi_headers = []
+        #fobi_keys = []
+
+        json_data = []
+
+        if fobi_slug:
+          form_entry = FormEntry.objects.get(slug=fobi_slug)
+          if self.user_agent == project.agent or self.user_agent in project.agent.managers():
+            managing = True
+
+          for req in qs:
             req.possible_agent = False
             if not hasattr(req, 'agent') and req.requested_username:
                 try:
@@ -3544,13 +3816,7 @@ def join_requests(request, agent_id):
                 except:
                     pass
             if hasattr(req, 'fobi_data') and hasattr(req.fobi_data, 'pk'):
-              #req.entries = SavedFormDataEntry.objects.filter(pk=req.fobi_data.pk).select_related('form_entry')
-              #entry = req.entries[0]
-              #req.data = json.loads(entry.saved_data)
-              #req.items = req.data.items()
               req.items_data = req.fobi_items_data()
-              #for key in fobi_keys:
-              #  req.items_data.append(req.data.get(key))
             else:
               req.entries = []
 
@@ -3560,22 +3826,83 @@ def join_requests(request, agent_id):
             payamount = req.payment_amount()
             totalshrs = req.total_shares()
             pendshrs = req.pending_shares()
-            proshrtyps = project.share_types()
             reqstatus = ''
             if req.exchange:
                 reqstatus = req.exchange.status()
-            subscrunit = project.subscription_unit()
+
             pendpays = req.pending_payments()
             subscres = req.subscription_resource()
 
+            req.mail = '<a class="longtext" href="mailto:'+req.email_address+'">'+req.email_address+'</a>'
+            req.webs = ''
+            if req.website:
+                req.webs = req.website
+            req.phon = req.phone_number
+            req.addr = req.address
+
+            if req.agent:
+                req.nam = '<a href="{% url "members_agent" agent_id=req.agent.id %}">'+req.agent.name+'</a>'
+                if not req.name and not req.surname:
+                    arr = req.agent.name.split(' ')
+                    if len(arr) > 1:
+                        req.name = arr[0]
+                        req.surname = arr[1]
+                    else:
+                        req.name = req.agent.name
+                    loger.info("- added missing name to the jnreq: "+str(req))
+                    req.save()
+
+                req.nick = '<a href="{% url "members_agent" agent_id=req.agent.id %}"><b><em>'+req.agent.nick+'</em></b></a>'
+                if not req.requested_username:
+                    req.requested_username = req.agent.nick
+                    loger.info("- added missing username to the jnreq: "+str(req))
+                    req.save()
+
+                req.typ = req.agent.agent_type.name
+                if not req.typ.lower() == req.type_of_user.lower():
+                    req.typ += ' ('+req.type_of_user+')'
+                if not req.agent.email == req.email_address:
+                    if req.email_address:
+                        req.mail += " <span class='longtext small'><em>("+req.agent.email+")</em></span>"
+                    elif req.agent.email:
+                        req.email_address = req.agent.email
+                        req.save()
+                        loger.info("- added missing agent email in join-request: "+str(req))
+                        req.mail = '<em><a class="longtext" href="mailto:'+req.agent.email+'">'+req.agent.email+'</a></em>'
+                if req.agent.url and not req.agent.url == req.website:
+                    if req.website:
+                        req.webs += ' <em>('+req.agent.url+')</em>'
+                    else:
+                        req.webs = '<em>'+req.agent.url+'</em>'
+                if req.agent.phone_primary and not req.agent.phone_primary == req.phone_number:
+                    if req.phone_number:
+                        req.phon += " <em>("+req.agent.phone_primary+")</em>"
+                    else:
+                        req.phon = '<em>'+req.agent.phone_primary+'</em>'
+                if req.agent.primary_location and not req.address:
+                    req.addr = '<em>'+str(req.agent.primary_location)+'</em>'
+
+            else:
+                req.nam = req.name+' '+req.surname
+                req.nam.strip()
+                if req.requested_username:
+                    req.nick = req.requested_username
+                else:
+                    req.nick = '??'
+                req.typ = req.type_of_user
+
+            if req.check_user_pass():
+                req.mail += '<br /><span class="error">'+str(_("not verified"))+'</span>'
+
+            #print("------- build actions ---")
             deleteform = '<form class="action-form" id="delete-form'+str(req.id)+'" method="POST" '
             deleteform += 'action="'+reverse("delete_request", args=(req.id,))+'" >'
-            deleteform += csrf_token_field
+            deleteform += self.csrf_token_field
             deleteform += '<input type="submit" class="btn btn-mini btn-danger" name="submit" value="'+str(_("Delete"))+'" /></form>'
 
             declineform = '<form class="action-form" id="decline-form'+str(req.id)+'" method="POST" '
             declineform += 'action="'+reverse("decline_request", args=(req.id,))+'" >'
-            declineform += csrf_token_field
+            declineform += self.csrf_token_field
             declineform += '<input type="submit" class="btn btn-mini btn-warning" name="submit" value="'+str(_("Decline"))+'" /></form>'
 
 
@@ -3583,16 +3910,17 @@ def join_requests(request, agent_id):
                 req.actions = '<span class="error">ERROR!</span> &nbsp;'
             if chekpass:
                 req.actions += '<span class="error">'+str(_("Not Valid yet!"))+'</span> &nbsp;'
-            elif proshrtyps or subscrunit:
+            elif self.proshrtyps or self.subscrunit:
               if req.fobi_data:
                 if req.agent:
-                    if proshrtyps:
-                        req.actions += str(payamount)+'&nbsp;'
-                        req.actions += str(_("Shares:"))+'&nbsp;'
-                    elif subscrunit:
+                    if self.proshrtyps:
+                        req.actions += '<span style="display: inline-block;">'
+                        req.actions += '<i class="icon-tags" style="color:#444;" title="'+str(payamount)+' '+str(_("Shares"))+'"></i>'
+                        req.actions += '&nbsp;'+str(payamount)+'</span> &nbsp;'
+                    elif self.subscrunit:
                         if pendpays: req.actions += '<span class="error">'
                         req.actions += str(payamount)+'&nbsp;'
-                        req.actions += str(subscrunit.name)+' / '+str(req.payment_regularity()['key'])+'&nbsp;'
+                        req.actions += str(self.subscrunit.name)+' / '+str(req.payment_regularity()['key'])+'&nbsp;'
                         if pendpays: req.actions += '</span>'
                     if pendshrs:
                         if totalshrs:
@@ -3604,7 +3932,7 @@ def join_requests(request, agent_id):
                                     req.actions += '<br><span class="">'+str(_("by"))+' '+str(req.subscription_resource().expiration_date)+'</span> '
                                 else:
                                     pass #req.actions += '<br><span class="error small">'+unicode(_("Never payed"))+'</span>'
-                            elif subscrunit:
+                            elif self.subscrunit:
                                 req.actions += '<span class="complete">'+str(_("Valid"))+'</span>'
                                 req.actions += '<br><span class="">'+str(_("until"))+' '+str(req.subscription_resource().expiration_date)+'</span> '
                             else:
@@ -3619,21 +3947,19 @@ def join_requests(request, agent_id):
                     req.actions += '<a href="'+reverse("exchange_logging_work", args=(req.project.agent.id, 0, req.exchange.id))+'"'
                     req.actions += ' class="'+str(reqstatus)+'" >'+str(reqstatus.title())+'</a> '
                 elif pendshrs:
-                    if not req.payment_option()['key'] == 'ccard' and req.agent and req.exchange_type():
+                    if not req.payment_option()['key'] == 'ccard' and req.agent and req.exchange_type() and not req.state == 'declined':
                         if managing:
                             req.actions += '<form class="action-form" id="status-form'+str(req.id)+'" '
                             req.actions += 'action="'+reverse("update_share_payment", args=(req.id,))+'" method="POST" >'
-                            req.actions += csrf_token_field
+                            req.actions += self.csrf_token_field
                             req.actions += '<input type="hidden" name="status" value="pending"> '
                             req.actions += '<input type="submit" class="btn btn-mini btn-primary" name="submit" '
-                            req.actions += ' value="'+str(_("Set as Pending"))+'" '
+                            req.actions += ' value="'+str(_("Set as Pending"))+'" title="ExchangeType: '+str(req.exchange_type())+'" '
                             if chekpass:
                                 req.actions += 'disabled="disabled" '
                             req.actions += ' /></form>'
 
-                            if request.user.is_superuser:
-                                req.actions += '<span class="help-text" style="font-size:0.8em">('+str(req.exchange_type())+')</span>'
-                    if request.user.is_superuser:
+                    if self.user_agent.user().user.is_superuser:
                         pass
                         #req.actions += '<span class="help-text" style="font-size:0.8em">ET: '+str(req.exchange_type())
                         #req.actions += ' <br />UT: '+str(req.payment_unit())+' RT: '+str(req.payment_unit_rt())+'</span><br />'
@@ -3652,29 +3978,29 @@ def join_requests(request, agent_id):
                 req.actions += str(_("request"))+'</a>) <br /> '+str(_("This request:"))+' '
                 req.actions += deleteform
 
-            ncom = len(Comment.objects.filter(content_type=com_content_type, object_pk=req.pk))
-            req.actions += '<a class="btn btn-info btn-mini" href="'+reverse('project_feedback', args=(req.project.agent.id, req.id))+'"> '
-            req.actions += '<b>'+str(_("Feedback:"))+'</b> '+str(ncom)+'</a>&nbsp;'
+            ncom = len(Comment.objects.filter(content_type=self.com_content_type, object_pk=req.pk))
+            req.actions += '<a class="btn btn-info btn-mini-icon" href="'+reverse('project_feedback', args=(req.project.agent.id, req.id))+'">'
+            req.actions += '<i class="icon-comment" title="Feedback"></i><span class="small"> '+str(ncom)+'</span></a>&nbsp;'
 
-            if state == "declined":
+            if self.state == "declined":
                 req.actions += '<form class="action-form" id="undecline-form'+str(req.id)+'" method="POST" '
                 req.actions += 'action="'+reverse("undecline_request", args=(req.id,))+'" >'
-                req.actions += csrf_token_field
+                req.actions += self.csrf_token_field
                 req.actions += '<input type="submit" class="btn btn-mini btn-primary" name="submit" value="'+str(_("Undecline"))+'" /></form>'
 
                 req.actions += deleteform
 
-            elif state == "accepted":
+            elif self.state == "accepted":
                 req.actions += declineform
 
             elif req.fobi_data:
                 if req.agent:
-                    if not pendshrs or not proshrtyps:
-                        if not subscrunit:
+                    if not pendshrs or not self.proshrtyps:
+                        if not self.subscrunit:
                           if not chekpass:
                             req.actions += '<form class="action-form" id="accept-form'+str(req.id)+'" method="POST" '
                             req.actions += 'action="'+reverse("accept_request", args=(req.id,))+'" >'
-                            req.actions += csrf_token_field
+                            req.actions += self.csrf_token_field
                             req.actions += '<input type="submit" class="btn btn-mini btn-primary" name="submit" value="'+str(_("Accept Member"))+'" /></form>'
 
                     if chekpass:
@@ -3682,9 +4008,9 @@ def join_requests(request, agent_id):
                             req.actions += ' &nbsp; <span class="help-text">'+str(_("Wait to confirm, or delete agent, user and request"))+':</span>'
                             req.actions += '<form style="display: inline;" class="delete-agent-form indent" id="delete-agent-form'+str(req.id)+'" '
                             req.actions += 'action="'+reverse("delete_request_agent_and_user", args=(req.id,))+' " method="POST" >'
-                            req.actions += csrf_token_field
+                            req.actions += self.csrf_token_field
                             req.actions += '<button style="display: inline;"  class="btn btn-danger btn-mini" title="Delete all" >'+str(_("Delete all"))+'</button></form>'
-                        elif request.user.is_superuser:
+                        elif self.user_agent.user().user.is_superuser:
                             req.actions += ' &nbsp; (agent no deletable)'
                     else:
                         req.actions += declineform
@@ -3698,7 +4024,7 @@ def join_requests(request, agent_id):
 
                     req.actions += '<form class="action-form" id="create-form'+str(req.id)+'" '
                     req.actions += 'action="'+reverse("confirm_request", args=(req.id,))+'" method="POST" >'
-                    req.actions += csrf_token_field
+                    req.actions += self.csrf_token_field
                     req.actions += '<input type="submit" class="btn btn-mini btn-primary" name="submit" value="'+str(_("Confirm Email"))+'" /> '
                     req.actions += '<span class="help-text">'+str(_("sends random pass and creates user+agent"))+'</span></form>'
 
@@ -3707,25 +4033,95 @@ def join_requests(request, agent_id):
             else:
                 req.actions += deleteform
 
+            #print("------ end build actions ---")
+            camps = [
+                req.actions,
+                req.request_date.strftime("%Y-%m-%d"), # %H:%M  #escape(item.number),  # escape HTML for security reasons
+                req.nam, #"{0} {1}".format(item.customer_firstname, item.customer_lastname)),  # escape HTML for security reasons
+                req.nick,
+                req.typ,
+                req.mail,
+                req.phon,
+                req.addr,
+                req.webs
+            ]
+
+            if hasattr(req, 'items_data'):
+                camps = camps + req.items_data
+                #for val in req.items_data:
+                #    camps = camps + .append([val])
+            else:
+                for val in self.fobi_keys:
+                    camps = camps + ["<span class='error'>"+str(_("missing"))+"</span>"]
+
+            json_data.append(camps)
+
+
+            #print("json_data: "+str(json_data))
+          # endfor
+        #print('--- prepare results (end) ----')
+
+        return json_data
+
+
+    """
+    jnreqs = None
+    agent = get_object_or_404(EconomicAgent, id=agent_id)
+    user_agent = get_agent(request)
+    if not user_agent or not agent.project or not agent in user_agent.managed_projects():
+        return render(request, 'work/no_permission.html')
+
+    if request.POST:
+        draw = int(request.POST['draw'])
+        start = request.POST['start']
+        length = request.POST['length']
+        search = request.POST['search']
+        columns = request.POST['columns']
+        order = request.POST['order']
+        ordcol1 = order[0]
+
+        state = request.POST['state']
+
+        jnreqnum = agent.project.join_requests.count()
+
+        jnreqs = agent.project.join_requests.filter(state=state).order_by(ordcol1)
+
+        com_content_type = ContentType.objects.get(model="joinrequest")
+        csrf_token = csrf.get_token(request)
+        csrf_token_field = '<input type="hidden" name="csrfmiddlewaretoken" value="'+csrf_token+'"> '
+
+        proshrtyps = agent.project.share_types()
+        subscrunit = agent.project.subscription_unit()
+
+        data = []
+
+        for req in jnreqs:
+
+            data.append(
+                [
+                    req.actions,
+                    req.request_date,
+                    req.name,
+                    req.nick,
+                    req.typ,
+                    req.mail
+                ]
+            )
+
             #print("---- end req: "+str(req)+" ----")
 
 
-
-    if project.is_moderated() and not agent.email:
-        messages.error(request, _("Please provide an email for the \"{0}\" project to use as a remitent for the moderated joining process notifications!").format(agent.name))
-
-    print("-------------- end join_requests ("+str(agent)+") (user:"+str(user_agent)+") ----------------")
-    loger.debug("-------------- end join_requests ("+str(agent)+") (user:"+str(user_agent)+") ----------------")
-
-    return render(request, "work/join_requests.html", {
-        "help": get_help("join_requests"),
-        "requests": requests,
-        "state_form": state_form,
-        "state": state,
-        "agent_form": agent_form,
-        "project": project,
-        "fobi_headers": fobi_headers,
-    })
+    return render(request, 'work/_jnreq_list.html', {
+            'jnreqs': jnreqs,
+            'agent': agent,
+            'user_agent': user_agent,
+            'draw': draw,
+            'recordsTotal': jnreqnum,
+            'recordsFiltered': len(jnreqs),
+            'data': data,
+            'error': error
+        })
+"""
 
 
 '''@login_required
@@ -5211,7 +5607,22 @@ def exchanges_all(request, agent_id): #all types of exchanges for one context ag
     Rtype_form = NewResourceTypeForm(agent=agent, data=request.POST or None)
     Stype_form = NewSkillTypeForm(agent=agent, data=request.POST or None)
 
-    exchanges_by_type = Exchange.objects.exchanges_by_type(agent)
+    #exchanges_by_type = Exchange.objects.exchanges_by_type(agent)
+    exsids = []
+    coms = agent.involved_in_commitments()
+    for com in coms:
+        if com.exchange:
+            exsids.append(com.exchange.id)
+        else:
+            print("+++ commitment has no exchange? "+str(com))
+    evts = agent.involved_in_events()
+    for evt in evts:
+        if evt.exchange:
+            exsids.append(evt.exchange.id)
+        else:
+            print("+++ event has no exchange? "+str(evt))
+    #print("+ + + "+str(exsids))
+    exchanges_by_type = Exchange.objects.filter(id__in=exsids).order_by('created_date')
 
     #import pdb; pdb.set_trace()
     if not request.method == "POST":
@@ -5754,12 +6165,12 @@ def exchanges_all(request, agent_id): #all types of exchanges for one context ag
         total_transfers = [to for to in total_transfers if not to['unit'] == eachunit]
 
 
-    print("......... start slots_with_detail ..........")
-    loger.info("......... start slots_with_detail ..........")
-    for x in exchanges:
-        x.slots = x.slots_with_detail(agent)
-    print("......... end slots_with_detail ..........")
-    loger.info("......... end slots_with_detail ..........")
+    #print("......... start slots_with_detail ..........")
+    #loger.info("......... start slots_with_detail ..........")
+    #for x in exchanges:
+    #    x.slots = x.slots_with_detail(agent)
+    #print("......... end slots_with_detail ..........")
+    #loger.info("......... end slots_with_detail ..........")
 
     return render(request, "work/exchanges_all.html", {
         "exchanges": exchanges,
@@ -5782,7 +6193,344 @@ def exchanges_all(request, agent_id): #all types of exchanges for one context ag
         "Utype_tree": Ocp_Unit_Type.objects.filter(id__in=agent.used_units_ids(exchanges_by_type)), #all(),
         #"unit_types": unit_types,
         "ext_form": ext_form,
+        "start": start,
+        "end": end
     })
+
+
+class ExchangeListJson(BaseDatatableView):
+
+    # define the columns that will be returned
+    columns = ['actions', 'start_date', 'agent', 'give_qty', 'give_resource', 'give_lastdate', 'receive_qty', 'receive_resource', 'receive_lastdate']
+
+    order_columns = ['', 'start_date', 'agent', 'give_qty', 'give_resource', 'give_lastdate', 'receive_qty', 'receive_resource', 'receive_lastdate']
+
+    # set max limit of records returned, this is used to protect our site if someone tries to attack our site
+    # and make it return huge amount of data
+    max_display_length = 500
+
+    def get(self, request, agent_id, *args, **kwargs):
+        self.user_agent = request.user.agent.agent
+        if not hasattr(self, 'agent'):
+            agent_id = self.kwargs['agent_id']
+            self.agent = EconomicAgent.objects.get(id=agent_id)
+        if not hasattr(self, 'start'):
+            self.start = self.kwargs['start']
+        if not hasattr(self, 'end'):
+            self.end = self.kwargs['end']
+        if not hasattr(self, 'csrf_token_field'):
+            csrf_token = csrf.get_token(request)
+            self.csrf_token_field = '<input type="hidden" name="csrfmiddlewaretoken" value="'+csrf_token+'"> '
+        if not hasattr(self, 'com_content_type'):
+            self.com_content_type = ContentType.objects.get(model="joinrequest")
+        self.request = request
+        #print('GET self: '+str(self.__dict__))
+        return super().get(request, *args, **kwargs)
+
+    def get_initial_queryset(self):
+        exsids = []
+        coms = self.agent.involved_in_commitments()
+        for com in coms:
+            if com.exchange:
+                exsids.append(com.exchange.id)
+            else:
+                print("+++ commitment has no exchange? "+str(com))
+        evts = self.agent.involved_in_events()
+        for evt in evts:
+            if evt.exchange:
+                exsids.append(evt.exchange.id)
+            else:
+                print("+++ event has no exchange? "+str(evt))
+        #print("+ + + "+str(exsids))
+        return Exchange.objects.filter(id__in=exsids, start_date__range=[self.start, self.end]).order_by('created_date')
+
+
+    def filter_queryset(self, qs):
+
+        return qs
+
+    def render_column(self, row, column):
+        # We want to render user as a custom column
+        if column == 'actions':
+            row.actions += "JELOW"
+            return row.actions #escape('{0} {1}'.format(row.customer_firstname, row.customer_lastname))
+        else:
+            return super(ExchangeListJson, self).render_column(row, column)
+
+    def prepare_results(self, qs):
+        # prepare list with output column data
+        # queryset is already paginated here
+        #print('--- prepare results (start) ----') #cols: '+str(self.columns))
+
+        json_data = []
+
+        for ex in qs:
+            ex.slots = ex.slots_with_detail(self.agent)
+
+            # calculate the actions table cell to speedup the template
+            ex.actions = ''
+            ex.otheragent = ''
+            ex.give_qty = ''
+            ex.give_resource = ''
+            ex.give_lastdate = ''
+            ex.receive_qty = ''
+            ex.receive_resource = ''
+            ex.receive_lastdate = ''
+
+            reqstatus = ex.status()
+            ex.actions += '<a href="'+reverse("exchange_logging_work", args=(self.agent.id, 0, ex.id))+'"'
+            ex.actions += ' class="'+str(reqstatus)+'" >'+str(reqstatus.title())+'</a> '
+
+            if self.request.user == ex.created_by or self.request.user.is_superuser:
+                if ex.is_deletable():
+                    ex.actions += '<form style="display: inline;" class="delete-form" id="deleteForm'+str(ex.id)+'"'
+                    ex.actions += ' action="'+reverse("delete_exchange", args=(ex.id,))+'" method="POST" >'
+                    ex.actions += self.csrf_token_field
+                    ex.actions += '<input type="hidden" id="next" name="next" value="exchanges-all" />'
+                    ex.actions += '<button style="display: inline;" class="btn btn-warning btn-mini" title="Delete exchange" >'
+                    ex.actions += 'X</button></form>'
+
+            req = None
+            if hasattr(ex, 'join_request') and ex.join_request:
+                req = ex.join_request
+                #chekpass = req.check_user_pass()
+                #payamount = req.payment_amount()
+                #totalshrs = req.total_shares()
+                #pendshrs = req.pending_shares()
+                #pendpays = req.pending_payments()
+                #subscres = req.subscription_resource()
+
+                ncom = len(Comment.objects.filter(content_type=self.com_content_type, object_pk=req.pk))
+                ex.actions += '<a class="btn btn-info btn-mini-icon" href="'+reverse('project_feedback', args=(self.agent.id, req.id))+'">'
+                ex.actions += '<i class="icon-comment" title="Feedback"></i><span class="small"> '+str(ncom)+'</span></a>&nbsp;'
+
+                if self.agent == req.project.agent:
+                    ex.otheragent = '<a href="'+reverse("members_agent", args=(req.agent.id,))+'" style="font-weight:bold;">'
+                    ex.otheragent += req.agent.name+'</a>'
+                else:
+                    ex.otheragent = '<a href="'+reverse("members_agent", args=(req.project.agent.id,))+'" style="font-weight:bold;">'
+                    ex.otheragent += req.project.agent.name+'</a>'
+            else:
+                txpay = ex.txpay()
+                if txpay:
+                    if txpay.to_agent() == self.agent:
+                        if txpay.from_agent():
+                            ex.otheragent = '<a href="'+reverse("members_agent", args=(txpay.from_agent().id,))+'" style="font-weight:bold;">'
+                            ex.otheragent += txpay.from_agent().name+'</a>'
+                        else:
+                            ex.otheragent = "?"
+                    elif txpay.to_agent():
+                        ex.otheragent = '<a href="'+reverse("members_agent", args=(txpay.to_agent().id,))+'" style="font-weight:bold;">'
+                        ex.otheragent += txpay.to_agent().name+'</a>'
+                    else:
+                        ex.otheragent = "?"
+                else:
+                    for ag in ex.related_agents():
+                        if ag and not ag == self.agent:
+                            ex.otheragent = '<a href="'+reverse("members_agent", args=(ag.id,))+'" style="font-weight:bold;">'
+                            ex.otheragent += ag.name+'</a> '
+                            #if not forloop.last:
+                            #    ex.otheragent += '<br/>'
+
+            if req and req.check_user_pass():
+                ex.otheragent += '<br /><span class="error">'+str(_("not verified"))+'</span>'
+
+
+            if ex.slots:
+                for slot in ex.slots:
+                    if self.agent in slot.agents_to:
+                        if slot.total_com_unit:
+                            ex.receive_qty += str(slot.total_com)
+                            ex.receive_resource += str(slot.total_com_unit)
+                        else:
+                            ex.receive_qty += str(slot.total_com)
+                            ex.receive_resource += '?'
+                        ex.receive_lastdate += '<span class="'+slot.status+'">&#9899;</span>&nbsp;'+str(slot.last_date)+' '
+                    elif not slot.agents_to:
+                        if req:
+                            if self.agent == req.agent:
+                                ex.receive_qty += 'jr:'+str(req)
+                                ex.receive_resource += 'jr:'+str(req)
+                            elif self.agent == req.project.agent:
+                                ex.receive_qty += req.total_price()
+                                ex.receive_resource += req.payment_unit()
+                        elif ex.transfers.count() == 1:
+                            tx = ex.transfers.all()[0]
+                            if tx.to_agent == self.agent:
+                                ex.give_resource += '<span class="'+ex.status()+'">&#9899;</span>'
+                                if tx.quantity:
+                                    ex.give_resource += str(tx.quantity)
+                                    if tx.actual_quantity and not tx.actual_quantity == tx.quantity:
+                                        ex.give_resource += '('+str(tx.actual_quantity)+')'
+                                elif tx.value:
+                                    ex.give_resource += str(tx.value)
+                                    if tx.actual_value and not tx.actual_value == tx.value:
+                                        ex.give_resource += '('+str(tx.actual_value)+')'
+                                else:
+                                    ex.give_resource += 'n'
+
+                    if self.agent in slot.agents_from:
+                        if slot.total_com_unit:
+                            ex.give_qty += str(slot.total_com)
+                            ex.give_resource += str(slot.total_com_unit)
+                            if slot.rts:
+                                for rt in slot.rts:
+                                    if not ex.give_resource.lower() in str(rt).lower() and not str(rt).lower() in ex.give_resource.lower():
+                                        if not '<em' in str(ex.give_resource):
+                                            ex.give_resource += ' rt:'+str(rt)
+                        else:
+                            ex.give_qty += str(slot.total_com)
+                            ex.give_resource += '?'
+                        ex.give_lastdate += '<span class="'+slot.status+'">&#9899;</span>&nbsp;'+str(slot.last_date)+' '
+
+                    elif not slot.agents_from:
+                        if req:
+                            if self.agent == req.agent:
+                                ex.give_qty += 'jr:'+str(req)
+                                ex.give_resource += 'jr:'+str(req)
+                            elif self.agent == req.project.agent:
+                                ex.give_qty += req.payment_amount()
+                                ex.give_resource += str(req.project.shares_type())
+                            else:
+                                ex.give_qty += 'jr?:'+str(req)
+                                ex.give_resource += 'jr?:'+str(req)
+                        elif ex.transfers.count() == 1:
+                            tx = ex.transfers.all()[0]
+                            if tx.from_agent == self.agent:
+                                ex.give_resource += '<span class="'+ex.status()+'">&#9899;</span>'
+                                if tx.quantity:
+                                    ex.give_resource += str(tx.quantity)
+                                    if tx.actual_quantity and not tx.actual_quantity == tx.quantity:
+                                        ex.give_resource += '('+str(tx.actual_quantity)+')'
+                                elif tx.value:
+                                    ex.give_resource += str(tx.value)
+                                    if tx.actual_value and not tx.actual_value == tx.value:
+                                        ex.give_resource += '('+str(tx.actual_value)+')'
+                                else:
+                                    ex.give_resource += 'n'
+
+            elif ex.transfers.all():
+                ex.give_resource += 'tr!'
+                ex.receive_resource += 'tr!'
+                for tx in ex.transfers.all():
+                    if tx.from_agent == self.agent or req.project.agent == self.agent and not tx.from_agent:
+                        ex.give_resource += '<span class="'+tx.status()+'">&#9899;</span>'
+                        if tx.quantity:
+                            ex.give_qty += str(tx.quantity)
+                            if tx.actual_quantity and not tx.actual_quantity == tx.quantity:
+                                ex.give_qty += '('+str(tx.actual_quantity)+')'
+                        elif tx.value:
+                            ex.give_qty += str(tx.value)
+                            if tx.actual_value and not tx.actual_value == tx.value:
+                                ex.give_qty += '('+str(tx.actual_value)+')'
+                        elif req:
+                            ex.give_qty += str(req.payment_amount())
+                        else:
+                            ex.give_qty += 'x'
+                        if tx.resource:
+                            if tx.resource.resource_type.ocp_artwork_type.is_account():
+                                if tx.resource.resource_type.unit.name == 'Each':
+                                    ex.give_resource += str(tx.resource.resource_type.unit_of_price)
+                                else:
+                                    ex.give_resource += str(tx.resource.resource_type.unit)
+                            else:
+                                ex.give_resource += str(tx.resource)
+                        elif tx.resource_type:
+                            ex.give_resource += str(tx.resource_type)
+                        else:
+                            if tx.unit_of_quantity:
+                                ex.give_resource += 'u:'+str(tx.unit_of_quantity)
+                            elif tx.transfer_type.is_share():
+                                ex.give_resource += str(tx.transfer_type.is_share().resource_type)
+                            else:
+                                ex.give_resource += '? '+str(tx)
+                        if tx: # and not forloop.last:
+                            ex.give_resource += ' '
+                    elif tx.to_agent == self.agent or req.agent == self.agent and not tx.to_agent:
+                        ex.receive_resource += '<span class="'+tx.status()+'">&#9899;</span>'
+                        if tx.quantity:
+                            ex.receive_qty += str(tx.quantity)
+                            if tx.actual_quantity and not tx.actual_quantity == tx.quantity:
+                                ex.receive_qty += '('+str(tx.actual_quantity)+')'
+                        elif tx.value:
+                            ex.give_qty += str(tx.value)
+                            if tx.actual_value and not tx.actual_value == tx.value:
+                                ex.receive_qty += '('+str(tx.actual_value)+')'
+                        elif req:
+                            ex.receive_qty += str(req.payment_amount())
+                        else:
+                            ex.receive_qty += 'x'
+                        if tx.resource:
+                            if tx.resource.resource_type.ocp_artwork_type.is_account():
+                                if tx.resource.resource_type.unit.name == 'Each':
+                                    ex.receive_resource += str(tx.resource.resource_type.unit_of_price)
+                                else:
+                                    ex.receive_resource += str(tx.resource.resource_type.unit)
+                            else:
+                                ex.receive_resource += str(tx.resource)
+                        elif tx.resource_type:
+                            ex.receive_resource += str(tx.resource_type)
+                        else:
+                            if tx.unit_of_quantity:
+                                ex.receive_resource += 'u:'+str(tx.unit_of_quantity)
+                            elif tx.transfer_type.is_share():
+                                ex.receive_resource += str(tx.transfer_type.is_share().resource_type)
+                            else:
+                                ex.receive_resource += '? '+str(tx)
+                        if tx: # and not forloop.last:
+                            ex.receive_resource += ' '
+
+            else:
+                ex.give_qty += '?'
+                ex.receive_qty += '?'
+
+            '''if ex.work_events():
+                for event in ex.work_events():
+                    if event.from_agent == self.agent:
+                        if not ex.give_qty:
+                            ex.give_qty += str(remove_exponent(event.quantity))
+                        if not ex.give_resource:
+                            if event.unit_of_quantity:
+                                ex.give_resource += str(event.unit_of_quantity)+str(_(' of '))+str(event.resource_type) #+' EV: '+str(event.__dict__)
+                            else:
+                                ex.give_resource += str(event.resource_type) #+' EV: '+str(event.__dict__)
+                        if event.description:
+                            ex.give_resource += ': <em class="inlist small">'+event.description+'</em>'
+                    elif event.to_agent == self.agent:
+                        if not ex.receive_qty:
+                            ex.receive_qty += str(remove_exponent(event.quantity))
+                        if not ex.receive_resource:
+                            if event.unit_of_quantity:
+                                ex.receive_resource += str(event.unit_of_quantity)+str(_(' of '))+str(event.resource_type) #'EV:'+str(event)
+                            else:
+                                ex.receive_resource += str(event.resource_type) #+' EV: '+str(event.__dict__)
+                        if event.description:
+                            ex.receive_resource += ': <em class="inlist small">'+event.description+'</em>'
+            '''
+
+            #print("------ end build actions ---")
+            camps = [
+                ex.actions,
+                ex.start_date.strftime("%Y-%m-%d"), # %H:%M  #escape(item.number),  # escape HTML for security reasons
+                ex.otheragent, #"{0} {1}".format(item.customer_firstname, item.customer_lastname)),  # escape HTML for security reasons
+                ex.give_qty,
+                ex.give_resource,
+                ex.give_lastdate,
+                ex.receive_qty,
+                ex.receive_resource,
+                ex.receive_lastdate
+            ]
+
+            json_data.append(camps)
+
+
+            #print("json_data: "+str(json_data))
+          # endfor
+        #print('--- prepare results (end) ----')
+
+        return json_data
+
+
 
 
 @login_required

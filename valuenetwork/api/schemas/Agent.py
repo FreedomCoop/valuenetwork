@@ -27,25 +27,26 @@ class Query(object): #graphene.AbstractType):
     user_is_authorized_to_create = graphene.Boolean(scope_id=graphene.Int())
 
 
-    def resolve_my_agent(self, args, *rargs):
+    def resolve_my_agent(self, context, **args): #args, *rargs):
         agentUser = AgentUser.objects.filter(user=self.user).first()
         agent = agentUser.agent
         if agent:
             return formatAgent(agent)
         raise PermissionDenied("Cannot find requested agent")
 
-    def resolve_agent(self, args, *rargs):
-        id = args.get('id')
+    def resolve_agent(self, context, **args): #args, *rargs):
+        #print(ide)
+        id = args.get('id') #ide.id
         if id is not None:
             agent = EconomicAgent.objects.get(pk=id)
             if agent:
                 return formatAgent(agent)
         raise PermissionDenied("Cannot find requested agent")
 
-    def resolve_all_agents(self, args, context, info):
+    def resolve_all_agents(self, context, **args): #args, context, info):
         return formatAgentList(EconomicAgent.objects.all())
 
-    def resolve_user_is_authorized_to_create(self, args, context, info):
+    def resolve_user_is_authorized_to_create(self, context, **args): #args, context, info):
         context_agent_id = args.get('contest_agent_id')
         user_agent = AgentUser.objects.filter(user=self.user).first().agent
         return user_agent.is_authorized(context_agent_id=context_agent_id)

@@ -11,7 +11,9 @@ admin.site.register(Unit)
 admin.site.register(UseCase)
 admin.site.register(AccountingReference)
 admin.site.register(AgentResourceRoleType)
-admin.site.register(AgentResourceRole)
+class AgentResourceRoleAdmin(admin.ModelAdmin):
+    list_display = ('id', 'agent', 'role', 'resource')
+admin.site.register(AgentResourceRole, AgentResourceRoleAdmin)
 admin.site.register(Location)
 admin.site.register(UseCaseEventType)
 admin.site.register(HomePageLayout)
@@ -207,8 +209,8 @@ class EconomicAgentAdmin(TranslationAdmin):
 admin.site.register(EconomicAgent, EconomicAgentAdmin)
 
 class AgentAssociationAdmin(admin.ModelAdmin):
-    list_display = ('representation', 'association_type', 'state', 'is_associate', 'has_associate')
-    list_filter = ['association_type', 'state', 'is_associate', 'has_associate']
+    list_display = ('id', 'representation', 'association_type', 'state', 'is_associate', 'has_associate')
+    list_filter = ['association_type', 'state', 'is_associate'] #, 'has_associate']
 
 admin.site.register(AgentAssociation, AgentAssociationAdmin)
 

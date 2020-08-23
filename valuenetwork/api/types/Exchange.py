@@ -23,13 +23,13 @@ class ExchangeAgreement(DjangoObjectType):
 
     involved_agents = graphene.List(lambda: types.Agent)
 
-    def resolve_scope(self, args, *rargs):
+    def resolve_scope(self, context, **args): #args, *rargs):
         return formatAgent(self.scope)
 
-    def resolve_transfers(self, args, context, info):
+    def resolve_transfers(self, context, **args): #args, context, info):
         return self.transfers.all()
 
-    def resolve_involved_agents(self, args, context, info):
+    def resolve_involved_agents(self, context, **args): #args, context, info):
         agents = self.related_agents()
         formatted_agents = []
         for agent in agents:
@@ -71,50 +71,50 @@ class Transfer(DjangoObjectType):
 
     involved_agents = graphene.List(lambda: types.Agent)
 
-    def resolve_under(self, args, *rargs):
-        #VF does not have an exchange unless it is created ahead of time for reciprocal commitments 
+    def resolve_under(self, context, **args): #args, *rargs):
+        #VF does not have an exchange unless it is created ahead of time for reciprocal commitments
         return self.exchange_agreement
 
-    def resolve_scope(self, args, *rargs):
+    def resolve_scope(self, context, **args): #args, *rargs):
         return formatAgent(self.scope)
 
-    def resolve_provider(self, args, *rargs):
+    def resolve_provider(self, context, **args): #args, *rargs):
         return formatAgent(self.provider)
 
-    def resolve_receiver(self, args, *rargs):
+    def resolve_receiver(self, context, **args): #args, *rargs):
         return formatAgent(self.receiver)
 
-    def resolve_resource_classified_as(self, args, *rargs):
+    def resolve_resource_classified_as(self, context, **args): #args, *rargs):
         return self.resource_classified_as
 
-    def resolve_give_resource(self, args, *rargs):
+    def resolve_give_resource(self, context, **args): #args, *rargs):
         return self.give_resource
 
-    def resolve_take_resource(self, args, *rargs):
+    def resolve_take_resource(self, context, **args): #args, *rargs):
         return self.take_resource
 
-    def resolve_transfer_quantity(self, args, *rargs):
+    def resolve_transfer_quantity(self, context, **args): #args, *rargs):
         return QuantityValueProxy(numeric_value=self.actual_quantity(), unit=self.unit)
 
-    def resolve_transfer_economic_events(self, args, context, info):
+    def resolve_transfer_economic_events(self, context, **args): #args, context, info):
         return self.events.all()
 
-    def resolve_give_economic_event(self, args, *rargs):
+    def resolve_give_economic_event(self, context, **args): #args, *rargs):
         return self.give_event()
 
-    def resolve_take_economic_event(self, args, *rargs):
+    def resolve_take_economic_event(self, context, **args): #args, *rargs):
         return self.receive_event()
 
-    def resolve_give_commitment(self, args, *rargs):
+    def resolve_give_commitment(self, context, **args): #args, *rargs):
         return self.give_commitment()
 
-    def resolve_take_commitment(self, args, *rargs):
+    def resolve_take_commitment(self, context, **args): #args, *rargs):
         return self.receive_commitment()
 
-    def resolve_transfer_commitments(self, args, context, info):
+    def resolve_transfer_commitments(self, context, **args): #args, context, info):
         return self.commitments.all()
 
-    def resolve_involved_agents(self, args, context, info):
+    def resolve_involved_agents(self, context, **args): #args, context, info):
         agents = self.related_agents()
         formatted_agents = []
         for agent in agents:

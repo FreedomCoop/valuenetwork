@@ -26,7 +26,7 @@ class Query(object): #graphene.AbstractType):
 
     # load single item
 
-    def resolve_process(self, args, *rargs):
+    def resolve_process(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id is not None:
             process = ProcessProxy.objects.get(pk=id)
@@ -36,12 +36,13 @@ class Query(object): #graphene.AbstractType):
 
     # load all items
 
-    def resolve_all_processes(self, args, context, info):
+    def resolve_all_processes(self, context, **args): #args, context, info):
         return ProcessProxy.objects.all()
 
 
 class CreateProcess(AuthedMutation):
-    class Input(with_metaclass(AuthedInputMeta)):
+    class Arguments: #Input(with_metaclass(AuthedInputMeta)):
+        token = graphene.String()
         name = graphene.String(required=True)
         planned_start = graphene.String(required=True)
         planned_finish = graphene.String(required=True)
@@ -51,8 +52,8 @@ class CreateProcess(AuthedMutation):
 
     process = graphene.Field(lambda: Process)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         name = args.get('name')
         planned_start = args.get('planned_start')
         planned_finish = args.get('planned_finish')
@@ -75,10 +76,10 @@ class CreateProcess(AuthedMutation):
             notes=note,
             context_agent=scope,
             plan=plan,
-            created_by=context.user,
+            created_by=info.context.user,
         )
 
-        user_agent = AgentUser.objects.get(user=context.user).agent
+        user_agent = AgentUser.objects.get(user=info.context.user).agent
         is_authorized = user_agent.is_authorized(object_to_mutate=process)
         if is_authorized:
             process.save()
@@ -89,7 +90,8 @@ class CreateProcess(AuthedMutation):
 
 
 class UpdateProcess(AuthedMutation):
-    class Input(with_metaclass(AuthedInputMeta)):
+    class Arguments: #(with_metaclass(AuthedInputMeta)):
+        token = graphene.String()
         id = graphene.Int(required=True)
         name = graphene.String(required=False)
         planned_start = graphene.String(required=False)
@@ -101,8 +103,8 @@ class UpdateProcess(AuthedMutation):
 
     process = graphene.Field(lambda: Process)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         id = args.get('id')
         name = args.get('name')
         planned_start = args.get('planned_start')
@@ -132,9 +134,9 @@ class UpdateProcess(AuthedMutation):
                 process.plan=plan
             if is_finished != None:
                 process.finished=is_finished
-            process.changed_by=context.user
+            process.changed_by=info.context.user
 
-            user_agent = AgentUser.objects.get(user=context.user).agent
+            user_agent = AgentUser.objects.get(user=info.context.user).agent
             is_authorized = user_agent.is_authorized(object_to_mutate=process)
             if is_authorized:
                 process.save_api()
@@ -146,18 +148,19 @@ class UpdateProcess(AuthedMutation):
 
 
 class DeleteProcess(AuthedMutation):
-    class Input(with_metaclass(AuthedInputMeta)):
+    class Arguments: #Input(with_metaclass(AuthedInputMeta)):
+        token = graphene.String()
         id = graphene.Int(required=True)
 
     process = graphene.Field(lambda: Process)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         id = args.get('id')
         process = ProcessProxy.objects.get(pk=id)
         if process:
             if process.is_deletable():
-                user_agent = AgentUser.objects.get(user=context.user).agent
+                user_agent = AgentUser.objects.get(user=info.context.user).agent
                 is_authorized = user_agent.is_authorized(object_to_mutate=process)
                 if is_authorized:
                     process.delete()

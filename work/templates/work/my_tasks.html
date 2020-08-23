@@ -9,7 +9,7 @@
 {% block extra_head %}
 
 
-<link rel="stylesheet" href="https://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" />
+<!-- <link rel="stylesheet" href="https://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" /> -->
 <link rel="stylesheet" href="{% static 'css/chosen.css' %}" />
 
 <style>
@@ -52,20 +52,17 @@
     margin-bottom: 0;
 }
 
-#todoModal textarea {
-  width: 400px;
+/*#todoModal textarea {
   height: 200px;
 }
 
 .changeModal textarea {
-  width: 400px;
   height: 200px;
 }
 
 .commitmentModal textarea {
-  width: 400px;
   height: 200px;
-}
+}*/
 
 .entry-label {
     text-align: right;
@@ -273,9 +270,13 @@ th, td {
                             </div>
 
                             <div class="modal hide fade todoModal" id="todoModal" tabindex="-1" role="dialog" aria-labelledby="todo-label" aria-hidden="true">
+                              <div class="modal-dialog">
+                              <div class="modal-content">
                                 <div class="modal-header">
-                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                     <h3 id="todo-label">{% trans "Add a task" %}</h3>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
                                 </div>
                                 <div class="modal-body">
 
@@ -288,7 +289,9 @@ th, td {
                                         <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Add" %}' />
                                     </div>
                                     </form>
-                            </div>
+                                </div>
+                              </div>
+                              </div>
                             </div>
                         {% else %}
                             <div class="error">
@@ -359,9 +362,13 @@ th, td {
                                         </div>
 
                                         <div class="modal hide fade changeModal" id="changeModal-{{ todo.id }}" tabindex="-1" role="dialog" aria-labelledby="change-label" aria-hidden="true">
+                                          <div class="modal-dialog">
+                                          <div class="modal-content">
                                             <div class="modal-header">
-                                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                                 <h3 id="change-label">{% trans "Change task" %}</h3>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
                                             </div>
                                             <div class="modal-body">
 
@@ -374,6 +381,8 @@ th, td {
                                                     <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Change" %}' />
                                                   </div>
                                                 </form>
+                                            </div>
+                                          </div>
                                           </div>
                                         </div>
 
@@ -395,7 +404,7 @@ th, td {
 
                             {% if agent == todo.from_agent %}
                                 {% with todo.todo_event as event %}
-                                    
+
                                     <td colspan="1" class="did" >
                                         <textarea class="input-block-level did" id="{{ todo.id }}-didId" name="{{ todo.id }}-did" rows="3"
                                         />{% if event %}{% if event.description %}{{ event.description }}{% endif %}{% endif %}</textarea>
@@ -410,7 +419,7 @@ th, td {
                                         </form>
                                         <span id="{{ todo.id }}-timeSaving"></span>
                                     </td>
-                                    
+
                                     <td>
                                         {{ todo.resource_type.unit }}
                                     </td>
@@ -449,9 +458,13 @@ th, td {
 										</div>
 
 										<div class="modal hide fade commitmentModal" id="commitmentModal{{ item.id }}" tabindex="-1" role="dialog" aria-labelledby="commitment-label" aria-hidden="true">
-											<div class="modal-header">
-												<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+										  <div class="modal-dialog">
+                                          <div class="modal-content">
+                                            <div class="modal-header">
 												<h3 id="commitment-label">{% trans "Take this task" %}: {{ item.resource_type.name }}</h3>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
 											</div>
 											<div class="modal-body">
 
@@ -472,8 +485,9 @@ th, td {
 													</div>
 
 												</div>
-										  </div>
-
+										    </div>
+                                          </div>
+                                          </div>
 										</div>
 
 									{% endif %}
@@ -639,9 +653,13 @@ th, td {
                                         {% endif %}
                                         {% if agent == todo.to_agent %}
                                             <div class="modal hide fade changeModal" id="changeModal-{{ todo.id }}" tabindex="-1" role="dialog" aria-labelledby="change-label" aria-hidden="true">
+                                              <div class="modal-dialog">
+                                              <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                                     <h3 id="change-label">{% trans "Change task" %}</h3>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
                                                 </div>
                                                 <div class="modal-body">
 
@@ -654,6 +672,8 @@ th, td {
                                                         <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Change" %}' />
                                                       </div>
                                                     </form>
+                                                </div>
+                                              </div>
                                               </div>
                                             </div>
                                          {% endif %}
@@ -678,7 +698,7 @@ th, td {
 {% endblock %}
 {% block extra_script %}
 	<script type="text/javascript" src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.10.0/jquery.validate.min.js"></script>
-	<script src="https://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+	<!-- <script src="https://code.jquery.com/ui/1.9.2/jquery-ui.js"></script> -->
 	<script src="{% static 'js/chosen.jquery.js' %}"></script>
 {% endblock %}
 
@@ -702,7 +722,7 @@ th, td {
 		$('.date-entry').datepicker({ dateFormat: "yy-mm-dd" });
 
 		//$(".chzn-select").chosen();
-		$("textarea").resizable();
+		//$("textarea").resizable();
 
 		jQuery.validator.setDefaults({
 		    success: function(label) {
@@ -774,12 +794,12 @@ th, td {
 
 		$('.optional-quantity').blur(saveTime);
 		$('.did').blur(saveDescription);
-		
-		
+
+
     $(".context-selector").change(getResourceTypes);
 
 	}); // end document.ready
-	
+
 	function getResourceTypes(event)
     {
         var selectedContext = event.target.value;
@@ -805,7 +825,7 @@ th, td {
                     $(resourceTypeFieldId).append('<option value="' + id + '">' + name + '</option>')
                 }
             });
-            
+
     }
 
 	function saveTime(event)

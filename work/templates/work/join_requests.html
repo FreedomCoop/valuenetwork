@@ -50,6 +50,20 @@ table#listable.table-bordered.dataTable th, table#listable.table-bordered.dataTa
     border-left-width: 1px;
 }
 
+#listable_processing {
+    left: 0;
+    top: -10px;
+    margin: 0;
+    border: none;
+    width: 100%;
+}
+.jrlist div.dataTables_wrapper div.dataTables_paginate ul.pagination {
+    justify-content: flex-start;
+}
+.right {
+   text-align: right;
+}
+
 </style>
 
 
@@ -105,6 +119,7 @@ table#listable.table-bordered.dataTable th, table#listable.table-bordered.dataTa
                 <!-- <th>{% trans "Fobi" %}</th> -->
             </thead>
             <tbody>
+              {% comment %}
                 {% for req in requests %}
                     <tr class="{% cycle 'odd' 'even' %}">
                       <td>{{ req.actions|safe }}</td>
@@ -121,7 +136,8 @@ table#listable.table-bordered.dataTable th, table#listable.table-bordered.dataTa
                              {{ req.name }} {{ req.surname }}
                           {% endif %}
                       </td>
-                      <td>{% if req.agent %} <a href="{% url "members_agent" agent_id=req.agent.id %}"><b><em>{{ req.agent.username }}</em></b></a> {% elif req.requested_username %} {{ req.requested_username }} {% else %} ?? {% endif %}</td>
+                      <td>{% if req.agent %} <a href="{% url "members_agent" agent_id=req.agent.id %}"><b><em>{{ req.agent.username }}</em></b></a>
+                          {% elif req.requested_username %} {{ req.requested_username }} {% else %} ?? {% endif %}</td>
                       <td>{% if req.agent %} {{ req.agent.agent_type }}
                               {% if not req.agent.agent_type|lower == req.type_of_user %}({{ req.type_of_user }}){% endif %}
                           {% else %} {{ req.type_of_user }} {% endif %}</td>
@@ -150,6 +166,7 @@ table#listable.table-bordered.dataTable th, table#listable.table-bordered.dataTa
                       {% endif %}
                     </tr>
                 {% endfor %}
+              {% endcomment %}
             </tbody>
             <!-- <tfoot>
                 <th>{% trans "Actions" %}</th>
@@ -176,19 +193,19 @@ table#listable.table-bordered.dataTable th, table#listable.table-bordered.dataTa
 {% endblock %}
 
 {% block extra_script %}
-	<script type="text/javascript" charset="utf8" src="https://code.jquery.com/ui/1.9.2/jquery-ui.js"></script> <!-- -->
-	<script type="text/javascript" src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.10.0/jquery.validate.min.js"></script>
+	<script type="text/javascript" charset="utf8" src="{% static 'js/jquery-ui.min.js' %}"></script> <!-- -->
+	<script type="text/javascript" src="{% static 'js/jquery.validate.min.js' %}"></script>
     <script type="text/javascript" charset="utf8" src="{% static "js/jquery.expander.min.js" %}"></script>
 
    <!-- <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-2.2.4.min.js"></script>  https://code.jquery.com/jquery-3.3.1.min.js
 
     <script type="text/javascript" charset="utf8" src="{% static "js/datatables.min.js" %}"></script> -->
 
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs4/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/r-2.2.5/datatables.min.css"/>
+<link rel="stylesheet" type="text/css" href="{% static 'css/datatables.min.css' %}"/>
 
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/v/bs4/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/r-2.2.5/datatables.min.js"></script>
+<script type="text/javascript" src="{% static 'js/pdfmake.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/vfs_fonts.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/datatables.min.js' %}"></script>
 
 {% endblock %}
 
@@ -204,14 +221,22 @@ table#listable.table-bordered.dataTable th, table#listable.table-bordered.dataTa
       //$("#listable").DataTable();
   //};
 
-  $(document).ready(function(){
+$(document).ready(function(){
 
-    $("#listable").DataTable({
-        stateSave: true,
-        autoWidth: true,
-        order: [[1, 'desc']],
-        dom: '<"row no-gutters"<"col"ir><"col"f><"col"B>><"row no-gutters bigbox"t><"row no-gutters"<"col"l><"col"p>>',//'irftBpl', //'B<"clear">lfrtip',
-        buttons: [
+  $("#listable")
+    .on( 'processing.dt', function ( e, settings, processing ) {
+            $('#listable_processing').css( 'display', processing ? 'block' : 'none' );
+            $('.table-condensed').attr('style', processing ? 'pointer-events:none; opacity:0.5;' : 'pointer-events:inherit; opacity:1;');
+            if(!processing){
+                update_longs();
+            }
+       } )
+    .DataTable({
+        "stateSave": true,
+        "autoWidth": true,
+        "order": [[1, 'desc']],
+        "dom": '<"row no-gutters"<"col"ri><"col right"l>><"row no-gutters bigbox"t><"row no-gutters"<"col left"p><"col"B>>',//'irftBpl', //'B<"clear">lfrtip',
+        "buttons": [
             'colvis',
             {
                 extend: 'pdf',
@@ -226,7 +251,40 @@ table#listable.table-bordered.dataTable th, table#listable.table-bordered.dataTa
                 }
             },
         ],
-        "columnDefs": [
+
+        "lengthMenu": [[5, 10, 50, 100, 500], [5, 10, 50, 100, 500]],
+
+        "processing": true,
+        "serverSide": true,
+        "ajax": {
+            "url": "{% url 'joinreq_list_json' agent_id=project.agent.id state=state %}",
+            "type": "POST"
+        },
+        "language": {
+            "processing": "<img src='{% static 'img/loading.gif' %}' />"
+        },
+
+        "columns": [
+            { "orderable": false },
+            null, //{ "data": "request_date" },
+            null, //{ "data": "name" },
+            null, //{ "data": "requested_username" },
+            null, //{ "data": "type_of_user" },
+            null, //{ "data": "email_address" },
+            { "orderable": false }, //{ "data": "phone_number",
+            { "orderable": false }, //{ "data": "address",
+            { "orderable": false }, //{ "data": "website",
+            {% for key in fobi_headers %}
+                { "orderable": false,
+                  "className": "fobi"
+                },
+                //{   "class": "fobi",
+                //    "orderable": true,
+                //    "defaultContent": "Fobi" },
+            {% endfor %}
+        ],
+
+        /*"columnDefs": [
             {
                 // The `data` parameter refers to the data for the cell (defined by the
                 // `data` option, which defaults to the column being worked with, in
@@ -242,7 +300,7 @@ table#listable.table-bordered.dataTable th, table#listable.table-bordered.dataTa
                 },
                 "targets": 1
             }
-        ]
+        ]*/
     });
 
     //$("div.dataTables_wrapper > div.row").first().css('text-align: right;')
@@ -252,18 +310,21 @@ table#listable.table-bordered.dataTable th, table#listable.table-bordered.dataTa
         $('form#stateForm').submit();
     });
 
-    $('.fobi').each(function(e) {
-        $(this).expander({
-            slicePoint:       20,  // default is 100
-            expandSpeed: 0,
-            expandEffect: 'show',
-            collapseSpeed: 0,
-            collapseEffect: 'hide',
-            expandPrefix:     ' ', // default is '... '
-            expandText:       '[...]', // default is 'read more'
-            userCollapseText: '[^]'  // default is 'read less'
+    function update_longs(){
+        $('.fobi').each(function(e) {
+            $(this).expander({
+                    slicePoint:       20,  // default is 100
+                    expandSpeed: 0,
+                    expandEffect: 'show',
+                    collapseSpeed: 0,
+                    collapseEffect: 'hide',
+                    expandPrefix:     ' ', // default is '... '
+                    expandText:       '&nbsp; <span style="font-weight:bold">+</span>', // default is 'read more'
+                    userCollapseText: '&nbsp; <span style="font-weight:bold">&ndash;</span>'  // default is 'read less'
+            });
         });
-    });
+    };
+    update_longs();
 
 
     $( "#help" ).toggle( function(){

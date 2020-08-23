@@ -37,9 +37,7 @@ h3, h4 {
     /*color: firebrick;*/
     margin-bottom: 3px;
 }
-.modal {
-    width: 600px;
-}
+
 .subsection-label {
     font-weight: bold;
 }
@@ -87,6 +85,7 @@ li {
 .btn-mini {
     margin-top: 1px;
     margin-bottom: 1px;
+    font-size: .9rem;
 }
 .item-description {
     height: 40px;
@@ -187,8 +186,8 @@ h3.trtheading {
               {% endif %}
             {% endif %}
             <!-- <a class="indent" href="{% url "exchanges_all" agent_id=context_agent.id %}">{% trans "All Exchanges" %}</a>
-            <a class="indent" href="{% url 'members_agent' agent_id=context_agent.id %}">{% trans "View Project" %}</a> -->
-            <a class="indent" href="{% url "your_projects" %}">{% trans "Your Projects" %}</a>
+            <a class="indent" href="{% url 'members_agent' agent_id=context_agent.id %}">{% trans "View Project" %}</a>
+            <a class="indent" href="{% url "your_projects" %}">{% trans "Your Projects" %}</a> -->
         </div>
 	</legend>
 
@@ -394,10 +393,14 @@ h3.trtheading {
                             </p>
                             {% if agent and exchange and logger %}
                                 {% if not slot.is_currency %}
-                                  <div class="modal hide fade" id="addTransferModal{{ slot.id }}" tabindex="-1" role="dialog" aria-labelledby="xfer{{ slot.id }}" aria-hidden="true">
+                                <div class="modal hide fade" id="addTransferModal{{ slot.id }}" tabindex="-1" role="dialog" aria-labelledby="xfer{{ slot.id }}" aria-hidden="true">
+                                  <div class="modal-dialog">
+                                  <div class="modal-content">
                                     <div class="modal-header">
-                                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                         <h3 id="xfer{{ slot.id }}">{% trans "Log a new " %}{{ slot.name }}</h3>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
                                     </div>
                                     <div class="modal-body">
                                         <form class="validateMe" id="xferForm{{ slot.id }}" enctype="multipart/form-data" action="{% url "add_transfer" exchange_id=exchange.id transfer_type_id=slot.id %}" method="POST" >
@@ -478,11 +481,17 @@ h3.trtheading {
                                         </form>
                                     </div>
                                   </div>
+                                  </div>
+                                </div>
                                 {% endif %}
                                 <div class="modal hide fade" id="addCommitModal{{ slot.id }}" tabindex="-1" role="dialog" aria-labelledby="commit" aria-hidden="true">
+                                  <div class="modal-dialog">
+                                  <div class="modal-content">
                                     <div class="modal-header">
-                                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                         <h3 id="commit">{% trans "Log a new Commitment:" %} {{ slot.name }}</h3>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
                                     </div>
                                     <div class="modal-body">
                                         <form class="validateMe" id="commitForm" enctype="multipart/form-data" action="{% url "add_transfer_commitment_work" exchange_id=exchange.id transfer_type_id=slot.id %}" method="POST" >
@@ -522,6 +531,8 @@ h3.trtheading {
                                             </div>
                                         </form>
                                     </div>
+                                  </div>
+                                  </div>
                                 </div>
                             {% endif %}
 
@@ -535,11 +546,15 @@ h3.trtheading {
                                         {% if logger or comm.created_by == request.user or comm.to_agent == agent or comm.to_agent in agent.managed_projects %}
                                           {% if logger and not exchange.join_request and not exchange.join_request.agent == agent %}
                                             {% if not comm.to_agent %}
-                                               <a href="#agentModal{{ comm.id }}" class="btn btn-primary btn-mini" role="button" data-toggle="modal" alt="Create a new external agent (without a OCP user)">{% trans "New External Agent?" %}</a>
-                                               <div class="modal hide fade" id="agentModal{{ comm.id }}" tabindex="-1" role="dialog" aria-labelledby="xfer-label" aria-hidden="true">
+                                              <a href="#agentModal{{ comm.id }}" class="btn btn-primary btn-mini" role="button" data-toggle="modal" alt="Create a new external agent (without a OCP user)">{% trans "New External Agent?" %}</a>
+                                              <div class="modal hide fade" id="agentModal{{ comm.id }}" tabindex="-1" role="dialog" aria-labelledby="xfer-label" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                <div class="modal-content">
                                                   <div class="modal-header">
-                                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                                     <h3 id="xfer-label">{% trans "Create an external economic agent" %}</h3>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
                                                   </div>
                                                   <div class="modal-body">
                                                     <form class="validateMe" enctype="multipart/form-data" action="{% url "add_transfer_external_agent" commitment_id=xfer.commitments.first.id context_agent_id=context_agent.id %}" method="POST" >
@@ -554,16 +569,22 @@ h3.trtheading {
                                                       </div>
                                                     </form>
                                                   </div>
-                                               </div>
+                                                </div>
+                                                </div>
+                                              </div>
                                             {% endif %}
 
-                                            <a href="#cmitModal{{ comm.id }}" role="button" class="btn btn-info btn-mini" data-toggle="modal">
+                                            <a href="#cmitModal{{ comm.id }}" role="button" class="btn btn-info btn-mini-icon" data-toggle="modal">
                                                 <i class="icon-edit"></i>
                                             </a>
                                             <div class="modal hide fade" id="cmitModal{{ comm.id }}" tabindex="-1" role="dialog" aria-labelledby="cmit-label" aria-hidden="true">
+                                              <div class="modal-dialog">
+                                              <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                                     <h3 id="cmit-label">{% trans "Change Transfer Commitment" %}</h3>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
                                                 </div>
                                                 <div class="modal-body">
                                                     <form class="validateMe" enctype="multipart/form-data" action="{% url "change_transfer_commitments_work" transfer_id=xfer.id %}" method="POST" >
@@ -607,6 +628,8 @@ h3.trtheading {
                                                         </div>
                                                     </form>
                                                 </div>
+                                              </div>
+                                              </div>
                                             </div>
                                             {% if not comm.fulfillment_events.all and not exchange.join_request %}
                                                 <form
@@ -622,11 +645,15 @@ h3.trtheading {
                                                 {% if comm.to_agent %}
                                                   <a href="#xferModal{{ comm.id }}" role="button" class="btn btn-primary btn-mini" data-toggle="modal" alt="Record transfer based on commitment">{% trans "Transfer This" %}</a>
                                                   <div class="modal hide fade" id="xferModal{{ comm.id }}" tabindex="-1" role="dialog" aria-labelledby="xfer-label" aria-hidden="true">
-                                                    <div class="modal-header">
-                                                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                                                    <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                      <div class="modal-header">
                                                         <h3 id="xfer-label">{% trans "Make Transfer from Commitment" %}</h3>
-                                                    </div>
-                                                    <div class="modal-body">
+                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                      </div>
+                                                      <div class="modal-body">
                                                         <form class="validateMe" enctype="multipart/form-data" action="{% url "transfer_from_commitment" transfer_id=xfer.id %}" method="POST" >
                                                             {% csrf_token %}
                                                             {% with xfer.commit_transfer_context_form as ct_form %}
@@ -693,6 +720,8 @@ h3.trtheading {
                                                                 <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Save" %}' />
                                                             </div>
                                                         </form>
+                                                      </div>
+                                                    </div>
                                                     </div>
                                                   </div>
                                                 {% endif %}
@@ -711,14 +740,18 @@ h3.trtheading {
                                                 {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}+ {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
                                                 {% if logger or evt.created_by == request.user or evt.to_agent == agent or evt.to_agent in agent.managed_projects %}
                                                   {% if logger and not exchange.join_request and not exchange.join_request.agent == agent %}
-                                                    <a href="#xferModal{{ evt.id }}" role="button" class="btn btn-info btn-mini" data-toggle="modal">
+                                                    <a href="#xferModal{{ evt.id }}" role="button" class="btn btn-info btn-mini-icon" data-toggle="modal">
                                                         <i class="icon-edit"></i>
                                                     </a>
 
                                                     <div class="modal hide fade" id="xferModal{{ evt.id }}" tabindex="-1" role="dialog" aria-labelledby="xfer-label" aria-hidden="true">
+                                                      <div class="modal-dialog">
+                                                      <div class="modal-content">
                                                         <div class="modal-header">
-                                                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                                             <h3 id="xfer-label">{% trans "Change Transfer" %}</h3>
+                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                <span aria-hidden="true">&times;</span>
+                                                            </button>
                                                         </div>
                                                         <div class="modal-body">
                                                             <form class="validateMe" enctype="multipart/form-data" action="{% url "change_transfer_events_work" transfer_id=xfer.id context_agent_id=context_agent.id %}" method="POST" >
@@ -765,11 +798,13 @@ h3.trtheading {
                                                                 {% endwith %}
                                                                 <input type="hidden" id="next" name="next" value="exchange-work" />
                                                                 <div class="modal-footer">
-                                                                    <button class="btn" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
+                                                                    <button class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
                                                                     <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Save" %}' />
                                                                 </div>
                                                             </form>
                                                         </div>
+                                                      </div>
+                                                      </div>
                                                     </div>
                                                     {% if not slot.is_currency and not exchange.join_request %}
                                                       <form
@@ -802,13 +837,17 @@ h3.trtheading {
                                         {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}+ {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
                                         {% if logger or evt.created_by == request.user or evt.to_agent == agent or evt.to_agent in agent.managed_projects %}
                                           {% if logger and not exchange.join_request and not exchange.join_request.agent == agent %}
-                                            <a href="#xferModal{{ evt.id }}" role="button" class="btn btn-info btn-mini" data-toggle="modal">
+                                            <a href="#xferModal{{ evt.id }}" role="button" class="btn btn-info btn-mini-icon" data-toggle="modal">
                                                 <i class="icon-edit"></i>
                                             </a>
                                             <div class="modal hide fade" id="xferModal{{ evt.id }}" tabindex="-1" role="dialog" aria-labelledby="xfer-label" aria-hidden="true">
+                                              <div class="modal-dialog">
+                                              <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                                     <h3 id="xfer-label">{% trans "Change Transfer" %}</h3>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
                                                 </div>
                                                 <div class="modal-body">
                                                     <form class="validateMe" enctype="multipart/form-data" action="{% url "change_transfer_events_work" transfer_id=xfer.id context_agent_id=context_agent.id %}" method="POST" >
@@ -860,6 +899,8 @@ h3.trtheading {
                                                         </div>
                                                     </form>
                                                 </div>
+                                              </div>
+                                              </div>
                                             </div>
                                             {% if not slot.is_currency and not exchange.join_request %}
                                               <form
@@ -948,10 +989,14 @@ h3.trtheading {
                             </p>
                             {% if agent and exchange and logger %}
                                 {% if not slot.is_currency %}
-                                  <div class="modal hide fade" id="addTransferModal{{ slot.id }}" tabindex="-1" role="dialog" aria-labelledby="xfer{{ slot.id }}" aria-hidden="true">
+                                <div class="modal hide fade" id="addTransferModal{{ slot.id }}" tabindex="-1" role="dialog" aria-labelledby="xfer{{ slot.id }}" aria-hidden="true">
+                                  <div class="modal-dialog">
+                                  <div class="modal-content">
                                     <div class="modal-header">
-                                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                         <h3 id="xfer{{ slot.id }}">{% trans "Log a new:" %} {{ slot.name }}</h3>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
                                     </div>
                                     <div class="modal-body">
                                         <form class="validateMe" id="xferForm{{ slot.id }}" enctype="multipart/form-data" action="{% url "add_transfer" exchange_id=exchange.id transfer_type_id=slot.id %}" method="POST" >
@@ -1032,11 +1077,17 @@ h3.trtheading {
                                         </form>
                                     </div>
                                   </div>
+                                  </div>
+                                </div>
                                 {% endif %}
                                 <div class="modal hide fade" id="addCommitModal{{ slot.id }}" tabindex="-1" role="dialog" aria-labelledby="commit" aria-hidden="true">
+                                  <div class="modal-dialog">
+                                  <div class="modal-content">
                                     <div class="modal-header">
-                                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                         <h3 id="commit">{% trans "Log a new Commitment:" %} {{ slot.name }}</h3>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
                                     </div>
                                     <div class="modal-body">
                                         <form class="validateMe" id="commitForm" enctype="multipart/form-data" action="{% url "add_transfer_commitment_work" exchange_id=exchange.id transfer_type_id=slot.id %}" method="POST" >
@@ -1077,6 +1128,8 @@ h3.trtheading {
                                             </div>
                                         </form>
                                     </div>
+                                  </div>
+                                  </div>
                                 </div>
                             {% endif %}
 
@@ -1090,11 +1143,15 @@ h3.trtheading {
                                         {% if logger or comm.created_by == request.user or comm.from_agent == request.user.agent.agent or comm.from_agent in request.user.agent.agent.managed_projects %}
                                           {% if logger and not exchange.join_request and not exchange.join_request.agent == agent %}
                                             {% if not comm.from_agent %}
-                                               <a href="#agentModal{{ comm.id }}" class="btn btn-primary btn-mini" role="button" data-toggle="modal" alt="Create a new external agent (without a OCP user)">{% trans "New External Agent?" %}</a>
-                                               <div class="modal hide fade" id="agentModal{{ comm.id }}" tabindex="-1" role="dialog" aria-labelledby="xfer-label" aria-hidden="true">
+                                              <a href="#agentModal{{ comm.id }}" class="btn btn-primary btn-mini" role="button" data-toggle="modal" alt="Create a new external agent (without a OCP user)">{% trans "New External Agent?" %}</a>
+                                              <div class="modal hide fade" id="agentModal{{ comm.id }}" tabindex="-1" role="dialog" aria-labelledby="xfer-label" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                <div class="modal-content">
                                                   <div class="modal-header">
-                                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                                     <h3 id="xfer-label">{% trans "Create an external economic agent" %}</h3>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
                                                   </div>
                                                   <div class="modal-body">
                                                     <form class="validateMe" enctype="multipart/form-data" action="{% url "add_transfer_external_agent" commitment_id=xfer.commitments.first.id context_agent_id=context_agent.id %}" method="POST" >
@@ -1109,15 +1166,21 @@ h3.trtheading {
                                                       </div>
                                                     </form>
                                                   </div>
-                                               </div>
+                                                </div>
+                                                </div>
+                                              </div>
                                             {% endif %}
-                                            <a href="#cmitModal{{ comm.id }}" role="button" class="btn btn-info btn-mini" data-toggle="modal">
+                                            <a href="#cmitModal{{ comm.id }}" role="button" class="btn btn-info btn-mini-icon" data-toggle="modal">
                                                 <i class="icon-edit"></i>
                                             </a>
                                             <div class="modal hide fade" id="cmitModal{{ comm.id }}" tabindex="-1" role="dialog" aria-labelledby="cmit-label" aria-hidden="true">
+                                              <div class="modal-dialog">
+                                              <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                                     <h3 id="cmit-label">{% trans "Change Transfer Commitment" %}</h3>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
                                                 </div>
                                                 <div class="modal-body">
                                                     <form class="validateMe" enctype="multipart/form-data" action="{% url "change_transfer_commitments_work" transfer_id=xfer.id %}" method="POST" >
@@ -1162,6 +1225,8 @@ h3.trtheading {
                                                         </div>
                                                     </form>
                                                 </div>
+                                              </div>
+                                              </div>
                                             </div>
                                             {% if not comm.fulfillment_events.all %}
                                                 <form
@@ -1177,11 +1242,15 @@ h3.trtheading {
                                                 {% if comm.from_agent %}
                                                   <a href="#xferModal{{ comm.id }}" role="button" class="btn btn-primary btn-mini" data-toggle="modal" alt="Record transfer based on commitment">{% trans "Transfer This" %}</a>
                                                   <div class="modal hide fade" id="xferModal{{ comm.id }}" tabindex="-1" role="dialog" aria-labelledby="xfer-label" aria-hidden="true">
-                                                    <div class="modal-header">
-                                                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                                                    <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                      <div class="modal-header">
                                                         <h3 id="xfer-label">{% trans "Make Transfer from Commitment" %}</h3>
-                                                    </div>
-                                                    <div class="modal-body">
+                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                      </div>
+                                                      <div class="modal-body">
                                                         <form class="validateMe" enctype="multipart/form-data" action="{% url "transfer_from_commitment" transfer_id=xfer.id %}" method="POST" >
                                                             {% csrf_token %}
                                                             {% with xfer.commit_transfer_context_form as ct_form %}
@@ -1248,6 +1317,8 @@ h3.trtheading {
                                                                 <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Save" %}' />
                                                             </div>
                                                         </form>
+                                                      </div>
+                                                    </div>
                                                     </div>
                                                   </div>
                                                 {% endif %}
@@ -1265,14 +1336,18 @@ h3.trtheading {
                                                 {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}+ {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
                                                 {% if logger or evt.created_by == request.user or evt.from_agent == agent or evt.from_agent in agent.managed_projects %}
                                                   {% if logger and not exchange.join_request %}
-                                                    <a href="#xferModal{{ evt.id }}" role="button" class="btn btn-info btn-mini" data-toggle="modal">
+                                                    <a href="#xferModal{{ evt.id }}" role="button" class="btn btn-info btn-mini-icon" data-toggle="modal">
                                                         <i class="icon-edit"></i>
                                                     </a>
 
                                                     <div class="modal hide fade" id="xferModal{{ evt.id }}" tabindex="-1" role="dialog" aria-labelledby="xfer-label" aria-hidden="true">
+                                                      <div class="modal-dialog">
+                                                      <div class="modal-content">
                                                         <div class="modal-header">
-                                                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                                             <h3 id="xfer-label">{% trans "Change Transfer" %}</h3>
+                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                <span aria-hidden="true">&times;</span>
+                                                            </button>
                                                         </div>
                                                         <div class="modal-body">
                                                             <form class="validateMe" enctype="multipart/form-data" action="{% url "change_transfer_events_work" transfer_id=xfer.id context_agent_id=context_agent.id %}" method="POST" >
@@ -1324,6 +1399,8 @@ h3.trtheading {
                                                                 </div>
                                                             </form>
                                                         </div>
+                                                      </div>
+                                                      </div>
                                                     </div>
                                                     {% if not slot.is_currency and not exchange.join_request %}
                                                       <form
@@ -1356,13 +1433,17 @@ h3.trtheading {
                                         {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}+ {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
                                         {% if logger or evt.created_by == request.user or evt.from_agent == agent or evt.from_agent in agent.managed_projects  %}
                                           {% if logger and not exchange.join_request and not exchange.join_request.agent == agent %}
-                                            <a href="#xferModal{{ evt.id }}" role="button" class="btn btn-info btn-mini" data-toggle="modal">
+                                            <a href="#xferModal{{ evt.id }}" role="button" class="btn btn-info btn-mini-icon" data-toggle="modal">
                                                 <i class="icon-edit"></i>
                                             </a>
                                             <div class="modal hide fade" id="xferModal{{ evt.id }}" tabindex="-1" role="dialog" aria-labelledby="xfer-label" aria-hidden="true">
+                                              <div class="modal-dialog">
+                                              <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                                     <h3 id="xfer-label">{% trans "Change Transfer" %}</h3>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
                                                 </div>
                                                 <div class="modal-body">
                                                     <form class="validateMe" enctype="multipart/form-data" action="{% url "change_transfer_events_work" transfer_id=xfer.id context_agent_id=context_agent.id %}" method="POST" >
@@ -1414,6 +1495,8 @@ h3.trtheading {
                                                         </div>
                                                     </form>
                                                 </div>
+                                              </div>
+                                              </div>
                                             </div>
                                             {% if not slot.is_currency and not exchange.join_request %}
                                               <form
@@ -1477,9 +1560,13 @@ h3.trtheading {
                 </h3>
                 {% if logger and exchange %}
                     <div class="modal hide fade" id="addWorkModal" tabindex="-1" role="dialog" aria-labelledby="work-label" aria-hidden="true">
+                      <div class="modal-dialog">
+                      <div class="modal-content">
                         <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                             <h3 id="work-label">{% trans "Add Work Done for This Exchange" %}</h3>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
                         </div>
                         <div class="modal-body">
                             <form class="validateMe" id="workForm" enctype="multipart/form-data" action="{% url "add_work_for_exchange" exchange_id=exchange.id %}" method="POST" >
@@ -1503,6 +1590,8 @@ h3.trtheading {
                                 </div>
                             </form>
                         </div>
+                      </div>
+                      </div>
                     </div>
                 {% endif %}
 
@@ -1511,14 +1600,18 @@ h3.trtheading {
                         <span ><span class="event-label">{% trans "Work event" %}: </span><b> {{ event.resource_type.name }}</b> {{ event.quantity }} {{ event.unit_of_quantity }} {{ event.event_date }} <span class="taken">{% trans "Done by" %} {{ event.from_agent.nick }}</span></span>
                         {% if agent == event.from_agent or logger or event.created_by == request.user %}
                           {% if logger %}
-                            <a href="#eventModal{{ event.id }}" role="button" class="btn btn-info btn-mini" data-toggle="modal">
+                            <a href="#eventModal{{ event.id }}" role="button" class="btn btn-info btn-mini-icon" data-toggle="modal">
                                 <i class="icon-edit"></i>
                             </a>
 
                             <div class="modal hide fade" id="eventModal{{ event.id }}" tabindex="-1" role="dialog" aria-labelledby="event-label" aria-hidden="true">
+                              <div class="modal-dialog">
+                              <div class="modal-content">
                                 <div class="modal-header">
-                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                     <h3 id="event-label">{% trans "Change Time Contribution" %}</h3>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
                                 </div>
                                 <div class="modal-body">
                                     <form class="validateMe"  class="eventForm{{ event.id }} validateMe" enctype="multipart/form-data" action="{% url "change_exchange_work_event" event_id=event.id %}" method="POST" >
@@ -1545,6 +1638,8 @@ h3.trtheading {
                                         </div>
                                     </form>
                                 </div>
+                              </div>
+                              </div>
                             </div>
 
                             <form

@@ -1429,7 +1429,7 @@ class WorkTodoForm(forms.ModelForm):
     due_date = forms.DateField(widget=forms.TextInput(attrs={'class': 'input-small date-entry',}))
     description = forms.CharField(
         required=False,
-        widget=forms.Textarea(attrs={'class': 'todo-description input-xlarge',}))
+        widget=forms.Textarea()) #attrs={'class': 'todo-description input-xlarge',}))
     url = forms.URLField(required=False, widget=forms.TextInput(attrs={'class': 'url input-xlarge',}))
 
     class Meta:

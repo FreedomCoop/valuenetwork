@@ -14,7 +14,7 @@
 
 .description {
     margin-top: 0;
-    margin-bottom: 0;
+    margin-bottom: .4rem;
     font-style: italic;
 }
 .description p {
@@ -61,24 +61,6 @@
                 &nbsp; &nbsp; &nbsp;
                 <a href="#create-agent" role="button" class="btn btn-primary" data-toggle="modal">{% trans "Create New Project" %}</a>
 
-                <div class="modal hide fade" id="create-agent" tabindex="-1" role="dialog" aria-labelledby="agent-label" aria-hidden="true">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                        <h3 id="agent-label">{% trans "Create a New Project" %}</h3>
-                    </div>
-                    <div class="modal-body">
-                        <form class="validateMe" id="projectForm" enctype="multipart/form-data" action="{% url "create_your_project" %}" method="POST" >
-                            {% csrf_token %}
-                            {{ agent_form|as_bootstrap }}
-                            {{ proj_form|as_bootstrap }}
-                            <div class="modal-footer">
-                                <button class="btn" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
-                                <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Save" %}' />
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
             {% endif %}
 
             <div class="subnav">
@@ -99,6 +81,31 @@
 
         </legend>
 
+    {% if user.agent.agent.is_active_freedom_coop_member or user.is_staff %}
+        <div class="modal hide fade" id="create-agent" tabindex="-1" role="dialog" aria-labelledby="agent-label" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 id="agent-label">{% trans "Create a New Project" %}</h3>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form class="validateMe" id="projectForm" enctype="multipart/form-data" action="{% url "create_your_project" %}" method="POST" >
+                            {% csrf_token %}
+                            {{ agent_form|as_bootstrap }}
+                            {{ proj_form|as_bootstrap }}
+                            <div class="modal-footer">
+                                <button class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
+                                <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Save" %}' />
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 
       {% if projects %}
        {% for req in agent.project_join_requests.all %}
@@ -117,7 +124,6 @@
         </h3>
         <ul class="managed-project">
         {% for node in projects %}
-            {% if not node.name == 'Freedom Coop' %}
               {% if node in agent.managed_projects %}
                   <li><h4><b><a href="../agent/{{ node.id }}">{{ node.name }}</a></b></h4>
                     <!-- {% if False and node.supply_exchange_count > 0 or node.demand_exchange_count > 0 or node.internal_exchange_count > 0 %}&nbsp;- &nbsp;<a href="{% url "exchanges_all" agent_id=node.id %}">{% trans "Exchanges" %}</a>{% endif %} -->
@@ -145,43 +151,27 @@
                     {% for aat in node.aats %}
                       {% if aat.identifier != "child" %}
                         <div class="assoc_group"> {{ aat.plural_name }}: {{ aat.assoc_count }}
-                          <span class="showhide" id="sh-{{ node.id }}{{ aat.id }}" >(Show)</span>
+                          <!-- <span class="showhide" id="sh-{{ node.id }}{{ aat.id }}" >(Show)</span> -->
                         </div>
-                        <div class="list" id="list-{{ node.id }}{{ aat.id }}" >
+                        <!-- <div class="list" id="list-{{ node.id }}{{ aat.id }}" >
                           <ul>
                             {% for assoc in aat.assoc_list %}
                             <li class="indent">
                               <b><a href="../agent/{{ assoc.id }}">{{ assoc.name }}</a> </b>
                               {% if assoc.state == "candidate" %} (candidate) {% endif%}
-                              <!-- <a class="indent" href="{% url "contributions" project_id=assoc.id %}">{% trans "Contributions" %}: {{ assoc.contributions_count }}</a>
-                              {% if assoc.wip %}
-                              <a class="indent" href="{% url "project_wip" project_id=assoc.id %}">{% trans "Work in process" %}: {{ assoc.wip.count }}</a>
-                              {% endif %}
-                              {% if assoc.supply_exchange_count > 0 %}
-                              <a class="indent" href="{% url "exchanges" agent_id=assoc.id %}">{% trans "Incoming Exchanges" %}: {{ assoc.supply_exchange_count }}</a>
-                              {% endif %}
-                              {% if assoc.demand_exchange_count > 0 %}
-                              <a class="indent" href="{% url "demand_exchanges" agent_id=assoc.id %}">{% trans "Outgoing Exchanges" %}: {{ assoc.demand_exchange_count }}</a>
-                              {% endif %}
-                              {% if assoc.internal_exchange_count > 0 %}
-                              <a class="indent" href="{% url "internal_exchanges" agent_id=assoc.id %}">{% trans "Internal Exchanges" %}: {{ assoc.internal_exchange_count }}</a>
-                              {% endif %}
-                              {% if assoc.distributions_count > 0 %}
-                              <a class="indent" href="{% url "distributions" agent_id=assoc.id %}">{% trans "Distributions" %}: {{ assoc.distributions_count }}</a>
-                              {% endif %} -->
+
                               {% if assoc.description %}
                               <div class="description" >{{ assoc.description|urlize|linebreaks }}</div>
                               {% endif %}
                             </li>
                             {% endfor %}
                           </ul>
-                        </div>
+                        </div> -->
                       {% endif %}
                     {% endfor %}
 
                    </li>
               {% endif %}
-            {% endif %}
 
         {% endfor %}
        </ul>
@@ -228,16 +218,16 @@
               {% for aat in node.aats %}
                 {% if aat.identifier != "child" %}
                 <div class="assoc_group"> {{ aat.plural_name }}: {{ aat.assoc_count }}
-                  <span class="showhide" id="sh-{{ node.id }}{{ aat.id }}" >(Show)</span>
+                  <!-- <span class="showhide" id="sh-{{ node.id }}{{ aat.id }}" >(Show)</span> -->
                 </div>
-                <div class="list" id="list-{{ node.id }}{{ aat.id }}" >
+                <!-- <div class="list" id="list-{{ node.id }}{{ aat.id }}" >
                   <ul>
                     {% for assoc in aat.assoc_list %}
                     <li class="indent"><a href="../agent/{{ assoc.id }}">{{ assoc.name }}</a>
                       {% if assoc.state == "potential" %} (potential) {% endif%} </li>
                     {% endfor %}
                   </ul>
-                </div>
+                </div> -->
                 {% endif%}
               {% endfor %}
             </li>

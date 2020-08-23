@@ -1,0 +1,49 @@
+{% load comments %}
+{% load i18n %}
+
+{% for req in jnreqs %}
+    <tr class="{% cycle 'odd' 'even' %}">
+        <td>{{ req.actions|safe }}</td>
+        <td>{{ req.request_date|date:"Y-m-d" }}</td>
+        <td>
+            {% if req.agent %}
+                <a href="{% url "members_agent" agent_id=req.agent.id %}">
+                    {{ req.agent.name }}
+                </a>
+            {% else %}
+                {{ req.name }} {{ req.surname }}
+            {% endif %}
+        </td>
+        <td>
+            {% if req.agent %}
+                <a href="{% url "members_agent" agent_id=req.agent.id %}"><b><em>{{ req.agent.username }}</em></b></a>
+            {% elif req.requested_username %} {{ req.requested_username }} {% else %} ?? {% endif %}</td>
+
+        <td>{% if req.agent %} {{ req.agent.agent_type }}
+                {% if not req.agent.agent_type|lower == req.type_of_user %}({{ req.type_of_user }}){% endif %}
+            {% else %} {{ req.type_of_user }} {% endif %}</td>
+
+        <td>{% if req.email_address %}
+                <a href="mailto:{{ req.email_address }}">{{ req.email_address }}</a>
+            {% else %}
+                <em>{{ req.agent.email }}</em>
+            {% endif %}
+            {% if req.check_user_pass %}
+                <br /><span class="error">{% trans "not verified" %}</span>
+            {% endif %}
+        </td>
+        <td>{% if req.phone_number %} {{ req.phone_number }} {% else %} <em>{{ req.agent.phone_primary }}</em> {% endif %}</td>
+        <td>{% if req.address %} {{ req.address }} {% else %} <em>{{ req.agent.primary_location }}</em> {% endif %}</td>
+        <td>{% if req.website %} {{ req.website }} {% else %} <em>{{ req.agent.url }}</em> {% endif %}</td>
+
+        {% if req.items_data %}
+            {% for val in req.items_data %}
+                <td class="fobi">{{ val }}</td>
+            {% endfor %}
+        {% else %}
+            {% for val in fobi_headers %}
+                <td><span class='error'>{% trans "missing" %}</span></td>
+            {% endfor %}
+        {% endif %}
+    </tr>
+{% endfor %}

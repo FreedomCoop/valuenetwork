@@ -1,0 +1,50 @@
+{% load comments %}
+{% load i18n %}
+
+  {% for asso in assocs %}
+    <li>
+    {% if user_agent in agent.managers or user_agent == agent or request.user.is_superuser %}
+        <a href="{% url "members_agent" agent_id=asso.is_associate.id %}">{{ asso.is_associate.name }}</a>
+        {% for req in asso.is_associate.jn_reqs %}
+            {% if req.id %}
+                &nbsp;
+                {% get_comment_count for req as ncom %}
+                {% if req.project.agent == agent or req.agent == agent %}
+                    <a href="{% url 'project_feedback' agent_id=agent.id join_request_id=req.id %}"
+                       class="btn-mini-icon small"><i class="icon-comment"></i> {{ ncom }}</a>
+                {% else %}
+                {% endif %}
+                {% if req.exchange %} <a href="{% url "exchange_logging_work" context_agent_id=agent.id exchange_type_id=0 exchange_id=req.exchange.id %}"
+                                   class="btn-mini-icon small"><i class="icon-transfer"></i></a> {% endif %}
+                {% if not req.fobi_data %} &nbsp;<b class="error">ERROR!</b> {% endif %}
+                {% if not forloop.first %} &nbsp;<b class="error">Error: multiple requests!</b>{% endif %}
+            {% endif %}
+        {% empty %}
+            {% if agent.project.is_moderated and not asso.association_type.association_behavior in no_shares %}
+                &nbsp;<span class="small"><b class="error">no-form!</b></span>
+            {% endif %}
+        {% endfor %}
+        {% with asso.is_associate.newshares as shares %}
+            {% if shares %}
+                &nbsp;<span style="color:rgb(102, 153, 153);" alt="Shares" class="small">{% blocktrans count shares=shares %}<i class="icon-tag"></i>{{ shares }}{% plural %}<i class="icon-tags"></i>&nbsp;{{ shares }}{% endblocktrans %}</span>
+            {% elif agent.project.shares_type and asso.state == 'active' and not asso.association_type.association_behavior in no_shares %}
+                &nbsp;<span class="small"><b class="error">no-shares?</b></span>
+            {% endif %}
+        {% endwith %}
+        {% if asso.is_associate.membership_request and agent.nick == "Freedom Coop" and request.user.is_superuser %}
+          &nbsp;<span class="small">
+          {% if not agent.project in asso.is_associate.joinaproject_requests_projects %}
+            {% get_comment_count for asso.is_associate.membership_request as ncom  %}
+            <a href="{% url 'membership_discussion' membership_request_id=asso.is_associate.membership_request.id %}" class="error">
+                {% trans "Migrate the membership!" %} {{ ncom }}
+            </a>
+          {% else %}
+            (<a href="{% url 'membership_discussion' membership_request_id=asso.is_associate.membership_request.id %}">{% trans "old" %}</a>)
+          {% endif %}
+          </span>
+        {% endif %}
+    {% else %}
+        <a href="{% url "members_agent" agent_id=asso.is_associate.id %}">{{ asso.is_associate.name }}</a>
+    {% endif %}
+    </li>
+  {% endfor %}

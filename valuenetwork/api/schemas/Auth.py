@@ -16,18 +16,19 @@ class CreateToken(graphene.Mutation):
     class Meta:
         #abstract = True
         def __new__(cls, name, bases, attrs):
-            if not is_base_type(bases, _AuthedMutationMeta):
-                return type.__new__(cls, name, bases, attrs)
+            #if not is_base_type(bases, _AuthedMutationMeta):
+            #    return type.__new__(cls, name, bases, attrs)
 
             # store a ref to the original mutate method (not the classmethod wrapper!)
             orig_mutate = getattr(attrs['mutate'], '__func__')
 
             # define wrapper logic for this class
-            def new_mutate(cls, root, args, context, info):
+            def new_mutate(root, info, token, **args): #cls, root, info, token, **args) #args, context, info):
+                print("new_mutate! ")
                 # authenticate automagically before running mutation, throw exception on bad credentials
-                context.user = _authUser(args.get('token'))
+                info.context.user = _authUser(token) #args.get('token'))
                 # now run the original mutation, exposing the user in the context object
-                return orig_mutate(cls, root, args, context, info)
+                return orig_mutate(root, info, **args) #cls, root, info, **args) #args, context, info)
 
             # override base mutate classmethod
             attrs['mutate'] = classmethod(new_mutate)
@@ -40,11 +41,11 @@ class CreateToken(graphene.Mutation):
 
     token = graphene.String()
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
-        username = args.get('username')
-        password = args.get('password')
+    def mutate(root, info, username, password, **args): #cls, root, info, **args): #args, context, info):
+        #username = args.get('username')
+        #password = args.get('password')
         user = authenticate(username=username, password=password)
+        #print("auth-mutate! user:"+str(user))
         hashed_passwd = hash_password(user)
         if user is not None:
             token = jwt.encode({
@@ -61,6 +62,7 @@ class CreateToken(graphene.Mutation):
 
 # Auth helper, metaclass & superclass for setting up mutations which require authentication (ie. most of them)
 def _authUser(token_str):
+    print("_authUser! ")
     token = jwt.decode(token_str, settings.SECRET_KEY)
     user = User.objects.get_by_natural_key(token['username'])
     if token is not None and user is not None:
@@ -70,7 +72,7 @@ def _authUser(token_str):
     raise PermissionDenied('Invalid credentials')   # purposefully generic error to guard against hack attempt info gathering
 
 """
-class _AuthedMutationMeta(ObjectTypeMeta): #MutationMeta):
+class _AuthedMutationMeta(graphene.ObjectTypeMeta): #MutationMeta):
     def __new__(cls, name, bases, attrs):
         if not is_base_type(bases, _AuthedMutationMeta):
             return type.__new__(cls, name, bases, attrs)
@@ -97,4 +99,5 @@ class AuthedMutation(CreateToken): # with_metaclass(_AuthedMutationMeta, graphen
 class AuthedInputMeta(type):
     def __new__(mcs, classname, bases, dictionary):
         dictionary['token'] = graphene.String(required=True)
+        #print("dictionary: "+str(dictionary)) #AuthedInputMeta __new__ !!")
         return type.__new__(mcs, classname, bases, dictionary)

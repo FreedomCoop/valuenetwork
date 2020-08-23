@@ -35,7 +35,11 @@ ul.fancytree-container, .fancytree-treefocus, .fancytree-plain {
   background-color: #ccc;
   color: inherit;
 }
-
+#by_type span.fancytree-title {
+    white-space: normal;
+    width: 90%;
+    cursor: default;
+}
 
 #category-form {
   margin: 0 0 5px;
@@ -112,7 +116,7 @@ img {
   -khtml-border-bottom-left-radius: 7px;
   border-bottom-left-radius: 7px;
 
-  margin-top: -3px;
+  margin-top: -4px;
 }
 .ui-tabs .ui-tabs-panel h4 {
     margin: 0px 0 2px 0;
@@ -132,7 +136,10 @@ img {
   color: inherit;
 }
 .ui-widget-content a {
-  color: inherit;
+  color: #734279;
+}
+.ui-widget-content .res a:hover {
+    text-decoration: underline;
 }
 .ui-state-default a, .ui-state-default a:link, .ui-state-default a:visited {
   color: #734279;
@@ -266,7 +273,7 @@ img {
         </div>
       </div>
 
-      <div class="col-sm span4 filter miniform" style="padding-left:1em;">
+      <div class="col-sm span4 filter miniform secondcol" style="padding-left:1em;">
 
         {% include "work/_treetypes_filter.html" %}
 

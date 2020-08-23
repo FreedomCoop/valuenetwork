@@ -62,7 +62,7 @@
             {% endif %}
           {% endif %}
           {% if user_agent.need_projects %}
-              <a class="indent" href="{% url "your_projects" %}">{% trans "Your Projects" %}</a>
+              <!-- <a class="indent" href="{% url "your_projects" %}">{% trans "Your Projects" %}</a> -->
           {% endif %}
         </div>
 
@@ -195,7 +195,7 @@
 
     <div class="container" style="padding:0;">
       <div class="row no-gutters">
-        <div class="col-sm span6 resource">
+        <div class="col-lg-6 col-sm-12 resource">
 
             <table class="table table-bordered" >
                 {% if resource.identifier %}
@@ -299,23 +299,23 @@
 
         </div>
 
-        <div class="col-sm span6 info secondcol">
-
-            {% if resource.demands %}
+    {% if resource.demands %}
+        <div class="col-lg-6 col-sm-12">
+            <div class="infobox secondcol">
                 <h4 class="">{% trans "Demands" %}:</h4>
                 <ul>
                 {% for ct in resource.demands %}
                     <li><a href="{{ ct.process.get_absolute_url }}">{{ ct }}</a></li>
                 {% endfor %}
                 </ul>
-            {% endif %}
-
+            </div>
         </div>
+    {% endif %}
 
-      </div>
+
     {% if not resource.resource_type.is_virtual_account %}
-      <div class="row" tyle="margin-top: 1em;">
-          <div class="col-sm span6">
+        <div class="col-lg-6 col-sm-12">
+            <div class="infobox">
                 <h3 class="">{% trans "Where from" %}:</h3>
                 {% if resource.where_from_events %}
                     <ul>
@@ -384,8 +384,10 @@
                     {% endif %}
                 {% endif %}
             </div>
+        </div>
 
-            <div class="span6 secondcol">
+        <div class="col-lg-6 col-sm-12">
+            <div class="infobox secondcol">
               <h3 class="">{% trans "Where to" %}:</h3>
 
               {% if resource.where_to_events %}
@@ -427,9 +429,10 @@
 
             {% endif %}
 
-	    </div>
-      </div>
+	        </div>
+        </div>
     {% endif %}
+    </div>
     </div>
 {% endblock %}
 

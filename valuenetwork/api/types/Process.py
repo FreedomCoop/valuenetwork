@@ -20,7 +20,7 @@ class ProcessClassification(DjangoObjectType):
         model = ProcessType
         fields = ('id', 'name')
 
-    def resolve_scope(self, args, *rargs):
+    def resolve_scope(self, context, **args): #args, *rargs):
         return formatAgent(self.scope)
 
 
@@ -75,16 +75,16 @@ class Process(DjangoObjectType):
     #resource_classifications_by_action = graphene.List(lambda: types.ResourceClassification)
 
 
-    def resolve_scope(self, args, *rargs):
+    def resolve_scope(self, context, **args): #args, *rargs):
         return formatAgent(self.scope)
 
-    def resolve_process_plan(self, args, *rargs):
+    def resolve_process_plan(self, context, **args): #args, *rargs):
         return self.plan  #self.independent_demand()
 
-    def resolve_process_classified_as(self, args, *rargs):
+    def resolve_process_classified_as(self, context, **args): #args, *rargs):
         return self.process_type
 
-    def resolve_inputs(self, args, context, info):
+    def resolve_inputs(self, context, **args): #args, context, info):
         action = args.get('action')
         events = self.incoming_events()
         if action:
@@ -92,7 +92,7 @@ class Process(DjangoObjectType):
             events = events.filter(event_type=event_type)
         return events
 
-    def resolve_outputs(self, args, context, info):
+    def resolve_outputs(self, context, **args): #args, context, info):
         action = args.get('action')
         events = self.outputs()
         if action:
@@ -100,7 +100,7 @@ class Process(DjangoObjectType):
             events = events.filter(event_type=event_type)
         return events
 
-    def resolve_committed_inputs(self, args, context, info):
+    def resolve_committed_inputs(self, context, **args): #args, context, info):
         action = args.get('action')
         commits = self.incoming_commitments()
         if action:
@@ -108,7 +108,7 @@ class Process(DjangoObjectType):
             commits = commits.filter(event_type=event_type)
         return commits
 
-    def resolve_committed_outputs(self, args, context, info):
+    def resolve_committed_outputs(self, context, **args): #args, context, info):
         action = args.get('action')
         commits = self.outgoing_commitments()
         if action:
@@ -116,20 +116,20 @@ class Process(DjangoObjectType):
             commits = commits.filter(event_type=event_type)
         return commits
 
-    def resolve_next_processes(self, args, context, info):
+    def resolve_next_processes(self, context, **args): #args, context, info):
         return self.next_processes()
 
-    def resolve_previous_processes(self, args, context, info):
+    def resolve_previous_processes(self, context, **args): #args, context, info):
         return self.previous_processes()
 
-    def resolve_working_agents(self, args, context, info):
+    def resolve_working_agents(self, context, **args): #args, context, info):
         agents = self.all_working_agents()
         formatted_agents = []
         for agent in agents:
             formatted_agents.append(formatAgent(agent))
         return formatted_agents
 
-    def resolve_unplanned_economic_events(self, args, context, info):
+    def resolve_unplanned_economic_events(self, context, **args): #args, context, info):
         action = args.get('action')
         unplanned_events = self.uncommitted_events()
         if action:
@@ -137,17 +137,17 @@ class Process(DjangoObjectType):
             unplanned_events = unplanned_events.filter(event_type=event_type)
         return unplanned_events
 
-    def resolve_is_deletable(self, args, *rargs):
+    def resolve_is_deletable(self, context, **args): #args, *rargs):
         return self.is_deletable()
 
-    def resolve_user_is_authorized_to_update(self, args, context, *rargs):
-        token = rargs[0].variable_values['token']
+    def resolve_user_is_authorized_to_update(self, context, **args): #args, context, *rargs):
+        token = args[0].variable_values['token']
         context.user = _authUser(token)
         user_agent = AgentUser.objects.get(user=context.user).agent
         return user_agent.is_authorized(object_to_mutate=self)
 
-    def resolve_user_is_authorized_to_delete(self, args, context, *rargs):
-        token = rargs[0].variable_values['token']
+    def resolve_user_is_authorized_to_delete(self, context, **args): #args, context, *rargs):
+        token = args[0].variable_values['token']
         context.user = _authUser(token)
         user_agent = AgentUser.objects.get(user=context.user).agent
         return user_agent.is_authorized(object_to_mutate=self)

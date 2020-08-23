@@ -54,17 +54,14 @@
 }
 
 #todoModal textarea {
-  width: 400px;
   height: 200px;
 }
 
 .changeModal textarea {
-  width: 400px;
   height: 200px;
 }
 
 .commitmentModal textarea {
-  width: 400px;
   height: 200px;
 }
 
@@ -192,7 +189,7 @@ th, td {
             <div class="my-work">
 				<h3 style="margin-bottom: 4px;" >{% trans "My tasks" %}:
 
-                    {% if agent %}
+                    {% if agent and todo_form %}
                         {% if agent.related_contexts %}
                             &nbsp;&nbsp;&nbsp;&nbsp;
                             <div style="display: inline;" >
@@ -202,9 +199,13 @@ th, td {
                             </div>
 
                             <div class="modal hide fade todoModal" id="todoModal" tabindex="-1" role="dialog" aria-labelledby="todo-label" aria-hidden="true">
+                              <div class="modal-dialog">
+                              <div class="modal-content">
                                 <div class="modal-header">
-                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                     <h3 id="todo-label">{% trans "Add a task" %}</h3>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
                                 </div>
                                 <div class="modal-body">
 
@@ -217,7 +218,9 @@ th, td {
                                         <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Add" %}' />
                                     </div>
                                     </form>
-                            </div>
+                                </div>
+                              </div>
+                              </div>
                             </div>
                         {% else %}
                             <div class="error">
@@ -274,7 +277,7 @@ th, td {
                                 </td>
                                 <td>
 
-                                    {% if agent == todo.to_agent %}
+                                    {% if agent == todo.to_agent and todo.work_todo_change_form %}
                                         <div class="entry-buttons" >
                                             <a href="#changeModal-{{ todo.id }}" role="button" class="btn btn-info btn-mini edit-button" data-toggle="modal">
                                                 <i class="icon-edit"></i>
@@ -289,9 +292,13 @@ th, td {
                                         </div>
 
                                         <div class="modal hide fade changeModal" id="changeModal-{{ todo.id }}" tabindex="-1" role="dialog" aria-labelledby="change-label" aria-hidden="true">
+                                          <div class="modal-dialog">
+                                          <div class="modal-content">
                                             <div class="modal-header">
-                                                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                                 <h3 id="change-label">{% trans "Change task" %}</h3>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
                                             </div>
                                             <div class="modal-body">
 
@@ -304,6 +311,8 @@ th, td {
                                                     <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Change" %}' />
                                                   </div>
                                                 </form>
+                                            </div>
+                                          </div>
                                           </div>
                                         </div>
 
@@ -368,7 +377,7 @@ th, td {
 							{% for item in other_unassigned %}
 								<li>
 									<b>{{ item.resource_type.name }}:</b> {{ item.quantity }} {{ item.unit_of_quantity }} {% trans "due" %} {{ item.due_date }}
-									{% if agent %}
+									{% if agent and item.commitment_form %}
 										<div style="display: inline;" >
 											<a href="#commitmentModal{{ item.id }}" role="button" class="btn btn-info btn-mini" data-toggle="modal">
 												{% trans "Take this task" %}
@@ -376,9 +385,13 @@ th, td {
 										</div>
 
 										<div class="modal hide fade commitmentModal" id="commitmentModal{{ item.id }}" tabindex="-1" role="dialog" aria-labelledby="commitment-label" aria-hidden="true">
-											<div class="modal-header">
-												<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+										  <div class="modal-dialog">
+                                          <div class="modal-content">
+                                            <div class="modal-header">
 												<h3 id="commitment-label">{% trans "Take this task" %}: {{ item.resource_type.name }}</h3>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
 											</div>
 											<div class="modal-body">
 
@@ -399,8 +412,9 @@ th, td {
 													</div>
 
 												</div>
-										  </div>
-
+										    </div>
+                                          </div>
+                                          </div>
 										</div>
 
 									{% endif %}
@@ -454,9 +468,13 @@ th, td {
                                     </div>
 
                                     <div class="modal hide fade commitmentModal" id="commitmentModal{{ item.id }}" tabindex="-1" role="dialog" aria-labelledby="commitment-label" aria-hidden="true">
+                                      <div class="modal-dialog">
+                                      <div class="modal-content">
                                         <div class="modal-header">
-                                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                             <h3 id="commitment-label">{% trans "Take this task" %}: {{ item.resource_type.name }}</h3>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
                                         </div>
                                         <div class="modal-body">
 
@@ -479,7 +497,8 @@ th, td {
                                                 </div>
                                             </div>
                                         </div>
-
+                                      </div>
+                                      </div>
                                     </div>
 
                                 {% endif %}
@@ -633,9 +652,13 @@ th, td {
                                         {% endif %}
                                         {% if agent == todo.to_agent %}
                                             <div class="modal hide fade changeModal" id="changeModal-{{ todo.id }}" tabindex="-1" role="dialog" aria-labelledby="change-label" aria-hidden="true">
+                                              <div class="modal-dialog">
+                                              <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                                                     <h3 id="change-label">{% trans "Change task" %}</h3>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
                                                 </div>
                                                 <div class="modal-body">
 
@@ -648,6 +671,8 @@ th, td {
                                                         <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Change" %}' />
                                                       </div>
                                                     </form>
+                                                </div>
+                                              </div>
                                               </div>
                                             </div>
                                          {% endif %}
@@ -671,7 +696,7 @@ th, td {
 {% endblock %}
 {% block extra_script %}
 	<script type="text/javascript" src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.10.0/jquery.validate.min.js"></script>
-	<script src="https://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+	<!-- <script src="https://code.jquery.com/ui/1.9.2/jquery-ui.js"></script> -->
 	<script src="{% static 'js/chosen.jquery.js' %}"></script>
 {% endblock %}
 

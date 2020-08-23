@@ -69,11 +69,18 @@ class Query(graphene.ObjectType):
     debug = graphene.Field(DjangoDebug, name='__debug')
 
     def resolve_viewer(self, info, **kwargs):
-        token_str = args.get('token')
-        token = jwt.decode(token_str, settings.SECRET_KEY)
+        token_str = kwargs.get('token')#.encode('utf-8')
+        #print(type(token_str))
+        #print()
+        #print('- token_str: '+str(token_str))
+        token = jwt.decode(token_str[2:-1], settings.SECRET_KEY)
         user = User.objects.get_by_natural_key(token['username'])
         if token is not None and user is not None:
+            #print("- tokenpass: "+token['password'])
+            #print("- hashpass: "+hash_password(user))
+
             if token['password'] != hash_password(user):
+                #print(user)
                 raise PermissionDenied("Invalid password")
             return ViewerQuery(token=token, user=user)
         raise PermissionDenied('Cannot access this resource')

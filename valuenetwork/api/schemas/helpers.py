@@ -18,7 +18,8 @@ def ensureSingleModel(result):
 
 def hash_password(user):
     algo = hashlib.sha1()
-    algo.update(user.password)
-    algo.update(user.username)
-    algo.update(settings.SECRET_KEY)
+    #print(type(settings.SECRET_KEY))
+    algo.update(user.password.encode('utf-8'))
+    algo.update(user.username.encode('utf-8'))
+    algo.update(settings.SECRET_KEY.encode('utf-8'))
     return algo.hexdigest()

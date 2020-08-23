@@ -34,8 +34,8 @@ class Facet(DjangoObjectType):
         fields = ('id', 'name', 'description')
 
     facet_values = graphene.List(lambda: FacetValue)
-    
-    def resolve_facet_values(self, args, context, info):
+
+    def resolve_facet_values(self, context, **args): #args, context, info):
         return self.values.all()
 
 class FacetValue(DjangoObjectType):
@@ -60,7 +60,7 @@ class ResourceClassification(DjangoObjectType):
 
     #classification_facet_values = graphene.List(lambda: FacetValue)
 
-    def resolve_classification_resources(self, args, context, info):
+    def resolve_classification_resources(self, context, **args): #args, context, info):
         return self.resources.all()
 
     #def resolve_classification_facet_values(self, args, context, info):
@@ -83,23 +83,23 @@ class EconomicResource(DjangoObjectType):
     transfers = graphene.List(lambda: types.Transfer)
 
     resource_contacts = graphene.List(lambda: types.Agent)
-    
+
     owners = graphene.List(lambda: types.Agent)
 
-    def resolve_current_quantity(self, args, *rargs):
+    def resolve_current_quantity(self, context, **args): #args, *rargs):
         return QuantityValueProxy(numeric_value=self.quantity, unit=self.unit)
 
-    def resolve_resource_classified_as(self, args, *rargs):
+    def resolve_resource_classified_as(self, context, **args): #args, *rargs):
         return self.resource_type
 
-    def resolve_current_location(self, args, *rargs):
+    def resolve_current_location(self, context, **args): #args, *rargs):
         return self.current_location
 
-    def resolve_transfers(self, args, context, info):
+    def resolve_transfers(self, context, **args): #args, context, info):
         return self.transfers()
 
-    def resolve_resource_contacts(self, args, context, info):
+    def resolve_resource_contacts(self, context, **args): #args, context, info):
         return formatAgentList(self.all_contact_agents())
 
-    def resolve_owners(self, args, context, info):
+    def resolve_owners(self, context, **args): #args, context, info):
         return formatAgentList(self.owners())

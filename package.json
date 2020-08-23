@@ -26,6 +26,7 @@
   },
   "license": "UNLICENSED",
   "dependencies": {
+    "@popperjs/core": "^2.4.4",
     "babel-core": "6.26.0",
     "babel-preset-env": "1.6.1",
     "babelify": "8.0.0",
@@ -44,9 +45,13 @@
     "jsdom": "11.6.2",
     "jsdom-global": "3.0.2",
     "mocha": "5.0.0",
-    "node-sass": "4.7.2",
+    "node-sass": "^4.14.1",
     "onchange": "3.3.0",
     "uglify-js": "3.3.9",
     "watchify": "3.10.0"
+  },
+  "devDependencies": {
+    "ajv": "^6.9.1",
+    "popper.js": "1.16.1"
   }
 }

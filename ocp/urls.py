@@ -30,11 +30,6 @@ urlpatterns = [
     path('i18n/', include('django.conf.urls.i18n')),
     path('robots.txt', lambda r: HttpResponse("User-agent: *\nAllow: /$\nDisallow: /", content_type="text/plain")),
 
-    # basic ocp login+join
-    path('<form_slug>/', work.views.project_login, name="project_login"),
-    path('joinaproject/<form_slug>/', work.views.joinaproject_request, name="joinaproject_request"),
-    path('join/<form_slug>/', work.views.joinaproject_request, name="join_request"),
-
     # api special endpoints
     path("total-shares/<project_slug>/", work.views.project_total_shares, name="project_total_shares"),
     path("update-share-payment/<project_slug>/", work.views.project_update_payment_status, name="project_update_payment_status"),
@@ -49,6 +44,11 @@ urlpatterns = [
     # DB Store plugin URLs
     path('fobi/plugins/form-handlers/db-store/',
     include('fobi.contrib.plugins.form_handlers.db_store.urls')),
+
+    # basic ocp login+join
+    path('<form_slug>/', work.views.project_login, name="project_login"),
+    path('joinaproject/<form_slug>/', work.views.joinaproject_request, name="joinaproject_request"),
+    path('join/<form_slug>/', work.views.joinaproject_request, name="join_request"),
 
 ]
 

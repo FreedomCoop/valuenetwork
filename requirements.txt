@@ -34,4 +34,5 @@ django_forms_bootstrap
 django-bootstrap-form
 chromedriver_binary
 psycopg2-binary
+django-datatables-view
 
