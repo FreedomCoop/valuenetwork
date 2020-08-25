@@ -1,11 +1,15 @@
-"""
-    You want a local_settings.py file in the same directory
-    as settings.py.
-    settings.py will import it, if it exists
-    and local_settings will override settings
-    for the setting with the same name.
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+from django.conf import settings
+from django.utils.text import format_lazy
+from django.utils.translation import ugettext_lazy as _
+from decimal import Decimal
 
-    You also want your localsettings.py to be different
+"""
+    The settings.py will import this file, if it exists
+    and the local_settings will override settings with the same name.
+
+    You also want your local_settings.py to be different
     on a development machine and a server,
     in ways that will be mentioned below.
 
@@ -13,7 +17,6 @@
     It is internally inconsistent to show some choices.
     Create your own local_settings.py file
     to fit your own needs.
-
 """
 
 #for a development machine
@@ -26,11 +29,11 @@ TEMPLATE_DEBUG = DEBUG
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'valuenetwork.sqlite'
+        'NAME': 'ocp.sqlite'
     }
 }
 #for a server, you want a real database
-DATABASES = {
+'''DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.', # Add 'postgresql_psycopg2', 'mysql', or 'oracle'.
         'NAME': '',
@@ -39,20 +42,25 @@ DATABASES = {
         'HOST': '',
         'PORT': '',                      # Set to empty string for default.
     }
-}
+}'''
 
-STATIC_URL = "/static/"
 
-# valueaccounting settings can be overridden
+# ocp settings can be overridden
 USE_WORK_NOW = False
 SUBSTITUTABLE_DEFAULT = False
+
+SITE_NAME = 'OCP'
+STATIC_URL = "/static/" # your desired static url
+
+MEDIA_URL = "/media/" # your desired media url
+MEDIA_ROOT = "/home/user/Envs/py3/ocp/ocp/site_media/media/" # your desired media folder
+
 
 #example: Greece
 MAP_LATITUDE = 38.2749497
 MAP_LONGITUDE = 23.8102717
 MAP_ZOOM = 6
 
-STATIC_URL = "/static/"
 
 #and you can override any other settings in settings.py
 
@@ -60,7 +68,7 @@ STATIC_URL = "/static/"
 settings.LOGGING['handlers']['applogfile']['filename'] = '/home/ocp/logs/ocp_debug.log' # put your desired path!
 
 
-# to run the multicurrency service you need to define the connection details with chipchap
+# to run the multicurrency service you need to define the connection details with Bank of the Commons
 MULTICURRENCY = {
       'client_id': '',
       'client_secret': '',
@@ -72,14 +80,15 @@ MULTICURRENCY = {
       'url_new_user': "",
 }
 
-DEFAULT_FROM_EMAIL = ""
+DEFAULT_FROM_EMAIL = "" # place your server default email address
 
 RANDOM_PASSWORD_LENGHT = 8
 
 CRYPTOS = ('btc', 'eth', 'fair')
 #CRYPTO_LAPSUS = 60 # for example, to forget the stored unit-ratio after 1 minute, set 60 seconds here
-#CRYPTO_DECIMALS = 9
-#DECIMALS = Decimal('0.000000000')
+#CRYPTO_DECIMALS = 9 # put the desired crypto assets shown decimals
+#DECIMALS = Decimal('0.000000000') # put the same number of zeros here
+
 
 # To accept payments for the shares of one project, define here the methods details
 
@@ -87,7 +96,7 @@ PAYMENT_GATEWAYS = {
     'slug-of-the-project': {
         'transfer': {
             'url':'',
-            'html':_('To pay with a bank transfer, go to your bank and place a transfer to this account:<br>IBAN:  <b>the iban number</b><br>    BIC:  <b>the swift/bic code</b><br>Concept:  <b>Put your new username!</b><br>Account owner:  <b>the ower name</b><br>Bank name:  <b>bank</b><br>Bank address:  <b>address</b>'),
+            'html': format_lazy("You can set your transfer from your bank account to our account:<br>IBAN:  <b>{iban}</b><br>BIC/Swift:  <b>{bic}</b><br>Concept:  <b>Put your new username!</b><br>Account owner:  <b>{owner}</b><br>Bank name:  <b>{bank}</b><br>Bank address:  <b>{baddress}</b>", iban="the_iban_number", bic="the_bic_code", owner="the_account_owner_name", bank="the_bank_name", baddress="the_bank_address"),
             'unit':'EUR'
         },
         'ccard': {

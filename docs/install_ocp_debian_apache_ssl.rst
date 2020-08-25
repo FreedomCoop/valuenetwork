@@ -67,7 +67,7 @@ For ocp instances in production, better to move daemon_service to */etc/init.d/*
 - Create npm build system and compile css+js: ::
 
     npm install
-    npm run complie
+    npm run compile
     npm run optimize
 
 - If static files are served from another directory when in production, you'll need to copy the npm results to the right place, e.g. (../static/): ::

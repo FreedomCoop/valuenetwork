@@ -22,6 +22,7 @@ a:hover {
   border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
   filter: progid:dximagetransform.microsoft.gradient(startColorstr='#ADAD85', endColorstr='#8A8A5C', GradientType=0);
   filter: progid:dximagetransform.microsoft.gradient(enabled=false);
+  color: #fff;
 }
 
 .btn-primary:hover,
@@ -45,6 +46,7 @@ a:hover {
     border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
     filter: progid:dximagetransform.microsoft.gradient(startColorstr='#94B8B8', endColorstr='#669999', GradientType=0);
     filter: progid:dximagetransform.microsoft.gradient(enabled=false);
+    color: #fff;
 }
 .btn-info:hover,
 .btn-info:active,
@@ -76,6 +78,7 @@ a:hover {
 .btn-warning.disabled,
 .btn-warning[disabled] {
   background-color: #BE6F54;
+  color: #fff;
 }
 .filter {
   background-color: #F5F5F0;
@@ -136,4 +139,3 @@ a:hover {
 .hours, .minutes {
     width: 25px;
 }
-
