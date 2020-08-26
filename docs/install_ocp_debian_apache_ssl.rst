@@ -2,75 +2,15 @@ This is a howto for installing ocp in a debian/ubuntu system.
 
 The ocp now runs on Python3 like the electrumfair wallet.
 
-#- Install dependencies in the system: ::
-#
-#    # sudo apt-get install virtualenv git libjpeg-dev zlib1g-dev build-essential gettext
-#    # sudo apt-get install python-setuptools python2.7-dev python-pil python-qt4
+Follow first the `INSTALL.md` instructions and the `docs/install_ocp_faircoin.md`, and then:
 
-- Install electrumfair and daemon dependencies in the system (python3): ::
+- Install apache dependencies in the system (python3): ::
 
-    sudo apt-get install python3-setuptools python3-pyqt5 python3-pip python3-venv npm git libapache2-mod-wsgi-py3
+    sudo apt-get install apache2 libapache2-mod-wsgi-py3
 
-- If you want to add a Faircoin Wallet service: ::
+- Modify the local_settings.py file to define a production database details (e.g. for postgres) instead of the sqlite development db.
 
-    sudo pip3 install https://download.faircoin.world/electrum/ElectrumFair-3.0.5.tar.gz
-    sudo pip install jsonrpclib
-
-- Create an electrumfair wallet (as 'wallet' user or root): ::
-
-    electrumfair create
-
-This gives you seed to keep in safe place, and ask for password to encript the wallet.
-All the electrumfair data will be created in /home/user/.electrumfair/ directory.
-Be carefull if you already have an electrum-fair wallet installed with the same user.
-
-- Download from github and copy daemon sample files: ::
-
-    cd [installation dir]
-    git clone https://github.com/FreedomCoop/valuenetwork.git
-    cd valuenetwork
-    cp faircoin/daemon/daemon_service.sample faircoin/daemon/daemon_service
-    chmod a+x faircoin/daemon/daemon_service
-    cp faircoin/daemon/daemon.py.sample faircoin/daemon/daemon.py
-    chmod a+x faircoin/daemon/daemon.py
-    cp faircoin/daemon/daemon.conf.sample faircoin/daemon/daemon.conf
-
-- Setup daemon: ::
-
-    vim faircoin/daemon/daemon_service #Set paths and user for starting the daemon.
-    vim faircoin/daemon/daemon.conf #Set wallet config
-    sudo ./faircoin/daemon/daemon_service start
-    sudo ./faircoin/daemon/daemon_service status
-
-If daemon runs ok, *daemon_service status* returns *Running*.
-For ocp instances in production, better to move daemon_service to */etc/init.d/* and daemon.conf to */etc/*
-
-
-- With the 'ocp' user, create virtual enviroment, update pip and setuptools: ::
-
-    cd [installation dir]
-    python3 -m venv py3
-    cd valuenetwork
-    source ../py3/bin/activate
-    pip install --upgrade pip
-    pip install --upgrade setuptools
-
-- Install ocp python dependencies: ::
-
-    pip install -U -r requirements.txt --trusted-host dist.pinaxproject.com
-
-- Create database, load some data, run tests and start with dev server: ::
-
-    ./manage.py makemigrations
-    ./manage.py migrate
-
-- Create npm build system and compile css+js: ::
-
-    npm install
-    npm run compile
-    npm run optimize
-
-- If static files are served from another directory when in production, you'll need to copy the npm results to the right place, e.g. (../static/): ::
+- If static files are served from another directory when in production, you'll need to copy the npm build resulting files to the right place, e.g. (../static/): ::
 
     cp static/dist/css/app.css ../static/css/app.css
     cp static/dist/js/site.js ../static/js/site.js
@@ -104,7 +44,7 @@ and the old way (non recompiling), just in case: ::
     ./manage.py createsuperuser
 
 
-If you are deplying in a server with apache:
+If you are deploying in a server with apache:
 
 - Stop the dev web server: ctrl+c
 
@@ -114,14 +54,11 @@ If you are deplying in a server with apache:
 
 Add one task to the cron: ::
 
-    * * * * * (cd /path/to/installation/valuenetwork; /path/to/installation/env/bin/python manage.py send_faircoin_requests > /dev/null 2>&1)
+    * * * * * (cd /path/to/installation/ocp; /path/to/installation/py3/bin/python manage.py send_faircoin_requests > /dev/null 2>&1)
+
 
 Apache2 and wsgi configuration
 ==============================
-
-- Install system dependencies: ::
-
-    sudo apt-get install apache2 libapache2-mod-wsgi
 
 - Setup a secure website with certification. See:
 
@@ -135,7 +72,7 @@ Apache2 and wsgi configuration
 
 This is a sample of the file: ::
 
-    WSGIPythonPath /absolute/path/to/installation/valuenetwork:/absolute/path/to/installation/py3/lib/python3.6/site-packages
+    WSGIPythonPath /absolute/path/to/installation/ocp:/absolute/path/to/installation/py3/lib/python3.7/site-packages
 
     <IfModule mod_ssl.c>
         <VirtualHost _default_:443>
@@ -146,18 +83,18 @@ This is a sample of the file: ::
             ErrorLog ${APACHE_LOG_DIR}/error.log
             CustomLog ${APACHE_LOG_DIR}/access.log combined
 
-            WSGIScriptAlias / /absolute/path/to/installation/valuenetwork/ocp/wsgi.py:/absolute/path/to/installation/py3/lib/python3.6/site-packages
+            WSGIScriptAlias / /absolute/path/to/installation/ocp/ocp/wsgi.py:/absolute/path/to/installation/py3/lib/python3.7/site-packages
 
             Alias /site_media/static/ /absolute/path/to/installation/static/
             Alias /static/ /absolute/path/to/installation/static/
 
-            <Directory /absolute/path/to/installation/valuenetwork/ocp/>
+            <Directory /absolute/path/to/installation/ocp/ocp/>
                 <Files wsgi.py>
                     Require all granted
                 </Files>
             </Directory>
 
-            <Directory /absolute/path/to/installation/py3/lib/python3.6/site-packages/>
+            <Directory /absolute/path/to/installation/py3/lib/python3.7/site-packages/>
                 Require all granted
             </Directory>
 
@@ -176,8 +113,8 @@ This is a sample of the file: ::
 Add to the file: ::
 
     import sys
-    sys.path.append('/absolute/path/to/installation/py3/lib/python3.6/site-packages')
-    sys.path.append('/absolute/path/to/installation/valuenetwork/')
+    sys.path.append('/absolute/path/to/installation/py3/lib/python3.7/site-packages')
+    sys.path.append('/absolute/path/to/installation/ocp/')
 
 If you get a *forbidden* error, make sure that apache has permission to access to the application, by checking directory and wsgi.py file permissions for user www-data and/or adding to /etc/apache2/apache2.conf: ::
 
@@ -187,7 +124,7 @@ If you get a *forbidden* error, make sure that apache has permission to access t
         Require all granted
     </Directory>
 
-- Create local_settings.py: ::
+- Create local_settings.py if you don't have it: ::
 
     vim local_settings.py
 
@@ -196,7 +133,7 @@ Include absolute path to database, STATIC_ROOT constant and map settings in loca
     DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': '/absolute/path/to/installation/valuenetwork/valuenetwork.sqlite'
+        'NAME': '/absolute/path/to/installation/ocp/ocp.sqlite'
     }
     }
     STATIC_ROOT = "/absolute/path/to/installation/static/"
@@ -219,7 +156,7 @@ If static files are not visible in the site by a permissions error, you need to 
         Require all granted
     </Directory>
 
-- Try to login. If you get an *unable to open database file* error, check apache (www-data) can read and write the db file (valuenetwork.sqlite), and the above directory too.
+- Try to login. If you get an *unable to open database file* error, check apache (www-data) can read and write the db file (ocp.sqlite), and the above directory too.
 
 
 - An email server or an external email service with SMTP will be needed for notifications and recovering passwords. If you choose an external email service, add to local_settings.py: ::
@@ -232,7 +169,7 @@ If static files are not visible in the site by a permissions error, you need to 
 
 When the site is able to send emails, another crontab configuration is needed: ::
 
-    * * * * * (cd /path/to/installation/valuenetwork; /path/to/installation/env/bin/python manage.py emit_notices >> /path/to/installation/valuenetwork/emit_notices.log)
+    * * * * * (cd /path/to/installation/ocp; /path/to/installation/py3/bin/python manage.py emit_notices >> /path/to/installation/ocp/emit_notices.log)
 
 And in order to recive emails with correct links, you need to login with admin user and change in: ::
 
