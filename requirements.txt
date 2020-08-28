@@ -8,7 +8,7 @@ pinax-theme-bootstrap-account==1.0b2
 django-appconf==1.0.2
 webtest
 django-webtest
-pinax-notifications
+pinax-notifications<6
 toposort
 django-cors-headers
 rdflib
