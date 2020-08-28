@@ -2716,8 +2716,8 @@ def repair_duplicate_agents(request, agent):
         for co in copis:
             users = co.users.all()
             if users and request.user.is_superuser:
-                if len(users) > 1 or not unicode(users[0].user) == unicode(co.nick):
-                    usrs = ' (user'+('s!' if len(users)>1 else '')+': '+(', '.join([unicode(us.user) for us in users]))+')'
+                if len(users) > 1 or not str(users[0].user) == str(co.nick):
+                    usrs = ' (user'+('s!' if len(users)>1 else '')+': '+(', '.join([str(us.user) for us in users]))+')'
                 else:
                     usrs = ' (=user)'
             else:

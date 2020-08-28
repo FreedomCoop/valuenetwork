@@ -679,6 +679,8 @@ class JoinRequest(models.Model):
             entry = self.entries[0]
             form_headers = json.loads(entry.form_data_headers)
             for elem in self.fobi_data.form_entry.formelemententry_set.all().order_by('position'):
+                if not elem.plugin_data:
+                    continue
                 data = json.loads(elem.plugin_data)
                 nam = data.get('name')
                 if nam:
