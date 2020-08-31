@@ -1011,11 +1011,11 @@ class JoinRequest(models.Model):
             requnit = self.payment_unit()
             amount = price
             if not requnit == unit and price and requnit:
-                from work.utils import remove_exponent
+                #from work.utils import remove_exponent
                 if hasattr(self, 'ratio'):
                     amount = price / self.ratio
-                    print("using CACHED ratio at share_price!")
-                    loger.warning("using CACHED ratio at share_price!")
+                    #print("using CACHED ratio at share_price!")
+                    #loger.warning("using CACHED ratio at share_price!")
                 else:
                     from work.utils import convert_price
                     amount, ratio = convert_price(price, unit, requnit, self)
@@ -2844,6 +2844,24 @@ class NewFeature(models.Model):
 
     def __str__(self):
         return self.name
+
+
+# Generic agent MetaInfo model to store json or texts
+# meta types: 'total_transfers'
+
+class MetaInfo(models.Model):
+    agent = models.ForeignKey(EconomicAgent, related_name="metainfo", on_delete=models.CASCADE)
+    type = models.CharField(_("type"), max_length=128)
+    text = models.TextField(_("text"), blank=True, null=True)
+    created_date = models.DateField(auto_now_add=True, editable=False)
+    changed_date = models.DateField(auto_now=True, editable=False)
+
+    class Meta:
+        ordering = ('agent', '-changed_date')
+
+    def __str__(self):
+        return self.agent.nick+' '+self.type+' '+str(self.changed_date)
+
 
 
 class InvoiceNumber(models.Model):
