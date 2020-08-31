@@ -330,7 +330,7 @@ admin.site.register(Process, ProcessAdmin)
 class CommitmentAdmin(admin.ModelAdmin):
     date_hierarchy = 'due_date'
     list_display = ('id', 'resource_type', 'quantity', 'unit_of_quantity', 'event_type', 'due_date', 'finished', 'from_agent', 'to_agent', 'process', 'exchange', 'context_agent', 'order', 'independent_demand',
-        'description')
+        ) #'description')
     list_filter = ['independent_demand', 'event_type', 'resource_type', 'from_agent', 'context_agent']
     search_fields = ['event_type__name', 'from_agent__name', 'to_agent__name', 'resource_type__name']
 

@@ -8931,16 +8931,18 @@ class ExchangeManager(models.Manager):
                     exsids.append(com.transfer.exchange.id)
                     com.exchange = com.transfer.exchange
                     com.save()
-                    print("++ added missing exchange to comm from its transfer")
+                    print("++ added missing exchange to comm from its transfer, in ex:"+str(com.transfer.exchange.id)+" for "+str(agent.nick))
+                    loger.info("++ added missing exchange to comm from its transfer, in ex:"+str(com.transfer.exchange.id)+" for "+str(agent.nick))
                 else:
                     print("++ com.transfer without exchange? com:"+str(com.id))
+                    loger.warning("++ com.transfer without exchange? com:"+str(com.id))
             elif com.process:
                 pass
             elif com.event_type.name == 'Todo':
                 pass
             else:
-                # TODO search ways to show the teoretical exchange related the commitment...
                 print("+++ commitment has no exchange nor process? com:"+str(com.id)+" com.evtyp:"+str(com.event_type))
+                loger.warning("+++ commitment has no exchange nor process? com:"+str(com.id)+" com.evtyp:"+str(com.event_type))
 
         evts = agent.involved_in_events()
         for evt in evts:
@@ -8951,21 +8953,31 @@ class ExchangeManager(models.Manager):
                     exsids.append(evt.transfer.exchange.id)
                     evt.exchange = evt.transfer.exchange
                     evt.save()
-                    print("++ added missing exchange to event from its transfer")
+                    print("++ added missing exchange to event from its transfer, in ex:"+str(evt.transfer.exchange.id)+" for "+str(agent.nick))
+                    loger.info("++ added missing exchange to event from its transfer, in ex:"+str(evt.transfer.exchange.id)+" for "+str(agent.nick))
                 else:
-                    print("++ evt.transfer without exchange? evt:"+str(evt.id))
+                    print("++ evt.transfer without exchange? evt:"+str(evt.id)+" tx:"+str(evt.transfer.id))
+                    loger.warning("++ evt.transfer without exchange? evt:"+str(evt.id)+" tx:"+str(evt.transfer.id))
             elif evt.process or evt.distribution:
                 pass
             elif evt.event_type.name == 'Todo':
                 pass
             else:
-                # TODO search ways to show the teoretical exchange related the commitment...
                 print("+++ event has no exchange nor process? evt:"+str(evt.id)+" evt.typ:"+str(evt.event_type))
+                loger.warning("+++ event has no exchange nor process? evt:"+str(evt.id)+" evt.typ:"+str(evt.event_type))
 
         exs_bt = Exchange.objects.filter(id__in=exsids).order_by('exchange_type')
 
+        last_com = coms.order_by('-changed_date').first()
         last_evt = evts.order_by('-event_date').first()
-        #print("LASTEV: "+str(last_evt))
+        #print("LASTEV: "+str(last_evt.event_date)+" <> LASTCOM: "+str(last_com.changed_date)+"("+str(last_com.created_date)+") due:"+str(last_com.due_date))
+        if last_evt:
+            if last_com and last_com.changed_date > last_evt.event_date:
+                last_date = last_com.changed_date
+            else:
+                last_date = last_evt.event_date
+        elif last_com:
+            last_date = last_com.changed_date
 
         """
         agids = [c.id for c in agent.related_contexts()]
@@ -9020,7 +9032,7 @@ class ExchangeManager(models.Manager):
         print("--- end exchanges_by_type for agent: "+str(agent.nick)+" exs:"+str(exs_bt.count()))
 
         if last:
-            return exs_bt, last_evt.event_date
+            return exs_bt, last_date
         return exs_bt #.order_by(Lower('exchange_type__ocp_record_type__name').asc())
 
 
@@ -10265,12 +10277,16 @@ class Transfer(models.Model):
         status = '??'
         comits = self.commitments.all_give() #filter(transfer=self)
         events = list(self.events.all_give()) #filter(transfer=self)
-        for com in comits:
-            for ev in com.fulfillment_events.all_give():
-                if not ev in events:
-                    print(" append ev:"+str(ev))
-                    loger.info(" append ev:"+str(ev))
-                    events.append(ev)
+        #print(":: coms:"+str(len(comits))+" evts:"+str(len(events)))
+        if not len(comits) == len(events):
+            for com in comits:
+                evs = self.events.all()
+                for ev in com.fulfillment_events.all_give():
+                    #print('ev: '+str(ev.id))
+                    if not ev in evs:
+                        print("append ev:"+str(ev.id)+" !! ") #+str(ev.__dict__))
+                        loger.info(" append ev:"+str(ev.id)+" !! ")
+                        events.append(ev)
         if len(comits):
           if len(events) < len(comits) or not len(events) >= need_evts:
             status = 'pending' #str([ev.id for ev in events])+' '+str([co.id for co in comits])+' tr:'+str(self.id)+' x:'+str(self.exchange.id)+' pending'
@@ -11152,9 +11168,9 @@ class Commitment(models.Model):
                 quantity_string,
                 abbrev,
                 resource_name,
-                self.due_date.strftime('%Y-%m-%d'),
                 name1,
-                name2
+                name2,
+                self.due_date.strftime('%Y-%m-%d')
         ])
 
     def show_name(self, agent=None, forced=False):
@@ -13008,22 +13024,30 @@ class EconomicEventManager(models.Manager):
     def all_give(self, agent=None):
         #print("event all_give")
         et_give = EventType.objects.get(name="Give")
-        bkp = self.all()
-        filtered = self.filter(event_type=et_give)
-        if not filtered and bkp:
-            #print("x bkp: "+str(bkp))
-            internal = bkp.filter(exchange__isnull=False, exchange__exchange_type__use_case__identifier='intrnl_xfer')
-            if not internal and bkp:
-                internal = bkp.filter(transfer__exchange__isnull=False, transfer__exchange__exchange_type__use_case__identifier='intrnl_xfer')
-                #print("x filter using ev tx ex. internal:"+str(len(internal)))
-            if internal:
-                print("WARN not found 'give' event_type (internal) filtered from "+str(self)+", return all! "+str(bkp))
-                loger.info("WARN not found 'give' event_type (internal) filtered from "+str(self)+", return all! "+str(bkp))
-            return bkp
-        if agent:
-            givin = bkp.filter(to_agent=agent)
-            if not givin:
-                filtered = bkp.filter(event_type__name="Receive")
+        if not agent:
+            bkp = self.all()
+            filtered = bkp.filter(event_type=et_give)
+            if not filtered and bkp:
+                if len(bkp) == 1:
+                    return bkp
+                #print("x bkp: "+str(bkp.values_list('id')))
+                internal = bkp.filter(exchange__isnull=False, exchange__exchange_type__use_case__identifier='intrnl_xfer')
+                if not internal and bkp:
+                    internal = bkp.filter(transfer__exchange__isnull=False, transfer__exchange__exchange_type__use_case__identifier='intrnl_xfer')
+                    #print("x filter using ev tx ex. internal:"+str(len(internal)))
+                if internal:
+                    print("WARN not found 'give' event_type in internal ex.tx, found "+str(internal.count())+" events, return all! ids:"+str(internal.values_list('id'))+" bkp:"+str(bkp.count()))
+                    loger.info("WARN not found 'give' event_type in internal ex.tx, found "+str(internal.count())+" events, return all! ids:"+str(internal.values_list('id'))+" bkp:"+str(bkp.count()))
+                return bkp
+        else:
+            relag = self.related_agent(agent)
+            filtered = relag.filter(event_type=et_give)
+            if not filtered:
+                filtered = relag.filter(event_type__name="Receive")
+                print("WARN not found 'give' event_type related agent: "+str(agent.nick)+", return receive! "+str(filtered))
+            if not filtered:
+                print("WARNING: No events found for agent: "+str(agent.nick)+", return ALL ??")
+                filtered = self.all()
         return filtered
 
     def related_agent(self, agent=None):
