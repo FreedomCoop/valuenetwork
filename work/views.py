@@ -4064,64 +4064,6 @@ class JoinreqListJson(BaseDatatableView):
         return json_data
 
 
-    """
-    jnreqs = None
-    agent = get_object_or_404(EconomicAgent, id=agent_id)
-    user_agent = get_agent(request)
-    if not user_agent or not agent.project or not agent in user_agent.managed_projects():
-        return render(request, 'work/no_permission.html')
-
-    if request.POST:
-        draw = int(request.POST['draw'])
-        start = request.POST['start']
-        length = request.POST['length']
-        search = request.POST['search']
-        columns = request.POST['columns']
-        order = request.POST['order']
-        ordcol1 = order[0]
-
-        state = request.POST['state']
-
-        jnreqnum = agent.project.join_requests.count()
-
-        jnreqs = agent.project.join_requests.filter(state=state).order_by(ordcol1)
-
-        com_content_type = ContentType.objects.get(model="joinrequest")
-        csrf_token = csrf.get_token(request)
-        csrf_token_field = '<input type="hidden" name="csrfmiddlewaretoken" value="'+csrf_token+'"> '
-
-        proshrtyps = agent.project.share_types()
-        subscrunit = agent.project.subscription_unit()
-
-        data = []
-
-        for req in jnreqs:
-
-            data.append(
-                [
-                    req.actions,
-                    req.request_date,
-                    req.name,
-                    req.nick,
-                    req.typ,
-                    req.mail
-                ]
-            )
-
-            #print("---- end req: "+str(req)+" ----")
-
-
-    return render(request, 'work/_jnreq_list.html', {
-            'jnreqs': jnreqs,
-            'agent': agent,
-            'user_agent': user_agent,
-            'draw': draw,
-            'recordsTotal': jnreqnum,
-            'recordsFiltered': len(jnreqs),
-            'data': data,
-            'error': error
-        })
-"""
 
 
 '''@login_required
