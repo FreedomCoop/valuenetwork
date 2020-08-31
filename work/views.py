@@ -5951,19 +5951,25 @@ def exchanges_all(request, agent_id): #all types of exchanges for one context ag
             totdate = meta.changed_date
             if last_date:
                 if last_date > totdate:
-                    print("Rebuid totals!")
+                    print("REBUILD totals!")
                     total_transfers = rebuild_totals(agent, exchanges_by_type)
                     meta.text = json.dumps(total_transfers)
                     meta.save()
                 else:
-                    print("Cached totals...")
-                    total_transfers = json.loads(meta.text)
+                    if meta.text:
+                        print("Cached totals...")
+                        total_transfers = json.loads(meta.text)
+                    else:
+                        total_transfers = rebuild_totals(agent, exchanges_by_type)
+                        meta.text = json.dumps(total_transfers)
+                        meta.save()
+                        print("REPAIRED meta.text !")
             else:
                 raise ValidationError("Can't get the 'last_date' of the exchanges of ag:"+agent.nick)
         else:
             raise ValidationError("WARN: No metainfo of type 'total_transfers'? ag:"+str(agent.nick))
     else:
-        print("New totals!")
+        print("New totals metainfo!")
         total_transfers = rebuild_totals(agent, exchanges_by_type)
         meta = MetaInfo(
             agent=agent,
@@ -6320,12 +6326,12 @@ class ExchangeListJson(BaseDatatableView):
             self.start = self.kwargs['start']
             #print('start: '+str(self.start))
         if 'start_date' in request.POST: #self.kwargs:
-            print('start_date!: '+str(request.POST['start_date']))
+        #    print('start_date!: '+str(request.POST['start_date']))
             self.start = request.POST['start_date']
         if not hasattr(self, 'end'):
             self.end = self.kwargs['end']
         if 'end_date' in request.POST:
-            print('end_date!: '+str(request.POST['end_date']))
+            #print('end_date!: '+str(request.POST['end_date']))
             self.end = request.POST['end_date']
         if not hasattr(self, 'csrf_token_field'):
             csrf_token = csrf.get_token(request)
@@ -6337,13 +6343,15 @@ class ExchangeListJson(BaseDatatableView):
         if not hasattr(self, 'filters'):
             if 'filters' in request.POST:
                 self.filters = request.POST['filters'].strip().split(',')
-                print("FILTERS: "+str(self.filters))
+                #print("FILTERS: "+str(self.filters))
+        if not hasattr(self, 'exs'):
+            self.exs = Exchange.objects.exchanges_by_type(self.agent).filter(start_date__range=[self.start, self.end])
         #print('GET post: '+str(request.POST))
         return super().get(request, *args, **kwargs)
 
     def get_initial_queryset(self):
         #print("+ + + "+str(exsids))
-        exs = Exchange.objects.exchanges_by_type(self.agent).filter(start_date__range=[self.start, self.end])
+        exs = self.exs #Exchange.objects.exchanges_by_type(self.agent).filter(start_date__range=[self.start, self.end])
         if not 'all' in self.filters:
             #print("FILTERS: "+str(self.filters))
             ids = filter_exchange_ids(self.filters, exs, self.agent)
@@ -6353,7 +6361,7 @@ class ExchangeListJson(BaseDatatableView):
         return exs
 
     def filter_queryset(self, qs):
-
+        #print("filter_queryset?")
         return qs
 
     def render_column(self, row, column):
@@ -6361,7 +6369,6 @@ class ExchangeListJson(BaseDatatableView):
         print("column: "+str(column))
         if column == 'actions':
             print("render actions?")
-            row.actions += "JELOW"
             return row.actions #escape('{0} {1}'.format(row.customer_firstname, row.customer_lastname))
         else:
             return super(ExchangeListJson, self).render_column(row, column)
