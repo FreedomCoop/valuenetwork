@@ -156,13 +156,13 @@ def convert_price(amount, shunit, unit, obj=None, deci=settings.DECIMALS):
                 ratio = obj.ratio
                 price = amount/ratio
                 #print("using a CACHED obj.ratio: "+str(ratio)+" for obj:"+unicode(obj))
-                logger.warning("using a CACHED obj.ratio: "+str(ratio)+" for obj:"+str(obj))
+                #logger.warning("using a CACHED obj.ratio: "+str(ratio)+" for obj:"+str(obj))
             else:
                 if unit.abbrev in settings.CRYPTOS and not unit.abbrev == 'fair':
                     if hasattr(settings, 'CRYPTO_LAPSUS'):
                         secs = settings.CRYPTO_LAPSUS
                     else:
-                        secs = 60
+                        secs = 600
                     lapsus = datetime.timedelta(seconds=secs)
                 else:
                     lapsus = None
@@ -233,7 +233,7 @@ def convert_price(amount, shunit, unit, obj=None, deci=settings.DECIMALS):
                     #decs = decimal.getcontext().prec
                     amount = price.quantize(deci) #round(price, deci)
 
-                print("Convert_price: ratio:"+str(ratio)+" price:"+str(price)+" shunit:"+str(shunit)+" unit:"+str(unit)+" amount:"+str(amount))
+                #print("Convert_price: ratio:"+str(ratio)+" price:"+str(price)+" shunit:"+str(shunit)+" unit:"+str(unit)+" amount:"+str(amount))
         else:
             print("Skip convert price, same unit: "+str(unit))
         return amount, ratio

@@ -570,6 +570,7 @@
                                   {{ agent.address }}
                                 {% endif %}
                                 {% if user_agent in agent.members or user_is_agent %}
+                                  {% if agent.address %}
                                     {% if not agent.address == agent.address_en %}
                                         <br><span class="small">(en: {{ agent.address_en }})</span>
                                     {% endif %}
@@ -579,6 +580,7 @@
                                     {% if not agent.address == agent.address_ca %}
                                         <br><span class="small">(ca: {{ agent.address_ca }})</span>
                                     {% endif %}
+                                  {% endif %}
                                 {% endif %}
                             </td>
                           </tr>

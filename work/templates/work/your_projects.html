@@ -119,6 +119,7 @@
           {% endif %}
        {% endfor %}
        {% if managed_projects %}
+        <br/>
         <h3>
           {% trans "Projects coordinated by you:" %}
         </h3>
@@ -153,20 +154,7 @@
                         <div class="assoc_group"> {{ aat.plural_name }}: {{ aat.assoc_count }}
                           <!-- <span class="showhide" id="sh-{{ node.id }}{{ aat.id }}" >(Show)</span> -->
                         </div>
-                        <!-- <div class="list" id="list-{{ node.id }}{{ aat.id }}" >
-                          <ul>
-                            {% for assoc in aat.assoc_list %}
-                            <li class="indent">
-                              <b><a href="../agent/{{ assoc.id }}">{{ assoc.name }}</a> </b>
-                              {% if assoc.state == "candidate" %} (candidate) {% endif%}
 
-                              {% if assoc.description %}
-                              <div class="description" >{{ assoc.description|urlize|linebreaks }}</div>
-                              {% endif %}
-                            </li>
-                            {% endfor %}
-                          </ul>
-                        </div> -->
                       {% endif %}
                     {% endfor %}
 
@@ -177,38 +165,17 @@
        </ul>
        {% endif %}
 
-      <p>  &nbsp; </p>
+      <br/>
 
       <h3>
         {% trans "Projects where you participate:" %}
       </h3>
       <ul id="member-projects">
 
-        {% with request.user.agent.agent.membership_request as mreq %}
-            {% if mreq %}
-              <li><b>
-                <a href="{% url 'membership_discussion' membership_request_id=mreq.id %}"
-                    title="{% trans 'Membership feedback' %}">{% trans "Freedom Coop's active member" %}</a>
-                {% get_comment_count for mreq as comment_count %}
-                {% if comment_count %}
-                    <span class="comments">
-                        - {{ comment_count }}
-                        {% if comment_count == 1 %}
-                            {% trans "comment" %}
-                        {% else %}
-                            {% trans "comments" %}
-                        {% endif %}
-                    </span>
-                {% endif %}
-              </b></li>
-            {% elif request.user.agent.agent.is_active_freedom_coop_member %}
-              <li><b>{% trans "Freedom Coop's active member" %}</b></li>
-            {% endif %}
-        {% endwith %}
 
         {% for node in projects %}
 
-            {% if not node.name == 'Freedom Coop' and not agent in node.managers and agent in node.members %}
+            {% if not agent in node.managers and agent in node.members %}
             <li><b><a href="../agent/{{ node.id }}">{{ node.name }}</a></b>
               {% if 'exchanges' in node.project.services %}&nbsp;- &nbsp;<a href="{% url "exchanges_all" agent_id=node.id %}">{% trans "Exchanges" %}</a>{% endif %}
               {% if node.description %}
@@ -236,7 +203,7 @@
         {% endfor %}
       </ul>
 
-      <p>  &nbsp; </p>
+      <br/>
 
       <h3>
         {% trans "Projects you can join:" %}

@@ -1657,7 +1657,7 @@ def your_projects(request):
     proj_form = ProjectCreateForm() #initial={'agent_type': 'Project'})
     projects = agent.related_contexts()
     managed_projects = agent.managed_projects()
-    join_projects = Project.objects.all() #filter(joining_style="moderated", visibility!="private")
+    join_projects = Project.objects.all().exclude(visibility="private").order_by('agent__name')
 
     next = "/work/your-projects/"
     allowed = False
@@ -5573,7 +5573,12 @@ def edit_resource_type(request, agent_id):
 
 @login_required
 def exchanges_all(request, agent_id): #all types of exchanges for one context agent
+    print("---- start exchanges_all ----")
     agent = get_object_or_404(EconomicAgent, id=agent_id)
+    user_agent = get_agent(request)
+    user_is_agent = False
+    if agent == user_agent:
+        user_is_agent = True
     today = datetime.date.today()
     end =  today
     start = today - datetime.timedelta(days=365)
@@ -5581,57 +5586,58 @@ def exchanges_all(request, agent_id): #all types of exchanges for one context ag
     dt_selection_form = DateSelectionForm(initial=init, data=request.POST or None)
     et_give = EventType.objects.get(name="Give")
     et_receive = EventType.objects.get(name="Receive")
-    context_ids = [c.id for c in agent.related_all_agents()]
-    if not agent.id in context_ids:
-        context_ids.append(agent.id)
-    ets = ExchangeType.objects.filter(context_agent__id__in=context_ids) #all()
-    event_ids = ""
+
+    #event_ids = ""
     select_all = True
     selected_values = "all"
+
+
+    exchanges_by_type, last_date = Exchange.objects.exchanges_by_type(agent, True) # second arg to retrieve the last date
+
 
     #nav_form = ExchangeNavForm(agent=agent, data=request.POST or None)
 
     gen_ext = Ocp_Record_Type.objects.get(clas='ocp_exchange')
-    usecases = Ocp_Record_Type.objects.filter(parent__id=gen_ext.id).exclude( Q(exchange_type__isnull=False), Q(exchange_type__context_agent__isnull=False), ~Q(exchange_type__context_agent__id__in=context_ids) ) #UseCase.objects.filter(identifier__icontains='_xfer')
-    #outypes = Ocp_Record_Type.objects.filter( Q(exchange_type__isnull=False, exchange_type__context_agent__isnull=False), ~Q(exchange_type__context_agent__id__in=context_ids) )
-    #outchilds_ids = []
-    #for tp in outypes:
-    #  desc = tp.get_descendants(True)
-    #  outchilds_ids.extend([ds.id for ds in desc])
-    #exchange_types = Ocp_Record_Type.objects.filter(lft__gt=gen_ext.lft, rght__lt=gen_ext.rght, tree_id=gen_ext.tree_id).exclude(id__in=outchilds_ids) #.exclude(Q(exchange_type__isnull=False), ~Q(exchange_type__context_agent__id__in=context_ids))
-    #usecase_ids = [uc.id for uc in usecases]
+    if False and request.user.is_superuser and user_is_agent:
+        context_ids = [c.id for c in agent.related_all_agents()]
+        if not agent.id in context_ids:
+            context_ids.append(agent.id)
+        ets = ExchangeType.objects.filter(context_agent__id__in=context_ids)
 
-    ext_form = ContextExchangeTypeForm(agent=agent, data=request.POST or None)
-    #unit_types = Ocp_Unit_Type.objects.all()
+        usecases = Ocp_Record_Type.objects.filter(parent__id=gen_ext.id).exclude( Q(exchange_type__isnull=False), Q(exchange_type__context_agent__isnull=False), ~Q(exchange_type__context_agent__id__in=context_ids) )
 
-    Rtype_form = NewResourceTypeForm(agent=agent, data=request.POST or None)
-    Stype_form = NewSkillTypeForm(agent=agent, data=request.POST or None)
+        ext_form = ContextExchangeTypeForm(agent=agent, data=request.POST or None)
 
-    #exchanges_by_type = Exchange.objects.exchanges_by_type(agent)
-    exsids = []
-    coms = agent.involved_in_commitments()
-    for com in coms:
-        if com.exchange:
-            exsids.append(com.exchange.id)
-        else:
-            print("+++ commitment has no exchange? "+str(com))
-    evts = agent.involved_in_events()
-    for evt in evts:
-        if evt.exchange:
-            exsids.append(evt.exchange.id)
-        else:
-            print("+++ event has no exchange? "+str(evt))
-    #print("+ + + "+str(exsids))
-    exchanges_by_type = Exchange.objects.filter(id__in=exsids).order_by('created_date')
+        Rtype_form = NewResourceTypeForm(agent=agent, data=request.POST or None)
+        Stype_form = NewSkillTypeForm(agent=agent, data=request.POST or None)
+
+        Etype_tree = Ocp_Record_Type.objects.filter(lft__gt=gen_ext.lft, rght__lt=gen_ext.rght, tree_id=gen_ext.tree_id).exclude( Q(exchange_type__isnull=False), Q(exchange_type__context_agent__isnull=False), ~Q(exchange_type__context_agent__id__in=context_ids) )
+
+        Rtype_tree = Ocp_Artwork_Type.objects.all().exclude( Q(resource_type__isnull=False), Q(resource_type__context_agent__isnull=False),  ~Q(resource_type__context_agent__id__in=context_ids) )
+
+        Stype_tree = Ocp_Skill_Type.objects.all().exclude( Q(resource_type__isnull=False), Q(resource_type__context_agent__isnull=False), ~Q(resource_type__context_agent__id__in=context_ids) )
+
+        Utype_tree = Ocp_Unit_Type.objects.filter(id__in=agent.used_units_ids(exchanges_by_type))
+
+    else:
+        usecases = []
+        ets = []
+        ext_form = None
+        Rtype_form = None
+        Stype_form = None
+        Etype_tree = None
+        Rtype_tree = None
+        Stype_tree = None
+        Utype_tree = None
 
     #import pdb; pdb.set_trace()
     if not request.method == "POST":
 
-        exchanges = Exchange.objects.exchanges_by_date_and_context(start, end, agent, exchanges_by_type)
+        exchanges = Exchange.objects.exchanges_by_date_and_context(start, end, agent, exchanges_by_type).count() #.order_by('created_date')
         if exchanges_by_type:
             while not exchanges:
                 start = start - datetime.timedelta(days=365)
-                exchanges = Exchange.objects.exchanges_by_date_and_context(start, end, agent, exchanges_by_type)
+                exchanges = Exchange.objects.exchanges_by_date_and_context(start, end, agent, exchanges_by_type).count() #.order_by('created_date')
                 if exchanges:
                     init = {"start_date": start, "end_date": end}
                     dt_selection_form = DateSelectionForm(initial=init, data=request.POST or None)
@@ -5646,35 +5652,46 @@ def exchanges_all(request, agent_id): #all types of exchanges for one context ag
             start = dt_selection_form.cleaned_data["start_date"]
             end = dt_selection_form.cleaned_data["end_date"]
 
-        exchanges = Exchange.objects.exchanges_by_date_and_context(start, end, agent, exchanges_by_type) #filter(context_agent=agent)
+        exchanges = Exchange.objects.exchanges_by_date_and_context(start, end, agent, exchanges_by_type).count() #order_by('created_date')
 
         nav_form = ExchangeNavForm(agent=agent, exchanges=exchanges_by_type, data=request.POST)
 
+        """
         if "categories" in request.POST:
             selected_values = request.POST["categories"]
             if selected_values:
-                sv = selected_values.split(",")
+                print("Selected_Filters: "+str(selected_values))
+                sv = selected_values.strip().split(",")
                 vals = []
                 for v in sv:
                     vals.append(v.strip())
-                if vals[0] == "all":
+                if "all" in sv:
                     select_all = True
                 else:
                     select_all = False
                     #transfers_included = []
                     exchanges_included = []
                     #events_included = []
-                    for ex in exchanges:
-                        if str(ex.exchange_type.id) in vals:
-                            exchanges_included.append(ex)
-                    exchanges = exchanges_included
+
+                    ids = filter_exchange_ids(sv, exchanges_by_type)
+                    for v in sv:
+                        print("TODO filter by: "+str(v))
+                    if ids:
+                        exchanges = Exchange.objects.exchanges_by_date_and_context(start, end, agent, exchanges_by_type).filter(id__in=ids).count()
+
+                    #for ex in exchanges:
+                    #    if str(ex.exchange_type.id) in vals:
+                    #        exchanges_included.append(ex)
+                    #exchanges = exchanges_included
 
                 #nav_form = ExchangeNavForm(agent=agent, data=None)
                 #Rtype_form = NewResourceTypeForm(agent=agent, data=None)
                 #Stype_form = NewSkillTypeForm(agent=agent, data=None)
         else:
           #exchanges = Exchange.objects.exchanges_by_date_and_context(start, end, agent) #Exchange.objects.filter(context_agent=agent) #.none()
-          selected_values = "all"
+        """
+
+        selected_values = "all"
 
 
         new_exchange = request.POST.get("new_exchange")
@@ -5925,28 +5942,81 @@ def exchanges_all(request, agent_id): #all types of exchanges for one context ag
 
     exchange_types = Ocp_Record_Type.objects.filter(exchange_type__isnull=False, exchange_type__id__in=set([ex.exchange_type.id for ex in exchanges_by_type])).order_by('pk', 'tree_id', 'lft').distinct()
 
+    if hasattr(agent, 'metainfo') and agent.metainfo.count():
+        metas = agent.metainfo.filter(type='total_transfers')
+        if len(metas) > 1:
+            raise ValidationError("WARN! More than one 'total_transfers' metainfo for agent:"+str(agent.nick))
+        elif metas:
+            meta = metas[0]
+            totdate = meta.changed_date
+            if last_date:
+                if last_date > totdate:
+                    print("Rebuid totals!")
+                    total_transfers = rebuild_totals(agent, exchanges_by_type)
+                    meta.text = json.dumps(total_transfers)
+                    meta.save()
+                else:
+                    print("Cached totals...")
+                    total_transfers = json.loads(meta.text)
+            else:
+                raise ValidationError("Can't get the 'last_date' of the exchanges of ag:"+agent.nick)
+        else:
+            raise ValidationError("WARN: No metainfo of type 'total_transfers'? ag:"+str(agent.nick))
+    else:
+        print("New totals!")
+        total_transfers = rebuild_totals(agent, exchanges_by_type)
+        meta = MetaInfo(
+            agent=agent,
+            type="total_transfers",
+            text=json.dumps(total_transfers)
+        )
+        meta.save()
+
+    #print("......... start slots_with_detail ..........")
+    #loger.info("......... start slots_with_detail ..........")
+    #for x in exchanges:
+    #    x.slots = x.slots_with_detail(agent)
+    #print("......... end slots_with_detail ..........")
+    #loger.info("......... end slots_with_detail ..........")
+
+    return render(request, "work/exchanges_all.html", {
+        "exchanges": exchanges,
+        "exchanges_by_type": exchanges_by_type,
+        "dt_selection_form": dt_selection_form,
+        "total_transfers": total_transfers,
+        #"total_rec_transfers": total_rec_transfers,
+        "select_all": select_all,
+        "selected_values": selected_values,
+        "ets": ets,
+        #"event_ids": event_ids,
+        "context_agent": agent,
+        "nav_form": nav_form,
+        "usecases": usecases,
+        "Etype_tree": Etype_tree,
+        "Rtype_tree": Rtype_tree,
+        "Stype_tree": Stype_tree,
+        "Rtype_form": Rtype_form,
+        "Stype_form": Stype_form,
+        "Utype_tree": Utype_tree, #all(),
+        #"unit_types": unit_types,
+        "ext_form": ext_form,
+        "start": start,
+        "end": end
+    })
+
+def rebuild_totals(agent, exchanges_by_type):
+    print("---- start total_transfers ("+str(agent.nick)+") ----")
     total_transfers = [{'unit':u,'name':'','clas':'','abbr':'','income':0,'incommit':0,'outgo':0,'outcommit':0, 'balance':0,'balnote':0,'debug':''} for u in agent.used_units_ids(exchanges_by_type)]
     total_rec_transfers = 0
     comma = ""
+    #event_ids = ""
 
     fairunit = None
     eachunit = None
 
-    '''for x in exchanges:
-        x.list_name = x.show_name(agent)
-        flip = False
-        if not str(x) == x.list_name:
-            flip = True
-
-        x.transfer_list = list(x.transfers.all())
-        for transfer in x.transfer_list:
-            transfer.list_name = transfer.show_name(agent, flip) # "2nd arg is 'forced'
-    '''
-
     shr_pros = []
     if hasattr(agent, 'project') and agent.project:
         shr_pros.append(agent.project)
-
 
     for x in exchanges_by_type:
 
@@ -5960,10 +6030,10 @@ def exchanges_all(request, agent_id): #all types of exchanges for one context ag
               uv = transfer.unit_of_value()
               if uq and uq.name == "Each" and uv: # and not uq and
                 if rt.is_account():
-                    print(",, Switch uq each from uv:"+str(uv)+" in ex:"+str(x.id)+" tx:"+str(transfer.id)+" rt:"+str(rt)+" acc:"+str(rt.is_account()))
+                    #print(",, Switch uq each from uv:"+str(uv)+" in ex:"+str(x.id)+" tx:"+str(transfer.id)+" rt:"+str(rt)+" acc:"+str(rt.is_account()))
                     uq = uv
               if not uq and rt:
-                print(",, Switch missing uq from rt.unit:"+str(rt.unit)+" in ex:"+str(x.id)+" tx:"+str(transfer.id)+" rt:"+str(rt)+" acc:"+str(rt.is_account()))
+                #print(",, Switch missing uq from rt.unit:"+str(rt.unit)+" in ex:"+str(x.id)+" tx:"+str(transfer.id)+" rt:"+str(rt)+" acc:"+str(rt.is_account()))
                 uq = rt.unit
 
               toag = transfer.to_agent()
@@ -6082,15 +6152,15 @@ def exchanges_all(request, agent_id): #all types of exchanges for one context ag
             else: # not quantity
                 pass
 
-            for event in transfer.events.all():
-                event_ids = event_ids + comma + str(event.id)
-                comma = ","
+            #for event in transfer.events.all():
+            #    event_ids = event_ids + comma + str(event.id)
+            #    comma = ","
 
         # end for transfer in x.transfer_list
 
-        for event in x.events.all():
-            event_ids = event_ids + comma + str(event.id)
-            comma = ","
+        #for event in x.events.all():
+        #    event_ids = event_ids + comma + str(event.id)
+        #    comma = ","
         #todo: get sort to work
 
     # end for x in exchanges_by_type
@@ -6164,38 +6234,70 @@ def exchanges_all(request, agent_id): #all types of exchanges for one context ag
     if eachunit:
         total_transfers = [to for to in total_transfers if not to['unit'] == eachunit]
 
+    #agent.totals_obj = total_transfers
+    #agent.save()
+    print("---- end total_transfers ("+str(agent.nick)+") ----")
+    return total_transfers
 
-    #print("......... start slots_with_detail ..........")
-    #loger.info("......... start slots_with_detail ..........")
-    #for x in exchanges:
-    #    x.slots = x.slots_with_detail(agent)
-    #print("......... end slots_with_detail ..........")
-    #loger.info("......... end slots_with_detail ..........")
 
-    return render(request, "work/exchanges_all.html", {
-        "exchanges": exchanges,
-        "exchanges_by_type": exchanges_by_type,
-        "dt_selection_form": dt_selection_form,
-        "total_transfers": total_transfers,
-        "total_rec_transfers": total_rec_transfers,
-        "select_all": select_all,
-        "selected_values": selected_values,
-        "ets": ets,
-        "event_ids": event_ids,
-        "context_agent": agent,
-        "nav_form": nav_form,
-        "usecases": usecases,
-        "Etype_tree": Ocp_Record_Type.objects.filter(lft__gt=gen_ext.lft, rght__lt=gen_ext.rght, tree_id=gen_ext.tree_id).exclude( Q(exchange_type__isnull=False), Q(exchange_type__context_agent__isnull=False), ~Q(exchange_type__context_agent__id__in=context_ids) ),
-        "Rtype_tree": Ocp_Artwork_Type.objects.all().exclude( Q(resource_type__isnull=False), Q(resource_type__context_agent__isnull=False),  ~Q(resource_type__context_agent__id__in=context_ids) ),
-        "Stype_tree": Ocp_Skill_Type.objects.all().exclude( Q(resource_type__isnull=False), Q(resource_type__context_agent__isnull=False), ~Q(resource_type__context_agent__id__in=context_ids) ),
-        "Rtype_form": Rtype_form,
-        "Stype_form": Stype_form,
-        "Utype_tree": Ocp_Unit_Type.objects.filter(id__in=agent.used_units_ids(exchanges_by_type)), #all(),
-        #"unit_types": unit_types,
-        "ext_form": ext_form,
-        "start": start,
-        "end": end
-    })
+def filter_exchange_ids(filters, exs, agent):
+    ids = []
+    print("FILTERS >> "+str(filters))
+    for ex in exs:
+        if 'donations' in filters:
+            if ex.transfers.count() < 2:
+                if not ex.id in ids:
+                    ids.append(ex.id)
+        elif 'give' in filters:
+            if ex.transfers.count() < 2:
+                tx = ex.transfers.all()[0]
+                if agent == tx.provider:
+                    if not ex.id in ids:
+                        ids.append(ex.id)
+        elif 'receive' in filters:
+            if ex.transfers.count() < 2:
+                tx = ex.transfers.all()[0]
+                if agent == tx.receiver:
+                    if not ex.id in ids:
+                        ids.append(ex.id)
+        if 'exchanges' in filters:
+            #print("exchanges")
+            if ex.transfers.count() > 1:
+                if not ex.id in ids:
+                    ids.append(ex.id)
+        elif 'memberships' in filters:
+            if hasattr(ex, 'join_request') and ex.join_request:
+                if not ex.id in ids:
+                    ids.append(ex.id)
+
+        stat = ex.status()
+        if 'complete' in filters:
+            #print("complete")
+            if stat == 'complete':
+                if not ex.id in ids:
+                    if len(filters) == 1:
+                        ids.append(ex.id)
+                    else:
+                        pass #ids.append(ex.id)
+            else:
+                if ex.id in ids:
+                    ids.remove(ex.id)
+        if 'pending' in filters:
+            #print("pending")
+            if stat == 'pending':
+                if not ex.id in ids:
+                    if len(filters) == 1:
+                        ids.append(ex.id)
+                    else:
+                        pass #ids.append(ex.id)
+            else:
+                if ex.id in ids:
+                    #print("remove "+str(ex.id)+" ids:"+str(len(ids)))
+                    ids.remove(ex.id)
+                    #print("removed "+str(ex.id)+" ids:"+str(len(ids)))
+
+    #print("IDS >> "+str(ids))
+    return ids
 
 
 class ExchangeListJson(BaseDatatableView):
@@ -6216,34 +6318,39 @@ class ExchangeListJson(BaseDatatableView):
             self.agent = EconomicAgent.objects.get(id=agent_id)
         if not hasattr(self, 'start'):
             self.start = self.kwargs['start']
+            #print('start: '+str(self.start))
+        if 'start_date' in request.POST: #self.kwargs:
+            print('start_date!: '+str(request.POST['start_date']))
+            self.start = request.POST['start_date']
         if not hasattr(self, 'end'):
             self.end = self.kwargs['end']
+        if 'end_date' in request.POST:
+            print('end_date!: '+str(request.POST['end_date']))
+            self.end = request.POST['end_date']
         if not hasattr(self, 'csrf_token_field'):
             csrf_token = csrf.get_token(request)
             self.csrf_token_field = '<input type="hidden" name="csrfmiddlewaretoken" value="'+csrf_token+'"> '
         if not hasattr(self, 'com_content_type'):
             self.com_content_type = ContentType.objects.get(model="joinrequest")
         self.request = request
-        #print('GET self: '+str(self.__dict__))
+
+        if not hasattr(self, 'filters'):
+            if 'filters' in request.POST:
+                self.filters = request.POST['filters'].strip().split(',')
+                print("FILTERS: "+str(self.filters))
+        #print('GET post: '+str(request.POST))
         return super().get(request, *args, **kwargs)
 
     def get_initial_queryset(self):
-        exsids = []
-        coms = self.agent.involved_in_commitments()
-        for com in coms:
-            if com.exchange:
-                exsids.append(com.exchange.id)
-            else:
-                print("+++ commitment has no exchange? "+str(com))
-        evts = self.agent.involved_in_events()
-        for evt in evts:
-            if evt.exchange:
-                exsids.append(evt.exchange.id)
-            else:
-                print("+++ event has no exchange? "+str(evt))
         #print("+ + + "+str(exsids))
-        return Exchange.objects.filter(id__in=exsids, start_date__range=[self.start, self.end]).order_by('created_date')
+        exs = Exchange.objects.exchanges_by_type(self.agent).filter(start_date__range=[self.start, self.end])
+        if not 'all' in self.filters:
+            #print("FILTERS: "+str(self.filters))
+            ids = filter_exchange_ids(self.filters, exs, self.agent)
 
+            #print("IDS: "+str(ids))
+            exs = exs.filter(id__in=ids)
+        return exs
 
     def filter_queryset(self, qs):
 
@@ -6251,7 +6358,9 @@ class ExchangeListJson(BaseDatatableView):
 
     def render_column(self, row, column):
         # We want to render user as a custom column
+        print("column: "+str(column))
         if column == 'actions':
+            print("render actions?")
             row.actions += "JELOW"
             return row.actions #escape('{0} {1}'.format(row.customer_firstname, row.customer_lastname))
         else:

@@ -36,18 +36,12 @@ span.pending, span.complete, span.empty {
     font-size: 19.5px;
 }*/
 
+#filter-form .controls input {
+    max-width: 110px;
+}
+
 
 .totals {
-    /*border: solid 2px firebrick;
-    background-color: oldlace;
-    margin-bottom: 12px;
-    padding-left: 1em;
-  padding-top: 16px;
-  padding-bottom: 16px;
-  max-width: 323px;
-  float: right;
-  width: 310px;
-  margin-left: 16px;*/
   display: inline-block;
 }
 .totals table {
@@ -242,7 +236,6 @@ hr {
 }
 .filter {
   float: right;
-  max-width: 355px;
 }
 
 .showhide {
@@ -395,7 +388,7 @@ hr {
         </legend>
     <div class="container span12" style="padding: 0px;">
       <div class="row no-gutters" style="width: 100%;">
-        <div class="col-sm span8" style="margin-left:0;">
+        <div class="col col-sm-12" style="margin-left:0;">
           {% if request.user.agent.agent in context_agent.managers or request.user.agent.agent == context_agent or request.user.is_superuser %}
             <div class="totals infobox" style="min-width:320px; padding-bottom:13px;">
               <span class="showhide" id="sh-totals" style="float:right;">(SHOW)</span>
@@ -471,18 +464,14 @@ hr {
                 </tbody>
               </table>
               {% endif %}
-              <!-- <span class="total">Incoming total: {{ total_transfers }} </span><br/>
-              <span class="total">Outgoing total: {{ total_rec_transfers }} </span>
-
-              <br />{% trans "* Note these totals are meaningful only if the events selected all use the same currency. <br/>(We'll do a multi total per unit-type box soon)" %} -->
 
             </div>
           {% endif %}
         </div>
 
-        <div class="col-sm span4">
+        <div class="col col-sm-12 ">
 
-          <div class="filter miniform">
+          <div class="miniform" style="margin-bottom: 20px">
             {% comment %}
             {% if exchanges %}
                 <div>
@@ -490,44 +479,65 @@ hr {
                 </div>
             {% endif %}
             {% endcomment %}
-            <h3 style="margin-bottom:8px;">{% trans "Filters:" %}</h3>
-            <form id="filter-form" action="." method="POST" style="margin-bottom:6px;">
+
+            <form id="filter-form" action="" method="POST" style="margin-bottom:6px; overflow:auto;">
 	            {% csrf_token %}
-                <div id="div_id_start_date" class="control-group" style="display:inline-block; margin-bottom:0;" >
-                    <label for="id_start_date" class="control-label required-field" style="display:inline-block;" >
-                        {% trans "Start:" %}
-                    </label>
-                    <div class="controls" style="display: inline-flex;" >
-                        {{ dt_selection_form.start_date }}
-                    </div> &nbsp;
+              <div class="row no-gutters">
+                <div class="col-lg-2 col-sm-4">
+                  <h3 style="margin-bottom:8px;">{% trans "Filters:" %}&nbsp;</h3>
                 </div>
-                <div id="div_id_end_date" class="control-group" style="display:inline-block; margin-bottom:0;" >
-                    <label for="id_end_date" class="control-label required-field" style="display:inline-block;" >
-                        {% trans "End:" %}
-                    </label>
-                    <div class="controls" style="display: inline-flex;" >
-                        {{ dt_selection_form.end_date }}
+                <div class="col">
+                  <div id="div_id_start_date" class="control-group" style="display:inline-block; margin-bottom:0;" >
+                      <label for="id_start_date" class="control-label required-field" style="display:inline-block;" >
+                          {% trans "Start:" %}
+                      </label>
+                      <div class="controls" style="display: inline-flex;" >
+                          {{ dt_selection_form.start_date }}
+                      </div> &nbsp;
+                  </div>
+                  <div id="div_id_end_date" class="control-group" style="display:inline-block; margin-bottom:0;" >
+                      <label for="id_end_date" class="control-label required-field" style="display:inline-block;" >
+                          {% trans "End:" %}
+                      </label>
+                      <div class="controls" style="display: inline-flex;" >
+                          {{ dt_selection_form.end_date }}
+                      </div> &nbsp;
+                  </div>
+                </div>
+
+                <div class="col">
+                  <div style="float:left; margin-top:5px;">
+                      <span class="title"> {% trans "More filters:" %}</span> &nbsp; <span class="showhide" id="sh-filter_by_type" >(SHOW)</span>
+                  </div>
+                  <input type="submit" id="btn-filter" name="submit" class="btn btn-info" value="{% trans 'Filter' %}"
+                           style="float:right; margin-top:5px;"/>
+                </div>
+              </div>
+	            <div class="list row no-gutters" id="list-filter_by_type" style="display:none;">
+                  <div class="col-lg-3 col-sm-4">
+                    <input type="checkbox" class="category" id="all" name="all" value="all" />&nbsp;<label for="all">{% trans "All" %}</label>
+                    <br/><span class="small">({% trans "in the date range" %})</span>
+                  </div>
+                  <div class="col-lg-3 col-sm-5">
+                    <h5>{% trans "Filter by Status" %}:</h5>
+                    <div><input type="radio" class="category" id="pending" name="status" value="pending" />&nbsp;<label for="pending">{% trans "Pending" %}</label> &nbsp;
+                        <input type="radio" class="category" id="complete" name="status" value="complete" />&nbsp;<label for="complete">{% trans "Complete" %}</label>
                     </div>
-                </div>
-	            <div class="list" id="list-filter_by_type" style="display:none;">
-                <p><span class="title"> {% trans "Filter by Type" %}:</span>
-                </p>
-                <p><input type="checkbox" class="category" id="all" name="all" value="all" {% if select_all %}checked="yes"{% endif %} /> {% trans "All in the date range" %}</p>
-                {% for x in exchanges_by_type %}
-                  {% if user.is_staff or request.user.agent.agent in context_agent.managers or request.user.agent.agent in x.related_agents %}
-                    {% with x.exchange_type as et %}
-                      {% with et.ocp_record_type.get_ancestors|slice:"5:6"|first as useca %}
-                        {% ifchanged useca %}
-                          <h5>{{ useca.name }}</h5>
-                        {% endifchanged %}
-                      {% endwith %}
-                      {% ifchanged et.ocp_record_type and et.ocp_record_type.name %}
-                        <p><input type="checkbox" class="category" id="{{ et.id }}" name="{{ et.id }}" value="{{ et.id }}" /> {% if not et.ocp_record_type %}{{ et }} (!){% else %}{{ et.ocp_record_type.name }}{% endif %}</p>
-                      {% endifchanged %}
-                    {% endwith %}
-                  {% endif %}
-                {% endfor %}
-                </div>
+                  </div>
+                  <div class="col col-sm-12">
+                    <h5>{% trans "Filter by Type" %}:</h5>
+                    <div>
+                      <input type="radio" class="category" id="donations" name="mode" value="donations" />&nbsp;<label for="donations">{% trans "Donations" %}:</label> &nbsp;
+                      <input type="radio" class="category" id="give" name="mode" value="give" />&nbsp;<label for="give">{% trans "Give" %}</label> &nbsp;
+                      <input type="radio" class="category" id="receive" name="mode" value="receive" />&nbsp;<label for="receive">{% trans "Receive" %}</label> &nbsp;
+                      <br/>
+                      <input type="radio" class="category" id="exchang" name="mode" value="exchanges" />&nbsp;<label for="exchang">{% trans "Exchanges" %}:</label> &nbsp;
+                      <input type="radio" class="category" id="memberships" name="mode" value="memberships" />&nbsp;<label for="memberships">{% trans "to Membership" %}</label>
+                    </div>
+                  </div>
+
+
+              </div>
 
 {% comment %}
                 {% if references %}
@@ -538,12 +548,9 @@ hr {
 	            {% endif %}
 {% endcomment %}
 
-                <div style="float:right; margin-top:5px;">
-                    <span class="title"> {% trans "by type:" %}</span> &nbsp; <span class="showhide" id="sh-filter_by_type" >(SHOW)</span>
-                </div>
+
 	            <input type="hidden" id="categories" name="categories" value=" {{ selected_values }} " />
-	            <input type="submit" id="btn-filter" name="submit" class="btn btn-info" value="{% trans 'Filter' %}"
-                       style="float:left; margin-bottom:5px;"/>
+
             </form>
           </div>
         </div>
@@ -554,10 +561,10 @@ hr {
       <!-- </div> -->
       <div class="exlist" style="">
       {% if exchanges_by_type %}
-        <h3>
+        <h3 id="title-list">
           {% trans "List of Exchanges" %}{% if not user.is_staff and not request.user.agent.agent in context_agent.managers and not request.user.agent.agent == context_agent %}
             <span>({% trans "related to you" %})</span>
-            {% endif %}: &nbsp;<span style="font-size:80%" class="small">({% trans "listing" %} {{ exchanges.count }} of {{ exchanges_by_type.count }})</span>
+            {% endif %}: &nbsp;<span class="small" style="font-size:65%">({% trans "total" %} {{ exchanges_by_type.count }})</span>
         </h3>
         <table id="exchanges" style="width: 100%;" class="table table-bordered table-hover table-condensed cell-border order-column stripe" >
         <thead>
@@ -908,7 +915,7 @@ hr {
       </div>
 
       <p> &nbsp; </p>
-
+      {% comment %}
       {% if False and request.user.agent.agent in context_agent.managers or request.user.agent.agent == context_agent and request.user.is_superuser %}
 
             <div id="new_exchange" class="miniform">
@@ -1265,7 +1272,7 @@ hr {
           </div>
 
           {% endif %}
-
+      {% endcomment %}
       </div>
 </div>
 {% endblock %}
@@ -1295,7 +1302,7 @@ hr {
 
   $(document).ready(function(){
 
-    $("#exchanges")
+    var table = $("#exchanges")
         .on( 'processing.dt', function ( e, settings, processing ) {
             $('#exchanges_processing').css('border', '0').css('top','16px').css('left','167px').css( 'display', processing ? 'block' : 'none' );
             $('.table-condensed').attr('style', processing ? 'pointer-events:none; opacity:0.5;' : 'pointer-events:inherit; opacity:1;');
@@ -1324,13 +1331,18 @@ hr {
                 },
             ],
 
-            "lengthMenu": [[5, 10, 50, 100, 500], [5, 10, 50, 100, 500]],
+            "lengthMenu": [[5, 10, 25, 50, 100, 500], [5, 10, 25, 50, 100, 500]],
 
             "processing": true,
             "serverSide": true,
             "ajax": {
                 "url": "{% url 'exchange_list_json' agent_id=context_agent.id start=start end=end %}",
-                "type": "POST"
+                "type": "POST",
+                "data": function(d){
+                            d.filters = $('#categories').prop('value').trim();
+                            d.start_date = $('#id_start_date').val(); //prop('value')),
+                            d.end_date = $('#id_end_date').val(); //prop('value')),
+                        },
             },
             "language": {
                 "processing": "<img src='{% static 'img/loading.gif' %}' />"
@@ -1353,6 +1365,20 @@ hr {
                 { "orderable": false }, //{ "data": "receive_lastdate",
             ],
         });
+
+    $('#btn-filter').click(function(event){
+        event.preventDefault();
+        table.ajax.reload();
+        var tit = $('#title-list').text().trim().split(' ');
+        var cats = $('#categories').prop('value').trim().split(',');
+        for(var ca in cats){
+            if(tit.includes(cats[ca])){
+                alert(tit);
+            } else {
+                //alert(cats[ca]+" tit:"+tit);
+            }
+        }
+    });
 
     function update_longs(){
         $('.textlong').each(function(e) {
@@ -1437,41 +1463,50 @@ hr {
     //   C A T E G O R I E S
 
 		var selectedCats = "{{ selected_values }}";
+    var cats = $('#categories').val();
+    if(cats && cats !== selectedCats){
+      selectedCats = cats;
+    }
+    if(!selectedCats || selectedCats.trim() == 'all'){
+        $('.category').each(function(){
+            $(this).prop('checked', false);
+        });
+        $('#all').prop('checked', true);
+        selectedCats = 'all';
+    } else {
+        $('#all').prop('checked', false);
+        $('.category').each(function(){
+            var cat = $(this)[0];
+            if (selectedCats.indexOf(cat.value+',') > -1 || selectedCats.indexOf(','+cat.value) > -1 || selectedCats == cat.value ) {
+                $(this).prop('checked', true);
+                $("#sh-filter_by_type").click();
+            }
+		    });
+    }
+    $('#categories').prop('value', selectedCats);
 
-		$('.category').each(function(){
-			var cat = $(this)[0];
-      if (selectedCats.indexOf(cat.name+',') > -1 || selectedCats.indexOf(','+cat.name) > -1 || selectedCats == cat.name ) {
-				$(this).prop('checked', true);
-			}
-		});
-
-		$('.category').click(function()
-		{
-			var checkedCats = [];
-			var checkedBox = $(this)[0];
-			var allBox = $('#all')[0];
-			if (checkedBox == allBox)
-			{
-				$('.category').each(function()
-				{
-		            $(this).prop('checked', false);
-				});
-				$('#all').prop('checked', true);
-				checkedCats.push('all');
-			}
-			else
-			{
-				$('#all').prop('checked', false);
-				$('.category').each(function()
-				{
-					var cat = $(this)[0];
-		            if (cat.checked)
-					{
-						checkedCats.push(cat.value);
-					}
-				});
-			}
-			$('#categories').prop('value', checkedCats);
+		$('.category').click(function(){
+  			var checkedCats = [];
+  			var checkedBox = $(this)[0];
+  			var allBox = $('#all')[0];
+  			if (checkedBox == allBox){
+            $('.category').each(function(){
+  		            $(this).prop('checked', false);
+  				  });
+  				  $('#all').prop('checked', true);
+  				  checkedCats.push('all');
+  			} else {
+    				$('#all').prop('checked', false);
+    				$('.category').each(function(){
+      					var cat = $(this)[0];
+      		            if (cat.checked)
+      					{
+      						checkedCats.push(cat.value);
+      					}
+    				});
+  			}
+  			$('#categories').prop('value', checkedCats);
+        //alert(checkedCats);
 		});
 
 
