@@ -457,6 +457,8 @@ legend a.btn {
 .table-bordered th {
   border-bottom: 1px #CACAC6;
   border-left: none;
+  border-right: none;
+  border-bottom: none;
 }
 /*.table-bordered tr:first-child th {
   -moz-border-radius: 7px 0 0 0;

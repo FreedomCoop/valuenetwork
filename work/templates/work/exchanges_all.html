@@ -387,8 +387,8 @@ hr {
             </div>
         </legend>
     <div class="container span12" style="padding: 0px;">
-      <div class="row no-gutters" style="width: 100%;">
-        <div class="col col-sm-12" style="margin-left:0;">
+      <div class="row" style="width: 100%;">
+        <div class="col-lg-auto col-sm-12" style="margin-left:0;">
           {% if request.user.agent.agent in context_agent.managers or request.user.agent.agent == context_agent or request.user.is_superuser %}
             <div class="totals infobox" style="min-width:320px; padding-bottom:13px;">
               <span class="showhide" id="sh-totals" style="float:right;">(SHOW)</span>
@@ -469,7 +469,7 @@ hr {
           {% endif %}
         </div>
 
-        <div class="col col-sm-12 ">
+        <div class="col-lg-auto col-sm-12 ">
 
           <div class="miniform" style="margin-bottom: 20px">
             {% comment %}
@@ -480,14 +480,14 @@ hr {
             {% endif %}
             {% endcomment %}
 
-            <form id="filter-form" action="" method="POST" style="margin-bottom:6px; overflow:auto;">
+            <form id="filter-form" action="" method="POST" style="overflow:auto;">
 	            {% csrf_token %}
               <div class="row no-gutters">
                 <div class="col-lg-2 col-sm-4">
                   <h3 style="margin-bottom:8px;">{% trans "Filters:" %}&nbsp;</h3>
                 </div>
-                <div class="col">
-                  <div id="div_id_start_date" class="control-group" style="display:inline-block; margin-bottom:0;" >
+                <div class="col-lg-4 col-sm-12"">
+                  <div id="div_id_start_date" class="control-group" style="display:inline-block; margin-top:3px;" >
                       <label for="id_start_date" class="control-label required-field" style="display:inline-block;" >
                           {% trans "Start:" %}
                       </label>
@@ -495,7 +495,7 @@ hr {
                           {{ dt_selection_form.start_date }}
                       </div> &nbsp;
                   </div>
-                  <div id="div_id_end_date" class="control-group" style="display:inline-block; margin-bottom:0;" >
+                  <div id="div_id_end_date" class="control-group" style="display:inline-block; margin-top:3px;" >
                       <label for="id_end_date" class="control-label required-field" style="display:inline-block;" >
                           {% trans "End:" %}
                       </label>
@@ -505,26 +505,28 @@ hr {
                   </div>
                 </div>
 
-                <div class="col">
-                  <div style="float:left; margin-top:5px;">
-                      <span class="title"> {% trans "More filters:" %}</span> &nbsp; <span class="showhide" id="sh-filter_by_type" >(SHOW)</span>
+                <div class="col-lg-6 col-sm-12"">
+                  <div class="" style="margin-top:5px;">
+                      <span class="title"> {% trans "More filters:" %}</span> &nbsp;
+                      <span class="showhide" id="sh-filter_by_type" >(SHOW)</span>&nbsp;
+                      <input type="submit" id="btn-filter" name="submit" class="btn btn-info" value="{% trans 'Filter' %}"
+                           style="float:right; margin: 0 0 5px 5px;"/>
                   </div>
-                  <input type="submit" id="btn-filter" name="submit" class="btn btn-info" value="{% trans 'Filter' %}"
-                           style="float:right; margin-top:5px;"/>
                 </div>
               </div>
-	            <div class="list row no-gutters" id="list-filter_by_type" style="display:none;">
-                  <div class="col-lg-3 col-sm-4">
-                    <input type="checkbox" class="category" id="all" name="all" value="all" />&nbsp;<label for="all">{% trans "All" %}</label>
+	            <div class="list" id="list-filter_by_type" style="display:none; margin-top:10px;">
+                <div class="row no-gutters">
+                  <div class="col-lg-2 col-sm-4" style="margin-bottom:10px">
+                    <input type="checkbox" class="category" id="all" name="all" value="all" />&nbsp;<label for="all" style="margin-bottom:0">{% trans "All" %}</label>
                     <br/><span class="small">({% trans "in the date range" %})</span>
                   </div>
-                  <div class="col-lg-3 col-sm-5">
+                  <div class="col-lg-4 col-sm-5">
                     <h5>{% trans "Filter by Status" %}:</h5>
                     <div><input type="radio" class="category" id="pending" name="status" value="pending" />&nbsp;<label for="pending">{% trans "Pending" %}</label> &nbsp;
                         <input type="radio" class="category" id="complete" name="status" value="complete" />&nbsp;<label for="complete">{% trans "Complete" %}</label>
                     </div>
                   </div>
-                  <div class="col col-sm-12">
+                  <div class="col-lg-6 col-sm-12">
                     <h5>{% trans "Filter by Type" %}:</h5>
                     <div>
                       <input type="radio" class="category" id="donations" name="mode" value="donations" />&nbsp;<label for="donations">{% trans "Donations" %}:</label> &nbsp;
@@ -535,8 +537,7 @@ hr {
                       <input type="radio" class="category" id="memberships" name="mode" value="memberships" />&nbsp;<label for="memberships">{% trans "to Membership" %}</label>
                     </div>
                   </div>
-
-
+                </div>
               </div>
 
 {% comment %}

@@ -348,7 +348,7 @@ h3.trtheading {
             {% if True or exchange.exchange_type.transfer_types.count > 1 or tt and not tt.is_income %}
             <div class="trt infobox">
                 <h3 class="trtheading">{% trans "Outgoing Transfers" %}
-                {% if logger %}<span class="info"> <a href="#" id="xfer-info" data-toggle="popover" data-trigger='hover' title="Transfers" data-placement="left"
+                {% if False and logger %}<span class="info"> <a href="#" id="xfer-info" data-toggle="popover" data-trigger='hover' title="Transfers" data-placement="left"
                     data-content="Log the planned and actual transfers for this exchange.  The types of transfers are determined by the type of exchange,
                     as defined by your previous selections.">
                     <img src="{% static 'img/information-icon.png' %}" /></a>
@@ -948,7 +948,7 @@ h3.trtheading {
             {% if True or exchange.can_have_reciprocal_transfers or tt and tt.is_income %}
             <div class="trt infobox">
                 <h3 CLASS="trtheading">{% trans "Incoming Transfers" %}
-                {% if logger %}<span class="info"> <a href="#" id="rxfer-info" data-toggle="popover" data-trigger='hover' title="Reciprocal Transfers" data-placement="left"
+                {% if False and logger %}<span class="info"> <a href="#" id="rxfer-info" data-toggle="popover" data-trigger='hover' title="Reciprocal Transfers" data-placement="left"
                     data-content="Log the planned and actual reciprocal transfers for this exchange.  The types of reciprocal transfers are determined by the type of exchange,
                     as defined by your previous selections.  They are in return for the primary transfers above.">
                     <img src="{% static 'img/information-icon.png' %}" /></a>
