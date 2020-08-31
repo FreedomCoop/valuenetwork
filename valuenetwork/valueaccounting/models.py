@@ -8917,7 +8917,57 @@ class ExchangeManager(models.Manager):
 
         return exs_bdc
 
-    def exchanges_by_type(self, agent):
+    def exchanges_by_type(self, agent, last=None):
+        print("--- start exchanges_by_type for agent: "+str(agent.nick))
+
+        last_date = None
+        exsids = []
+        coms = agent.involved_in_commitments()
+        for com in coms:
+            if com.exchange:
+                exsids.append(com.exchange.id)
+            elif com.transfer:
+                if com.transfer.exchange:
+                    exsids.append(com.transfer.exchange.id)
+                    com.exchange = com.transfer.exchange
+                    com.save()
+                    print("++ added missing exchange to comm from its transfer")
+                else:
+                    print("++ com.transfer without exchange? com:"+str(com.id))
+            elif com.process:
+                pass
+            elif com.event_type.name == 'Todo':
+                pass
+            else:
+                # TODO search ways to show the teoretical exchange related the commitment...
+                print("+++ commitment has no exchange nor process? com:"+str(com.id)+" com.evtyp:"+str(com.event_type))
+
+        evts = agent.involved_in_events()
+        for evt in evts:
+            if evt.exchange:
+                exsids.append(evt.exchange.id)
+            elif evt.transfer:
+                if evt.transfer.exchange:
+                    exsids.append(evt.transfer.exchange.id)
+                    evt.exchange = evt.transfer.exchange
+                    evt.save()
+                    print("++ added missing exchange to event from its transfer")
+                else:
+                    print("++ evt.transfer without exchange? evt:"+str(evt.id))
+            elif evt.process or evt.distribution:
+                pass
+            elif evt.event_type.name == 'Todo':
+                pass
+            else:
+                # TODO search ways to show the teoretical exchange related the commitment...
+                print("+++ event has no exchange nor process? evt:"+str(evt.id)+" evt.typ:"+str(evt.event_type))
+
+        exs_bt = Exchange.objects.filter(id__in=exsids).order_by('exchange_type')
+
+        last_evt = evts.order_by('-event_date').first()
+        #print("LASTEV: "+str(last_evt))
+
+        """
         agids = [c.id for c in agent.related_contexts()]
         agids2 = agids[:]
         if not agent.id in agids:
@@ -8934,39 +8984,43 @@ class ExchangeManager(models.Manager):
           Q(transfers__events__isnull=False, transfers__events__to_agent__isnull=False, transfers__events__to_agent=agent) |
           Q(transfers__commitments__isnull=False, transfers__commitments__from_agent__isnull=False, transfers__commitments__from_agent=agent) |
           Q(transfers__commitments__isnull=False, transfers__commitments__to_agent__isnull=False, transfers__commitments__to_agent=agent)
-        ).distinct().order_by('exchange_type', 'created_date') #.exclude(
-            #~Q(exchange_type__context_agent__isnull=False, exchange_type__context_agent=agent),
-            #~Q(context_agent__isnull=False, context_agent__id__in=agids)
-        #).order_by(Lower('exchange_type__ocp_record_type__name').asc())
-
-        # bum2: This filter seems not enough (why? its still a MISTERY !?) so we create the id list to exclude exts, depending on is_context
+        ).distinct().order_by('exchange_type', 'created_date')
 
         count = len(exs_bt)
         if agent.is_context:
             #print("- ebt context: "+str(agent)+" 1 exs:"+str(count))
             exs_bt2 = exs_bt.exclude(
                 ~Q(exchange_type__context_agent__isnull=False, exchange_type__context_agent=agent),
-            #    Q(context_agent__isnull=False, context_agent__id__in=agids2) |
-            #    Q(exchange_type__context_agent__isnull=False, exchange_type__context_agent__id__in=agids2)
             ) #.order_by('-start_date')
             count2 = len(exs_bt2)
             if not count == count2:
-                print("- filtered exchanges_by_type context: "+str(agent)+" count1:"+str(count)+" count2: "+str(count2))
+                exclud = []
+                for ex in exs_bt:
+                    if not ex in exs_bt2:
+                        exclud.append(ex.id)
+                print("- filter exchanges_by_type? context: "+str(agent)+" count1:"+str(count)+" count2: "+str(count2)+" exclud: "+str(exclud))
                 if count2:
-                    exs_bt = exs_bt2
+                    pass #exs_bt = exs_bt2
         else:
             #print("- ebt individual: "+str(agent)+" exs:"+str(count))
-            exs_bt = exs_bt.exclude(
+            exs_bt2 = exs_bt.exclude(
                 Q(transfers__isnull=True, context_agent__isnull=False, context_agent__id__in=agids2) |
                 #Q(transfers__events__isnull=True, transfers__commitments__isnull=True,
                 Q(exchange_type__context_agent__isnull=False, exchange_type__context_agent__id__in=otheragids) |
                 #Q(transfers__events__isnull=True, transfers__commitments__isnull=True,
                 Q(context_agent__isnull=False, context_agent__id__in=otheragids)
             ) #.order_by('-start_date')
-            count2 = len(exs_bt)
+            count2 = len(exs_bt2)
             if not count == count2:
                 print("- filtered exchanges_by_type individual: "+str(agent)+" count:"+str(count)+" coun2: "+str(count2))
+                if count2:
+                    pass #exs_bt = exs_bt2
+        """
 
+        print("--- end exchanges_by_type for agent: "+str(agent.nick)+" exs:"+str(exs_bt.count()))
+
+        if last:
+            return exs_bt, last_evt.event_date
         return exs_bt #.order_by(Lower('exchange_type__ocp_record_type__name').asc())
 
 
@@ -9094,6 +9148,7 @@ class Exchange(models.Model):
         return ttpay
 
     def slots_with_detail(self, context_agent=None):
+        #print("--- start slots_with_detail (ex:"+str(self.id)+") (ag:"+str(context_agent)+") ---")
         slots = self.exchange_type.transfer_types.all()
         slots = list(slots)
         memslot = None
@@ -9232,7 +9287,7 @@ class Exchange(models.Model):
 
                     if not slot.total_com_unit:
                         if rt and not rt in slot.rts:
-                            print("--- not total_com_unit, add rt:"+str(rt)+" in ex:"+str(self.id)+" slot:"+str(slot.id)+" "+str(slot))
+                            #print("--- not total_com_unit, add rt:"+str(rt)+" in ex:"+str(self.id)+" slot:"+str(slot.id)+" "+str(slot))
                             slot.rts.append(rt)
 
 
@@ -9263,7 +9318,7 @@ class Exchange(models.Model):
               else:
                 slot.total_com_unit = slot.rts[0]
                 if hasattr(slot.total_com_unit, 'ocp_artwork_type') and slot.total_com_unit.ocp_artwork_type.is_account():
-                    print("--- is account, change slot_com_unit to:"+str(slot.rts[0].unit)+" ex:"+str(self.id)+" slot:"+str(slot.id))
+                    #print("--- is account, change slot_com_unit to:"+str(slot.rts[0].unit)+" ex:"+str(self.id)+" slot:"+str(slot.id))
                     slot.total_com_unit = slot.rts[0].unit
                 else:
                     if slot.hours:
@@ -9290,7 +9345,7 @@ class Exchange(models.Model):
                                         slot.total_unit = str(slot.total_unit)+' of '+str(ev.resource)
                             if isinstance(slot.total_unit, Unit) and not slot.total_unit.name_en in ['Each','Hours']:
                                 slot.total_unit = str(slot.total_unit.abbrev)+' of '+str(ev.resource)
-                            print("-- transf evt res: "+str(ev.resource))
+                            #print("-- transf evt res: "+str(ev.resource))
                         elif ev.resource_type:
                             if not slot.total_unit:
                                 slot.total_unit = str(ev.resource_type)
@@ -9303,7 +9358,7 @@ class Exchange(models.Model):
                                         slot.total_unit = str(slot.total_unit)+' of '+str(ev.resource_type)
                             if isinstance(slot.total_unit, Unit) and not slot.total_unit.name_en == 'Each':
                                 slot.total_unit = str(slot.total_unit.abbrev)+' of '+str(ev.resource_type)
-                            print("-- transf evt resTyp: "+str(ev.resource_type))
+                            #print("-- transf evt resTyp: "+str(ev.resource_type))
                         if ev.description:
                             slot.total_unit = str(slot.total_unit)+' <em class="inlist small">'+ev.description+'</em>'
 
@@ -9322,7 +9377,7 @@ class Exchange(models.Model):
                                         slot.total_com_unit = str(slot.total_com_unit)+' of '+str(ev.resource)
                             #if isinstance(slot.total_com_unit, Unit):
                             #    slot.total_com_unit = str(slot.total_com_unit.abbrev)+' of '+str(ev.resource)
-                            print("-- transf com res: "+str(ev.resource))
+                            #print("-- transf com res: "+str(ev.resource))
                         elif ev.resource_type:
                             if not slot.total_com_unit:
                                 slot.total_com_unit = str(ev.resource_type)
@@ -9337,12 +9392,12 @@ class Exchange(models.Model):
                                         slot.total_com_unit = str(slot.total_com_unit)+' of '+str(ev.resource_type)
                             #if isinstance(slot.total_com_unit, Unit):
                             #    slot.total_com_unit = str(slot.total_com_unit.abbrev)+' of '+str(ev.resource_type)
-                            print("-- transf("+str(tr.id)+") com("+str(ev.id)+") resTyp: "+str(ev.resource_type))
+                            #print("-- transf("+str(tr.id)+") com("+str(ev.id)+") resTyp: "+str(ev.resource_type))
                         if ev.description:
                             slot.total_com_unit = str(slot.total_com_unit)+' <em class="inlist small">'+ev.description+'</em>'
 
-                print("- don't find rts? ex:"+str(self.id)+" slot:"+str(slot.id)+" "+str(slot)+" tot:"+str(slot.total)+" tot_com:"+str(slot.total_com)+" com_unit:"+str(slot.total_com_unit))
-                loger.info("- don't find rts? ex:"+str(self.id)+" slot:"+str(slot.id)+" "+str(slot)+" tot:"+str(slot.total)+" tot_com:"+str(slot.total_com)+" com_unit:"+str(slot.total_com_unit))
+                #print("- don't find rts? ex:"+str(self.id)+" slot:"+str(slot.id)+" "+str(slot)+" tot:"+str(slot.total)+" tot_com:"+str(slot.total_com)+" com_unit:"+str(slot.total_com_unit))
+                #loger.info("- don't find rts? ex:"+str(self.id)+" slot:"+str(slot.id)+" "+str(slot)+" tot:"+str(slot.total)+" tot_com:"+str(slot.total_com)+" com_unit:"+str(slot.total_com_unit))
 
             if not memslot:
               if slot.is_incoming(self, context_agent): #is_reciprocal:
