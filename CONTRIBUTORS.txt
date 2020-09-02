@@ -1,15 +1,32 @@
 Code Contributors
 =================
 
+Sebastià Freixa
+Xavi Paniello
 Bob Haugen
 Lynn Foster
-Seth Horne
+Pospi
+Santiki
+Ales Zabala
 Thierry Marianne
+Cillian O'Ruanaidh
+
+
 
 Ideas, testing, issue and bug reporting
 =======================================
 
-Tiberius Brastaviceanu
+Enric Duran
+Maro Horta
+Valentina Messeri
+Ivan Minutillo
+Michalis 
+Guy James
+Ale Fernandez
+Thomas König
 Abran Khalid
+Tiberius Brastaviceanu
 Francois Bergeron
 Jonathan Olesik
+Abran Khalid
+
