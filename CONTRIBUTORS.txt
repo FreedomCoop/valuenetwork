@@ -17,13 +17,15 @@ Ideas, testing, issue and bug reporting
 =======================================
 
 Enric Duran
-Maro Horta
+Maro
 Valentina Messeri
 Ivan Minutillo
 Michalis 
 Guy James
 Ale Fernandez
+Sporos
 Thomas König
+Laurent Schmidt
 Abran Khalid
 Tiberius Brastaviceanu
 Francois Bergeron
