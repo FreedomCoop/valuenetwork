@@ -112,7 +112,7 @@ value equations and distributions, etc.
 
 <!-- GETTING STARTED -->
 ### Installation
-To get a local copy up and running follow these simple steps: [Install](../INSTALL.md)
+To get a local copy up and running follow these simple steps: [INSTALL](/INSTALL.md)
 
 <!-- USAGE EXAMPLES -->
 ## Usage
@@ -137,7 +137,7 @@ see a bit of [Bank of the Commons OCP History](https://github.com/FreedomCoop/va
 
 - Finish the recurring payments 'subscription' model membership workflow.
 
-- Milestone #1: Create a new React Frontend learning from the [Shroom](https://github.com/ivanminutillo/shroom) and the 'Agent' expereinces to allow:
+- Milestone #1: Create a new React Frontend learning from the [shroom](https://github.com/ivanminutillo/shroom) and the 'Agent' react expereinces to allow:
 	- an easy input of user Needs, starting with Food needs, and
 	- an easy input of user offered Food products for producers and consumer groups. 
 	- This frontend will be initially connected to the OCP as a backend, but will be also useful for the future [CommonDB](https://commondb.net) distributed data network backend.
@@ -163,7 +163,7 @@ Contributions are what make the open source community such an amazing place to b
 5. Open a Pull Request
 
 ## Contributors
-see [Contributors.txt](../CONTRIBUTORS.txt)
+see [Contributors.txt](/CONTRIBUTORS.txt)
 
 <!-- LICENSE -->
 ## License
