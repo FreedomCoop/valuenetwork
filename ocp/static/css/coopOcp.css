@@ -27,6 +27,10 @@ header {
     background-color: #476b6b;
     /* padding-bottom: 0; */
 }
+.last-menu {
+    left: auto;
+    right: -40px;
+}
 
 .navbar-inner {
     min-height: 39px;
@@ -140,7 +144,7 @@ i.icon-star::before {
     content: "\e006";
 }
 i.icon-tasks::before {
-    content: "\e137",
+    content: "\e137";
 }
 i.icon-comment::before {
     content: "\e111";

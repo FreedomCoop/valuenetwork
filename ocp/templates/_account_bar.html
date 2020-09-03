@@ -41,11 +41,9 @@
                 {% endif %}
                 <b class="caret"></b>
             </a>
-            <ul class="dropdown-menu">
-                {% if user.is_staff or user.is_superuser %}
-                    {% if user.is_superuser %}
-                        <li class="nav-item"><a class="nav-link" href="/admin/"><i class="icon-wrench"></i> {% trans 'DB Admin' %}</a></li>
-                    {% endif %}
+            <ul class="dropdown-menu last-menu">
+                {% if user.is_superuser %}
+                    <li class="nav-item"><a class="nav-link" href="/admin/"><i class="icon-wrench"></i> {% trans 'DB Admin' %}</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url "start" %}"><i class="icon-wrench"></i> {% trans 'Coop Admin App' %}</a></li>
                     <li class="nav-item divider"></li>
                 {% endif %}
@@ -60,7 +58,7 @@
 
                 <li class="nav-item" id="my-profile" >
                       <a class="nav-link" href="{% url 'profile' %}"
-                      title="{% trans 'Your profile information and skills' %}"
+                        title="{% trans 'Your profile information and skills' %}"
                       ><i class="icon-user"></i> {% trans 'Profile' %}</a>
                 </li>
 
