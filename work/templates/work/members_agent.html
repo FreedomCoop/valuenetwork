@@ -789,7 +789,7 @@
                             <th>{% trans "Payment Options:" %}</th>
                             <td><ul style="padding-left:15px;">
                               {% for typ in agent.project.payment_options %}
-                                <li>{{ typ|safe }}</li>
+                                <li class="small">{{ typ|safe }}</li>
                               {% endfor %}
                             </ul>
                             {% if request.user.is_superuser %}
@@ -1161,9 +1161,8 @@
                                 {% get_comment_count for req as ncom  %}
                                 {% if req.project.agent == agent or req.agent == agent %}
                                     <a href="{% url 'project_feedback' agent_id=agent.id join_request_id=req.id %}"
-                                       class="btn-mini-icon small">
-                                        <i class="icon-comment"></i> {{ ncom }}
-                                    </a>
+                                       class="btn-mini-icon small"><i class="icon-comment"></i>&nbsp;<span
+                                       class="small smaller">{{ ncom }}</span></a>
                                 {% else %}
                                 {% endif %}
                                 {% if req.exchange %}&nbsp; <a href="{% url "exchange_logging_work" context_agent_id=agent.id exchange_type_id=0 exchange_id=req.exchange.id %}"

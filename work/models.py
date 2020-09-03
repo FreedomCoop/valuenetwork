@@ -301,12 +301,12 @@ class Project(models.Model):
                                             html = str(html) #.decode('utf-8')
                                         else:
                                             html = gate['html']
-                                        ok += ' <ul><li>'+html+'</li></ul>'
+                                        ok += ' <ul style="padding: 0 0 10px 15px;"><li style="list-style:none;">'+html+'</li></ul>'
                                     else:
                                         ok = "Error: no html?"
                                 else:
                                     ok = "Error: no gate?"
-                            pay_opts.append(""+val+' &nbsp;'+ok)
+                            pay_opts.append("<b>"+val+'</b> &nbsp;'+ok)
               return pay_opts
         return False
 
@@ -443,7 +443,7 @@ class Project(models.Model):
                         break
                 if account_type:
                     break
-            if not account_type:
+            if not account_type and self.joining_style == 'shares':
                 print("WARN: Can't find any account_type for project: "+str(self))
         return account_type
 
