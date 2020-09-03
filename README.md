@@ -1,18 +1,15 @@
 <!-- ABOUT THE PROJECT -->
 ## Open Collaborative Platform
 
-OCP is a collective economic management platform, based on the [REA](https://en.wikipedia.org/wiki/Resources,_events,_agents_(accounting_model)) accounting model (Resource-Event-Agent), which allows for a common 'economic facts tracking system' used among the projects and users using the platform (the economic Agents). Accounting any kind of resource in this multi-context system can help to a more ethical and efficient economic system.
+OCP is a collective economic management platform, based on the [REA](https://en.wikipedia.org/wiki/Resources,_events,_agents_(accounting_model)) accounting model (Resource-Event-Agent), which allows for a common 'economic facts tracking system' shared among various projects and users operating on the platform as economic Agents. Accounting for all kinds of resources (in this multi-context system) supports the implementation of a more ethical and efficient economic system. Transactions traceability and data retrieval and sharing, for example, not only facilitates management, marketing, or ordinary financial accounting but also other non-accounting policy choices, such as reputation and trust.
 
-OCP was born as a fork from the ValueNetwork NRP (Network Resource Planning) by mikorizal.org in June 2016 to solve the needs of FreedomCoop (by FairCoop), using FairCoin as the main internal currency, and also to pay the Shares at membership time.
+OCP was born as a fork from the ValueNetwork NRP by [mikorizal](mikorizal.org) (quoting a former README *"..something analogous to an ERP system for value networks. Might call it NRP for Network Resource Planning.."*) back in June 2016 to address the needs of [FreedomCoop](http://freedomcoop.eu/) a  [FairCoop](fair.coop)'s toolkit for self-management and accountancy for individuals and groups striving for fairer social and economic relationships*. One of ist features was introducing FairCoin as the main internal currency also used to pay Shares at membership time.
 
-Since then, the OCP has been refactored into a multi-context system, where various projects with different domains and urls can use the same backend and share a common database with many common data (agents, units, resource types, etc) but having each context their own register process, their own payment gateways, active services, email notification server, and a long etc.
+Since then, OCP has been refactored into a multi-context system, where multiple projects with different domains and URLs have a common backend and share a common database with common data (agents, units, resource types, etc.) while maintaining each context its own registration process, payment gateways, active services, e-mail notification servers, and many other features.
 
 FairCoop itself, to track tasks and distributions (OCW) used OCP as the backend for the [Agent](https://github.com/opencooperativeecosystem/agent) react frontend, based also on the [ValueFlows](https://valueflo.ws) vocabulary.
 
 Bank of the Commons is a big main project that started to use OCP for their whole membership process and shares system (launched on June 2017), and some payment gateways has been implemented ad-hoc for them, and also the 'multicurrency' app that allows each user to create/access their BotC multi-wallet from the OCP. 
-
-The initial readme said:
-REA is an Accounting in a large sense. The idea behind this app is "something analogous to an ERP system for value networks. Might call it NRP for Network Resource Planning or OCP for Open Collaborative Platform".
 
 
 ## Features
@@ -38,12 +35,12 @@ REA is an Accounting in a large sense. The idea behind this app is "something an
 	* Custom active services per main project, the options are:
 		- faircoins (enables the internal faircoin wallet connection)
 		- multicurrency (enables the BotC wallet connection)
-        - projects (allows project's members to manage other projects in OCP)
+        	- projects (allows project's members to manage other projects in OCP)
 		- shares (enables the project's custom shares management)
-        - exchanges (enables the 'exchanges' view of the economic transfers)
+        	- exchanges (enables the 'exchanges' view of the economic transfers)
 		- skills (enables skills management for project's members)
-        - tasks (enables the tasks system for members)
-        - processes (enables the plan/process system for members)
+        	- tasks (enables the tasks system for members)
+        	- processes (enables the plan/process system for members)
 
 * Custom Share definition and value per project (if needed):
 	- Share's name, shortname, value-unit (Eur, Fair, Btc, etc) and unit-value (share's price).
@@ -111,18 +108,17 @@ value equations and distributions, etc.
 - Fixed the main Install doc and other docs (at `/docs`) and this Readme.
 
 <!-- GETTING STARTED -->
-### Installation
+## Installation
 To get a local copy up and running follow these simple steps: [INSTALL](/INSTALL.md)
 
-<!-- USAGE EXAMPLES -->
-## Usage
+## Use Cases
 Some working urls using the actual OCP platform instances are:
 - https://members.bankofthecommons.coop
 - https://ocp.freedomcoop.eu
 - https://join.integral.tools
 
-## Docs 
-see a bit of [Bank of the Commons OCP History](https://github.com/FreedomCoop/valuenetwork/wiki/Bank-of-the-Commons---OCP-History)
+## Documentation
+see new howtos together with others released in the past in both ../docs and [here](https://github.com/FreedomCoop/valuenetwork/wiki) amongst them a bit of [Bank of the Commons OCP History](https://github.com/FreedomCoop/valuenetwork/wiki/Bank-of-the-Commons---OCP-History).
 
 <!-- ROADMAP -->
 ## Roadmap of the Dev Team
