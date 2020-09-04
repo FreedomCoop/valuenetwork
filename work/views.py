@@ -1793,7 +1793,7 @@ def members_agent(request, agent_id):
                     if not ass == mem:
                         print("DELETED a duplicate relation: "+str(ass)+" KEEPED aso: "+str(mem))
                         loger.info("DELETED a duplicate relation: "+str(ass)+" KEEPED aso: "+str(mem))
-                        #ass.delete()
+                        ass.delete()
                         break
     try:
         project = agent.project

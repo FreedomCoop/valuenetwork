@@ -1473,7 +1473,7 @@ class JoinRequest(models.Model):
         obj = None
         if settings.PAYMENT_GATEWAYS and payopt:
             gates = settings.PAYMENT_GATEWAYS
-            if self.project.fobi_slug and gates[self.project.fobi_slug]:
+            if self.project.fobi_slug and self.project.fobi_slug in gates:
                 try:
                     obj = gates[self.project.fobi_slug][payopt['key']]
                 except:
