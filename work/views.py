@@ -1782,9 +1782,19 @@ def members_agent(request, agent_id):
     user_agent.assos = user_agent.is_associate_of.filter(has_associate=agent)
     if user_agent.assos:
         if len(user_agent.assos) > 1:
-            print("- WARN: agent with multiple Relations with the context! "+str(user_agent.assos))
-            loger.warning("- WARN: agent with multiple Relations with the context! "+str(user_agent.assos))
-
+            print("- WARN: user_agent ("+user_agent.nick+") with multiple Relations with the context! "+agent.nick) #+str(user_agent.assos))
+            loger.warning("- WARN: user_agent ("+user_agent.nick+") with multiple Relations with the context! "+agent.nick) #+str(user_agent.assos))
+            mem = None
+            for ass in user_agent.assos:
+                if ass.association_type.association_behavior == 'manager':
+                    mem = ass
+            if mem:
+                for ass in user_agent.assos:
+                    if not ass == mem:
+                        print("DELETED a duplicate relation: "+str(ass)+" KEEPED aso: "+str(mem))
+                        loger.info("DELETED a duplicate relation: "+str(ass)+" KEEPED aso: "+str(mem))
+                        #ass.delete()
+                        break
     try:
         project = agent.project
     except:
@@ -1903,7 +1913,7 @@ def members_agent(request, agent_id):
         agent = set_lang_defaults(agent)
 
         agent.save()
-        #print("- saved agent "+str(agent))
+        print("- saved agent "+str(agent))
       else:
         pass # not POST
     else:
@@ -1946,11 +1956,11 @@ def members_agent(request, agent_id):
     membership_request = agent.membership_request()
     entries = []
     fobi_name = 'None'
+    assobj = {}
 
     et_work = EventType.objects.get(name="Time Contribution")
 
     if agent.is_individual():
-
         has_associations = agent.has_associates.all().order_by('association_type__name', 'state', Lower('is_associate__name'))
 
         contributions = agent.given_events.filter(is_contribution=True)
@@ -1962,6 +1972,7 @@ def members_agent(request, agent_id):
             individual_stats.append((key, value))
         individual_stats.sort(key=lambda x: x[1], reverse=True)
 
+        print("-- create skills list")
         skills = EconomicResourceType.objects.filter(behavior="work")
         arts = agent.resource_types.filter(event_type=et_work)
         agent.skills = []
@@ -1982,16 +1993,70 @@ def members_agent(request, agent_id):
                 skill.checked = True
             if skill in agent.suggested_skills:
                 skill.thanks = True
+        print("-- skills built")
+
+        add_skill_form = AddUserSkillForm(agent=agent, data=request.POST or None)
+        Stype_form = NewSkillTypeForm(agent=agent, data=request.POST or None)
+        Stype_tree = Ocp_Skill_Type.objects.all().exclude( Q(resource_type__isnull=False), Q(resource_type__context_agent__isnull=False), ~Q(resource_type__context_agent__id__in=context_ids) ).order_by('tree_id','lft')
+
 
     elif agent.is_context_agent():
 
-        #has_associations = agent.has_associates.all()
+        add_skill_form = None
+        Stype_form = None
+        Stype_tree = None
 
         try:
           fobi_name = get_object_or_404(FormEntry, slug=agent.project.fobi_slug)
           entries = agent.project.join_requests.filter(agent__isnull=True, state='new').order_by('request_date')
         except:
           entries = []
+
+
+        asso_childs = agent.has_associates.filter(association_type__association_behavior__in=['child','peer'], state="active").count() #.order_by(Lower('is_associate__name'))
+        asso_chil = agent.has_associates.filter(association_type__association_behavior__in=['child','peer'], state="active").first()
+        if user_is_agent or user_agent in agent.managers():
+            asso_declin = agent.has_associates.filter(state="inactive").count() #.order_by(Lower('is_associate__name'))
+            asso_decl = agent.has_associates.filter(state="inactive").first()
+            asso_candid = agent.has_associates.filter(state="potential").count() #.order_by(Lower('is_associate__name'))
+            asso_cand = agent.has_associates.filter(state="potential").first()
+        else:
+            asso_declin = 0
+            asso_decl = None
+            asso_candid = 0
+            asso_cand = None
+        asso_coords = agent.has_associates.filter(association_type__association_behavior__in=['manager','custodian'], state="active").count() #.order_by(Lower('is_associate__name'))
+        asso_coor = agent.has_associates.filter(association_type__association_behavior__in=['manager','custodian'], state="active").first()
+        asso_members = agent.has_associates.filter(association_type__association_behavior='member', state="active").count() #.order_by(Lower('is_associate__name'))
+        asso_memb = agent.has_associates.filter(association_type__association_behavior='member', state="active").first()
+
+        asso_states = ['active','inactive','potential']
+        asso_behaviors = [i[0] for i in ASSOCIATION_BEHAVIOR_CHOICES]
+
+        if hasattr(agent, 'project') and agent.project.is_moderated():
+            if not agent.email and user_agent in agent.managers():
+                messages.error(request, _("Please provide an email for the project to use as a remitent for the moderated joining process notifications!"))
+
+        assobj = {'childs':asso_childs,
+                  'chil':asso_chil,
+                  'declins':asso_declin,
+                  'decl':asso_decl,
+                  'candids':asso_candid,
+                  'cand':asso_cand,
+                  'coords':asso_coords,
+                  'coor':asso_coor,
+                  'members':asso_members,
+                  'memb':asso_memb,
+                  'behaviors':asso_behaviors,
+                  'states':asso_states}
+
+        if not has_associations:
+            has_associations = asso_childs + asso_members + asso_candid + asso_declin
+
+        if hasattr(agent, 'project') and agent.project.is_moderated():
+            if not agent.email and user_agent in agent.managers():
+                messages.error(request, _("Please provide an email for the project to use as a remitent for the moderated joining process notifications!"))
+
 
         """
         subs = agent.with_all_sub_agents()
@@ -2047,15 +2112,12 @@ def members_agent(request, agent_id):
             roles_height = len(member_hours_roles) * 20
         """
 
-    #artwork = get_object_or_404(Artwork_Type, clas="Material")
-    add_skill_form = AddUserSkillForm(agent=agent, data=request.POST or None)
-    Stype_form = NewSkillTypeForm(agent=agent, data=request.POST or None)
-    Stype_tree = Ocp_Skill_Type.objects.all().exclude( Q(resource_type__isnull=False), Q(resource_type__context_agent__isnull=False), ~Q(resource_type__context_agent__id__in=context_ids) ).order_by('tree_id','lft')
 
     upload_form = UploadAgentForm(instance=agent)
 
     auto_resource = create_user_accounts(request, agent)
 
+    print('-- create related_rts --')
     related_rts = []
     if agent.project_join_requests:
         for req in agent.project_join_requests.all():
@@ -2068,6 +2130,7 @@ def members_agent(request, agent_id):
                 for rt in rtsc:
                     if rt in rts:
                         related_rts.append(rt)
+    print('-- built related_rts --')
 
     dups = check_duplicate_agents(request, agent)
 
@@ -2075,49 +2138,7 @@ def members_agent(request, agent_id):
     if fixes:
         print("Fixed "+str(fixes)+" emapty strings for agent: "+agent.name)
 
-    asso_childs = agent.has_associates.filter(association_type__association_behavior__in=['child','peer'], state="active").count() #.order_by(Lower('is_associate__name'))
-    asso_chil = agent.has_associates.filter(association_type__association_behavior__in=['child','peer'], state="active").first()
-    if user_is_agent or user_agent in agent.managers():
-        asso_declin = agent.has_associates.filter(state="inactive").count() #.order_by(Lower('is_associate__name'))
-        asso_decl = agent.has_associates.filter(state="inactive").first()
-        asso_candid = agent.has_associates.filter(state="potential").count() #.order_by(Lower('is_associate__name'))
-        asso_cand = agent.has_associates.filter(state="potential").first()
-    else:
-        asso_declin = 0
-        asso_decl = None
-        asso_candid = 0
-        asso_cand = None
-    asso_coords = agent.has_associates.filter(association_type__association_behavior__in=['manager','custodian'], state="active").count() #.order_by(Lower('is_associate__name'))
-    asso_coor = agent.has_associates.filter(association_type__association_behavior__in=['manager','custodian'], state="active").first()
-    asso_members = agent.has_associates.filter(association_type__association_behavior='member', state="active").count() #.order_by(Lower('is_associate__name'))
-    asso_memb = agent.has_associates.filter(association_type__association_behavior='member', state="active").first()
 
-    asso_states = ['active','inactive','potential']
-    asso_behaviors = [i[0] for i in ASSOCIATION_BEHAVIOR_CHOICES]
-
-    if hasattr(agent, 'project') and agent.project.is_moderated():
-        if not agent.email and user_agent in agent.managers():
-            messages.error(request, _("Please provide an email for the project to use as a remitent for the moderated joining process notifications!"))
-
-    assobj = {'childs':asso_childs,
-              'chil':asso_chil,
-              'declins':asso_declin,
-              'decl':asso_decl,
-              'candids':asso_candid,
-              'cand':asso_cand,
-              'coords':asso_coords,
-              'coor':asso_coor,
-              'members':asso_members,
-              'memb':asso_memb,
-              'behaviors':asso_behaviors,
-              'states':asso_states}
-
-    if not has_associations:
-        has_associations = asso_childs + asso_members + asso_candid + asso_declin
-
-    if hasattr(agent, 'project') and agent.project.is_moderated():
-        if not agent.email and user_agent in agent.managers():
-            messages.error(request, _("Please provide an email for the project to use as a remitent for the moderated joining process notifications!"))
 
 
     print("--------- end members_agent ("+str(agent)+") ----------")
@@ -4453,7 +4474,8 @@ def project_feedback(request, agent_id, join_request_id):
     if not allowed:
         return render(request, 'work/no_permission.html')
 
-    migrate_fdc_shares(request, jn_req)
+    if project.fobi_slug == 'freedom-coop':
+        migrate_fdc_shares(request, jn_req)
 
     if jn_req.subscription_unit():
         jn_req.check_subscription_expiration()
