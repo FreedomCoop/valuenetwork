@@ -15,10 +15,10 @@ Bank of the Commons, a huge cooperative banking project launched on June 2017, a
 ## Features
 * Multi-language platform (static texts)
 * Multi-language international projects (dynamic db texts):
-	- Translatable agent fields: name, nickname, email, website, address, description, phone and image url.
-	- Translatable agent's relation type fields: name, plural name, label and inverse label.
-	- Translatable resource type fields: name and description.
-	- Translatable agent-resource role 'name' field.
+	- Translatable agent fields: *name, nickname, email, website, address, description, phone* and *image url*.
+	- Translatable agent's relation type fields: *name, plural name, label* and *inverse label*.
+	- Translatable resource type fields: *name* and *description*.
+	- Translatable agent-resource role *name* field.
 	
 * Custom register form fields and texts for each project (using fobi).
 * Custom register joining style per project:
@@ -33,14 +33,14 @@ Bank of the Commons, a huge cooperative banking project launched on June 2017, a
 * Custom login and register texts for each main project.
 * Custom CSS, Javascript and background image for each main project.
 * Custom active services per main project, the options are:
-     - faircoins (enables the internal faircoin wallet connection)
-     - multicurrency (enables the BotC wallet connection)
-     - projects (allows project's members to manage other projects in OCP)
-     - shares (enables the project's custom shares management)
-     - exchanges (enables the 'exchanges' view of the economic transfers)
-     - skills (enables skills management for project's members)
-     - tasks (enables the tasks system for members)
-     - processes (enables the plan/process system for members)
+     - *faircoins* (enables the internal faircoin wallet connection)
+     - *multicurrency* (enables the BotC wallet connection)
+     - *projects* (allows project's members to manage other projects in OCP)
+     - *shares* (enables the project's custom shares management)
+     - *exchanges* (enables the 'exchanges' view of the economic transfers)
+     - *skills* (enables skills management for project's members)
+     - *tasks* (enables the tasks system for members)
+     - *processes* (enables the plan/process system for members)
 
 * Custom Share definition and value per project (if needed):
      - Share's name, shortname, value-unit (Eur, Fair, Btc, etc) and unit-value (share's price).
@@ -54,7 +54,7 @@ Bank of the Commons, a huge cooperative banking project launched on June 2017, a
 
 * Join Requests page for project's coordinators to manage the candidatures:
 	- Fast page load for big projects, using ajax pagination with DataTables.
-	- Easy buttons that appear when needed to: 
+	- Easy buttons that appear in each row when needed to: 
 		- send the confirmation email (with the user initial random password) if is pending, 
 		- delete all (request, user and agent) when email not confirmed for a long time,
 		- go to the feedback page with the candidate (shows nº of comments), 
@@ -68,15 +68,16 @@ Bank of the Commons, a huge cooperative banking project launched on June 2017, a
 		- if chosen Faircoin from the internal faircoin wallet accounts, a button to pay appears if enough balance, or useful warning info instead.
 		- if chosen bank Transfer or any manual option, the details to pay are shown. Coordinators can manually confirm the payment to set up the exchange as complete.
 		- if chosen other Cryptos using external accounts, the info to pay is shown for candidates. Coordinators will need to input the blockchain transaction hash and the exact received amount (9 decimals).
-		- if chosen Faircoin from the BotC-Wallet account: if the candidate has filled-up a special 'multicurrency username' field in the register form, the multicurrency Connect button appears, otherwise a 'Create Multicurrency Account' button appears. 
+		- if chosen Faircoin from the BotC-Wallet account: if the candidate has filled-up a special 'multicurrency username' field in the register form, the multicurrency Connect button appears, otherwise a 'Create Multicurrency Account' button appears. If the actual balance of faircoin in the user's BotC account is enough to pay the shares, a button to directly pay the shares is shown, but it is still disabled due missing changes in the BotC-Wallet software to have enough security for that API call and response. 
+	
+	- The communication thread of messages between coordinators and members/candidates (with email notification).
 
 * Exchanges page to represent each agent economic activity related to other agents (buys/sells of resources or services, etc), with:
 	- a flexible multi-unit Totals box, which shows actual balances and also committed future balances, related the commitments in the exchanges related to the user. The calculated balances are now cached to gain speed on page load.
 	- a simplified Filters box, which filters by dates range, by state and by types, now all via ajax (without reloading the page).
 	- a fast paginated ajax list of Exchanges, representing in each row the main information useful for the user, showing both transfers of any exchange (except for donations, which has one transfer), using the js DataTables plugin.
 
-* Many more features inherited from the original valuenetwork: Simple tasks and process tasks, plan a process with or without using known 'recipes',
-value equations and distributions, etc.
+* Many more features (somewhat unattended lately) inherited from the original valuenetwork: Simple tasks and process tasks, plan a process with or without using known 'recipes', value equations and distributions, etc. The discontinued 'Agent' react frontend was solving better those features.
 
 
 ### Built With
