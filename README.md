@@ -30,27 +30,27 @@ Bank of the Commons, a huge cooperative banking project launched on June 2017, a
 * Custom membership workflow boolean option for moderated projects: 
 	- Auto create user+agent and send confirmation email: to review manually the spam registers before even sending the confirm email (with a usable password) leave unchecked. To speedup the process if you don't expect much spam, check it.
 * Custom domain URLs configurable for each main project context to access OCP.
-	* Custom login and register texts for each main project.
-	* Custom CSS, Javascript and background image for each main project.
-	* Custom active services per main project, the options are:
-		- faircoins (enables the internal faircoin wallet connection)
-		- multicurrency (enables the BotC wallet connection)
-        	- projects (allows project's members to manage other projects in OCP)
-		- shares (enables the project's custom shares management)
-        	- exchanges (enables the 'exchanges' view of the economic transfers)
-		- skills (enables skills management for project's members)
-        	- tasks (enables the tasks system for members)
-        	- processes (enables the plan/process system for members)
+* Custom login and register texts for each main project.
+* Custom CSS, Javascript and background image for each main project.
+* Custom active services per main project, the options are:
+     - faircoins (enables the internal faircoin wallet connection)
+     - multicurrency (enables the BotC wallet connection)
+     - projects (allows project's members to manage other projects in OCP)
+     - shares (enables the project's custom shares management)
+     - exchanges (enables the 'exchanges' view of the economic transfers)
+     - skills (enables skills management for project's members)
+     - tasks (enables the tasks system for members)
+     - processes (enables the plan/process system for members)
 
 * Custom Share definition and value per project (if needed):
-	- Share's name, shortname, value-unit (Eur, Fair, Btc, etc) and unit-value (share's price).
+     - Share's name, shortname, value-unit (Eur, Fair, Btc, etc) and unit-value (share's price).
 * Custom Payment gateways per project (to pay their shares):
-	- Bank Transfer, or any manual confirmation option.
-	- Faircoin using the internal server wallet to pay from the user's fair-account to the project's account (auto confirms on pay).
-	- Faircoin using the BotC multi-wallet (to confirm payments the coordinators must put the corresponding BotC-Wallet transaction ID and the received amount).
-	- Faircoin using an external project's fair-account (to confirm payments the coordinators must put the corresponding blockchain tx hash and the exact received amount).
-	- BTC or ETH using an external project's btc or eth account (to confirm payments the coordinators must put the corresponding blockchain tx hash and the exact received amount).
-	- CreditCard synchronous gateway was ready using the Fairbill processor service, and it autoconfirmed the payments correctly but has never been used in production yet.
+     - Bank Transfer, or any manual confirmation option.
+     - Faircoin using the internal server wallet to pay from the user's fair-account to the project's account (auto confirms on pay).
+     - Faircoin using the BotC multi-wallet (to confirm payments the coordinators must put the corresponding BotC-Wallet transaction ID and the received amount).
+     - Faircoin using an external project's fair-account (to confirm payments the coordinators must put the corresponding blockchain tx hash and the exact received amount).
+     - BTC or ETH using an external project's btc or eth account (to confirm payments the coordinators must put the corresponding blockchain tx hash and the exact received amount).
+     - CreditCard synchronous gateway was ready using the Fairbill processor service, and it autoconfirmed the payments correctly but has never been used in production yet.
 
 * Join Requests page for project's coordinators to manage the candidatures:
 	- Fast page load for big projects, using ajax pagination with DataTables.
@@ -135,19 +135,18 @@ see new howtos together with others released in the past in both ../docs and [he
 - Finish the recurring payments 'subscription' model membership workflow.
 
 - Milestone #1: Create a new React Frontend learning from the [Shroom](https://github.com/ivanminutillo/shroom) and the [Agent](https://github.com/ivanminutillo/agent) React experiences to allow:
-	- an easy input of user Needs, starting with Food needs, and
-	- easy input of user offered Food products for producers and consumer groups. 
-	- this frontend will be initially connected to the OCP as a backend but will be also useful for the future [CommonDB](https://commondb.net) distributed data network backend.
+    - an easy input of user Needs, starting with Food needs, and
+    - easy input of user offered Food products for producers and consumer groups. 
+    - this frontend will be initially connected to the OCP as a backend but will be also useful for the future [CommonDB](https://commondb.net) distributed data network backend.
 
 - Milestone #2: Port all the actual membership and exchanges functionality to the new react frontend, at least for regular members.
 
 - Other possible milestones:
-  - Port to the new React frontend:
+    - Port to the new React frontend:
         - all other OCP features (faircoins, multicurrency, skills, tasks and process, etc)
         - port also the project's coordinators pages and tools
-  - Whether the BotC multi-wallet service becomes too old or unstable, and there are enough team and funds in OCP:
-        - build a BTC and a ETH wallets in the OCP server and connect each user with an account, same as it was done with Faircoin, to allow direct multicurrency from OCP internally.
-
+    - In the case a multi-wallet service is needed, with enough team and funds, it's doable in OCP:
+        - build a BTC and an ETH wallets in the OCP server and connect each user with a crypto account, the same procedure used with Faircoin wallet, to allow direct multicurrency from OCP internally.
 
 <!-- CONTRIBUTING -->
 ## Contributing [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwyl/esta/issues)
@@ -161,7 +160,7 @@ Contributions are what make the open source community such an amazing place to b
 5. Open a Pull Request
 
 ## Contributors
-see [Contributors.txt](/CONTRIBUTORS.txt)
+see [Contributors.txt](../CONTRIBUTORS.txt)
 
 <!-- LICENSE -->
 ## License
@@ -173,7 +172,6 @@ see [Contributors.txt](/CONTRIBUTORS.txt)
 
 [![Gitter](https://badges.gitter.im/OpenCollaborativePlatform/community.svg)](https://gitter.im/OpenCollaborativePlatform/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-Donations: 
 
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
