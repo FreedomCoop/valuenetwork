@@ -8960,7 +8960,7 @@ class ExchangeManager(models.Manager):
                     loger.warning("++ evt.transfer without exchange? evt:"+str(evt.id)+" tx:"+str(evt.transfer.id))
             elif evt.process or evt.distribution:
                 pass
-            elif evt.event_type.name == 'Todo':
+            elif evt.event_type.name == 'Todo' or evt.event_type.unit_type == 'time': # TODO track tasks as work transfers in a exchange?
                 pass
             else:
                 print("+++ event has no exchange nor process? evt:"+str(evt.id)+" evt.typ:"+str(evt.event_type))

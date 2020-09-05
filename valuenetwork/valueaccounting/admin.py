@@ -344,7 +344,7 @@ class ClaimEvent2Inline(admin.TabularInline):
 class EconomicEventAdmin(admin.ModelAdmin):
     date_hierarchy = 'event_date'
     list_display = ('id', 'event_type', 'event_date', 'from_agent', 'to_agent', 'context_agent',
-        'process', 'exchange', 'resource_type', 'quantity', 'unit_of_quantity', 'description',)
+        'process', 'exchange', 'transfer', 'resource_type', 'quantity', 'unit_of_quantity', 'description',)
     list_filter = ['event_type', 'context_agent', 'resource_type', 'from_agent',]
     search_fields = ['description', 'process__name', 'event_type__name', 'from_agent__name', 'to_agent__name',
         'resource_type__name',]
