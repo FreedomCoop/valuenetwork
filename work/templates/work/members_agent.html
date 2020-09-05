@@ -1140,7 +1140,7 @@
               <h3>
                 {% trans "Relations:" %}
                 {% for asso in user_agent.assos %}
-                  &nbsp;<small class="small">({% trans "you're:" %} {{ asso.state }} {{ asso.association_type|lower }})</small>
+                  &nbsp;<small class="small">({% blocktrans with state=asso.statetrans assotype=asso.association_type|lower %}you're: {{ state }} {{ assotype }}{% endblocktrans %})</small>
                 {% endfor %}
               </h3>
 

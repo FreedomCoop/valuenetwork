@@ -2351,6 +2351,11 @@ class AgentAssociation(models.Model):
                 return jr.request_date
         return None
 
+    def statetrans(self):
+        for relstat in RELATIONSHIP_STATE_CHOICES:
+            if self.state == relstat[0]:
+                return relstat[1]
+
 
 #todo exchange redesign fallout
 #many of these are obsolete
