@@ -1941,11 +1941,6 @@ def members_agent(request, agent_id):
 
     assn_form = AssociationForm(agent=agent)
 
-    is_associated_with = agent.all_is_associates().order_by('association_type__name', 'state', Lower('is_associate__name'))
-
-    has_associations = None #agent.all_has_associates().order_by('association_type__name', 'state', Lower('is_associate__name'))
-
-
     headings = []
     member_hours_recent = []
     member_hours_stats = []
@@ -1957,11 +1952,58 @@ def members_agent(request, agent_id):
     entries = []
     fobi_name = 'None'
     assobj = {}
+    relobj = {}
 
     et_work = EventType.objects.get(name="Time Contribution")
 
+
+    asso_states = ['active','inactive','potential']
+    asso_behaviors = [i[0] for i in ASSOCIATION_BEHAVIOR_CHOICES]
+
+    # Upward relations
+    rels_coords = agent.is_associate_of.filter(association_type__association_behavior__in=['manager','custodian'], state='active').count()
+    rels_coor = agent.is_associate_of.filter(association_type__association_behavior__in=['manager','custodian'], state='active').first()
+    rels_member = agent.is_associate_of.filter(association_type__identifier='member', state='active').count()
+    rels_memb = agent.is_associate_of.filter(association_type__identifier='member', state='active').first()
+    rels_mcands = agent.is_associate_of.filter(association_type__identifier='member', state='potential').count()
+    rels_mcand = agent.is_associate_of.filter(association_type__identifier='member', state='potential').first()
+    rels_parti = agent.is_associate_of.filter(association_type__identifier='participant', state='active').count()
+    rels_part = agent.is_associate_of.filter(association_type__identifier='participant', state='active').first()
+    rels_pcands = agent.is_associate_of.filter(association_type__identifier='participant', state='potential').count()
+    rels_pcand = agent.is_associate_of.filter(association_type__identifier='participant', state='potential').first()
+    rels_child = agent.is_associate_of.filter(association_type__association_behavior='child', state='active').count()
+    rels_chil = agent.is_associate_of.filter(association_type__association_behavior='child', state='active').first()
+    rels_peers = agent.is_associate_of.filter(association_type__association_behavior='peer', state='active').count()
+    rels_peer = agent.is_associate_of.filter(association_type__association_behavior='peer', state='active').first()
+
+    relobj = {
+        'coords': rels_coords,
+        'coor': rels_coor,
+        'member': rels_member,
+        'memb': rels_memb,
+        'mcands': rels_mcands,
+        'mcand': rels_mcand,
+        'parti': rels_parti,
+        'part': rels_part,
+        'pcands': rels_pcands,
+        'pcand': rels_pcand,
+        'child': rels_child,
+        'chil': rels_chil,
+        'peers': rels_peers,
+        'peer': rels_peer,
+        'behaviors': asso_behaviors,
+        'states': asso_states
+    }
+
+    is_associated_with = rels_coords + rels_member + rels_mcands + rels_parti + rels_pcands + rels_child + rels_peers #agent.all_is_associates().order_by('association_type__name', 'state', Lower('is_associate__name'))
+
+    has_associations = None #agent.all_has_associates().order_by('association_type__name', 'state', Lower('is_associate__name'))
+
+
     if agent.is_individual():
+
         has_associations = agent.has_associates.all().order_by('association_type__name', 'state', Lower('is_associate__name'))
+
 
         contributions = agent.given_events.filter(is_contribution=True)
         agents_stats = {}
@@ -2013,8 +2055,10 @@ def members_agent(request, agent_id):
           entries = []
 
 
-        asso_childs = agent.has_associates.filter(association_type__association_behavior__in=['child','peer'], state="active").count() #.order_by(Lower('is_associate__name'))
-        asso_chil = agent.has_associates.filter(association_type__association_behavior__in=['child','peer'], state="active").first()
+        asso_childs = agent.has_associates.filter(association_type__association_behavior="child", state="active").count()
+        asso_chil = agent.has_associates.filter(association_type__association_behavior='child', state="active").first()
+        asso_peers = agent.has_associates.filter(association_type__association_behavior='peer', state="active").count()
+        asso_peer = agent.has_associates.filter(association_type__association_behavior='peer', state="active").first()
         if user_is_agent or user_agent in agent.managers():
             asso_declin = agent.has_associates.filter(state="inactive").count() #.order_by(Lower('is_associate__name'))
             asso_decl = agent.has_associates.filter(state="inactive").first()
@@ -2030,8 +2074,6 @@ def members_agent(request, agent_id):
         asso_members = agent.has_associates.filter(association_type__association_behavior='member', state="active").count() #.order_by(Lower('is_associate__name'))
         asso_memb = agent.has_associates.filter(association_type__association_behavior='member', state="active").first()
 
-        asso_states = ['active','inactive','potential']
-        asso_behaviors = [i[0] for i in ASSOCIATION_BEHAVIOR_CHOICES]
 
         if hasattr(agent, 'project') and agent.project.is_moderated():
             if not agent.email and user_agent in agent.managers():
@@ -2039,6 +2081,8 @@ def members_agent(request, agent_id):
 
         assobj = {'childs':asso_childs,
                   'chil':asso_chil,
+                  'peers':asso_peers,
+                  'peer':asso_peer,
                   'declins':asso_declin,
                   'decl':asso_decl,
                   'candids':asso_candid,
@@ -2051,7 +2095,7 @@ def members_agent(request, agent_id):
                   'states':asso_states}
 
         if not has_associations:
-            has_associations = asso_childs + asso_members + asso_candid + asso_declin
+            has_associations = asso_childs + asso_members + asso_candid + asso_declin + asso_peers
 
         if hasattr(agent, 'project') and agent.project.is_moderated():
             if not agent.email and user_agent in agent.managers():
@@ -2158,6 +2202,7 @@ def members_agent(request, agent_id):
         "user_is_agent": user_is_agent,
         "has_associations": has_associations,
         "assobj": assobj,
+        "relobj": relobj,
         "is_associated_with": is_associated_with,
         "headings": headings,
         #"member_hours_recent": member_hours_recent,
@@ -2190,6 +2235,7 @@ def view_agents_list(request, agent_id):
         state = request.POST['state']
         number = int(request.POST['number'])
         ready = int(request.POST['ready'])
+        relside = request.POST['side']
 
         ofset = 10    # TUNE as wished
 
@@ -2197,32 +2243,40 @@ def view_agents_list(request, agent_id):
         if maxim > number:
             maxim = number
 
-        if behavior == 'child':
-            behaviors = [behavior, 'peer']
-        elif behavior == 'manager':
+        if behavior == 'manager':
             behaviors = [behavior, 'custodian']
         else:
             behaviors = [behavior]
         #print('ready: '+str(ready)+' maxim:'+str(maxim))
-        assocs = agent.has_associates.filter(association_type__association_behavior__in=behaviors,
+        if relside == 'up':
+            if behavior in ['member','participant']:
+                assocs = agent.is_associate_of.filter(association_type__identifier=behavior,
+                                                 state=state).order_by(Lower('has_associate__name'))[ready:maxim]
+            else:
+                assocs = agent.is_associate_of.filter(association_type__association_behavior__in=behaviors,
+                                             state=state).order_by(Lower('has_associate__name'))[ready:maxim]
+        else: #if relside == 'down':
+            assocs = agent.has_associates.filter(association_type__association_behavior__in=behaviors,
                                              state=state).order_by(Lower('is_associate__name'))[ready:maxim]
 
-    if hasattr(agent, 'project') and agent.project.is_moderated():
-        proshacct = agent.project.shares_account_type()
-        for ass in assocs:
-            ag = ass.is_associate
-            ag.jn_reqs = ag.project_join_requests.filter(project=agent.project)
-            if proshacct:
-                ag.oldshares = ag.owned_shares(agent)
-                ag.newshares = 0
-                acc = ag.owned_shares_accounts(proshacct)
-                if acc:
-                    ag.newshares = int(acc[0].price_per_unit)
+
+            if hasattr(agent, 'project') and agent.project.is_moderated():
+                proshacct = agent.project.shares_account_type()
+                for ass in assocs:
+                    ag = ass.is_associate
+                    ag.jn_reqs = ag.project_join_requests.filter(project=agent.project)
+                    if proshacct:
+                        ag.oldshares = ag.owned_shares(agent)
+                        ag.newshares = 0
+                        acc = ag.owned_shares_accounts(proshacct)
+                        if acc:
+                            ag.newshares = int(acc[0].price_per_unit)
 
     return render(request, 'work/_agent_list.html', {
             'assocs': assocs,
             'agent': agent,
             'user_agent': user_agent,
+            'relside': relside,
             'no_shares': ['child', 'peer']
         })
 

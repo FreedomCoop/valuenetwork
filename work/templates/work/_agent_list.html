@@ -4,6 +4,20 @@
   {% for asso in assocs %}
     <li>
     {% if user_agent in agent.managers or user_agent == agent or request.user.is_superuser %}
+      {% if relside == 'up' %}
+          <a href="{% url "members_agent" agent_id=asso.has_associate.id %}">{{ asso.has_associate.name }}</a>
+          {% for req in asso.is_associate.project_join_requests.all %}
+              {% if req.id and req.project.agent == asso.has_associate %}
+                  &nbsp;
+                  {% get_comment_count for req as ncom %}
+                  <a href="{% url 'project_feedback' agent_id=agent.id join_request_id=req.id %}"
+                         class="btn-mini-icon small"><i class="icon-comment"></i> {{ ncom }}</a>
+                  {% if req.exchange %} <a href="{% url "exchange_logging_work" context_agent_id=agent.id exchange_type_id=0 exchange_id=req.exchange.id %}"
+                                     class="btn-mini-icon small"><i class="icon-transfer"></i></a> {% endif %}
+                  {% if not req.fobi_data %} &nbsp;<b class="error">ERROR!</b> {% endif %}
+              {% endif %}
+          {% endfor %}
+      {% else %}
         <a href="{% url "members_agent" agent_id=asso.is_associate.id %}">{{ asso.is_associate.name }}</a>
         {% for req in asso.is_associate.jn_reqs %}
             {% if req.id %}
@@ -43,8 +57,13 @@
           {% endif %}
           </span>
         {% endif %}
+      {% endif %}
     {% else %}
-        <a href="{% url "members_agent" agent_id=asso.is_associate.id %}">{{ asso.is_associate.name }}</a>
+        {% if relside == 'up' %}
+            <a href="{% url "members_agent" agent_id=asso.has_associate.id %}">{{ asso.has_associate.name }}</a>
+        {% else %}
+            <a href="{% url "members_agent" agent_id=asso.is_associate.id %}">{{ asso.is_associate.name }}</a>
+        {% endif %}
     {% endif %}
     </li>
   {% endfor %}
