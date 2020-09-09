@@ -7,7 +7,7 @@ from valuenetwork.valueaccounting.models import Exchange
 from valuenetwork.api.types.Exchange import ExchangeAgreement
 
 
-class Query(graphene.AbstractType):
+class Query(object): #graphene.AbstractType):
 
     # define input query params
 

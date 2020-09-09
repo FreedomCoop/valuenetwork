@@ -14,7 +14,7 @@ from .Auth import AuthedInputMeta, AuthedMutation
 from django.core.exceptions import PermissionDenied, ValidationError
 
 
-class Query(graphene.AbstractType):
+class Query(object): #graphene.AbstractType):
 
     commitment = graphene.Field(Commitment,
                                 id=graphene.Int())

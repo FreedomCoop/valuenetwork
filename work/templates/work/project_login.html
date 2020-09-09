@@ -7,11 +7,11 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="https://www.w3.org/1999/xhtml" lang="en">
   <head>
+    <meta HTTP-EQUIV="Content-Style-Type" CONTENT="text/css">
     <title>{{ project.agent.name }}</title>
 
 {% block extra_head %}
-
-<style>
+<style type="text/css">
 
 body {
     /*font-family: Arial, sans-serif;
@@ -30,11 +30,10 @@ body {
 
 {% endblock %}
 
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" media="all">
-    <link rel="stylesheet" href="{% static 'css/coop.css' %}">
+   <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" media="all"> -->
+    <link rel="stylesheet" type="text/css" href="{% static 'css/app.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/coop.css' %}">
    <!-- <link href="{% static "css/buttons.css" %}" rel="stylesheet"> -->
-    <link href="{% static "bootstrap/css/bootstrap.css" %}" rel="stylesheet">
-   <!-- <link href="{% static "bootstrap/css/bootstrap-responsive.css" %}" rel="stylesheet"> -->
 
     {% if project.custom_css %}
         <style>
@@ -44,7 +43,8 @@ body {
 </head>
 
 
-  <body style="background-image: {% if project.background_url %}url({% static project.background_url %}){% else %}url({% static 'img/photo-OCP-1600x900_green.jpg' %}){% endif %}; text-align:center; background-attachment:fixed;">
+  <body style="background-image: {% if project.background_url %}url({% static project.background_url %}){% else %}url({% static 'img/photo-OCP-1600x900_green.jpg' %}){% endif %};
+               text-align:center; background-size:cover; /* background-attachment:fixed; */">
 
 
     <form action="{% url 'set_language' %}" method="post" id="lang-switch">{% csrf_token %}
@@ -64,14 +64,19 @@ body {
     <p>&nbsp;<br/>&nbsp;</p>
 
     <h4>{% if project.agent.photo_url %}
-            <img src="{{ project.agent.photo_url }}" title="{{ project.agent.name }}">
+            <img src="{{ project.agent.photo_url }}" title="{{ project.agent.name }}" alt="{{ project.agent.name }}">
         {% elif project.agent.photo %}
-            <img src="{% thumbnail project.agent.photo 500x500 %}" title="{{ project.agent.name }}">
+            {% if project.agent.photo.readable %}
+                <img src="{% thumbnail project.agent.photo 500x500 %}" title="{{ project.agent.name }}" alt="{{ project.agent.name }}">
+            {% else %}
+                <img src="{{ project.agent.photo.url }}" title="{{ project.agent.name }}" alt="{{ project.agent.name }}">
+            {% endif %}
         {% endif %}
     </h4>
     {% if not project.agent.photo_url and not project.agent.photo %}<h1><br>{{ project.agent.name }}</h1>{% endif %}
         <br />
-    <table class="landing" border="0" align="center" style="text-align:center">
+
+    <table class="landing" border="0" align="center" >
       <tr>
         <td colspan="2">
             {% if project.custom_html %}{{ project.custom_html|safe }}
@@ -88,34 +93,39 @@ body {
         </td>
       </tr>
       <tr>
-	<td width="50%" class="register-block">
-          <h3>{% trans "Request Membership" %}</h3>
-	  <p>{% blocktrans %}The first step to become a member of this project and use OCP, is to fill the following membership form:{% endblocktrans %}</p>
-	  <h4>
-          <a class="btn" href="{% url 'join_request' form_slug=project.fobi_slug %}" id="join-page-but">{% trans "Join" %} {{ project.agent.name }}</a></h4>
-          </h3>
+        <td>
+          <div class="container landing">
+              <div class="row">
+                  <div class="col-sm register-block">
+                    <h3>{% trans "Request Membership" %}</h3>
+	                <p>{% blocktrans %}The first step to become a member of this project and use OCP, is to fill the following membership form:{% endblocktrans %}</p>
+	                <h4>
+                      <a class="btn" href="{% url 'join_request' form_slug=project.fobi_slug %}" id="join-page-but">{% trans "Join" %} {{ project.agent.name }}</a>
+                    </h4>
+                  </div>
+                  <div class="col-sm login-block">
+                      <h3>{% trans "Log in to OCP" %}</h3>
+                      <p>{% trans "If you already have an account in OCP, please login here." %}</p>
+                      <div class="log">
+                        <form method="POST" action="{% url "project_login" form_slug=form_slug %}" autocapitalize="off"
+                              class="form-horizontal"{% if form.is_multipart %} enctype="multipart/form-data"{% endif %}>
+                            {% csrf_token %}
+                            {{ form|as_bootstrap }}
+                            {% if redirect_field_value %}
+                                <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                            {% endif %}
+                            <div class="form-actions">
+                                <a href="{% url "account_password_reset" %}" class="forgot-pass" style="display:block; text-align:left;">{% trans "Forgot your password?" %}</a>
+                                <button type="submit" class="btn btn-primary" style="float:right;">{% trans "Log in" %}</button>
+                            </div>
+                        </form>
+                      </div>
+                  </div>
+              </div>
+          </div>
         </td>
-        <td width="50%" class="login-block">
-          <h3>{% trans "Log in to OCP" %}</h3>
-          <p>{% trans "If you already have an account in OCP, please login here." %}</p>
-          <div class="log">
-            <form method="POST" action="{% url "project_login" form_slug=form_slug %}" autocapitalize="off" class="form-horizontal"{% if form.is_multipart %} enctype="multipart/form-data"{% endif %}>
-                {% csrf_token %}
-                {{ form|as_bootstrap }}
-                {% if redirect_field_value %}
-                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
-                {% endif %}
-                <div class="form-actions">
-                    <a href="{% url "account_password_reset" %}" class="forgot-pass">{% trans "Forgot your password?" %}</a>
-                    <button type="submit" class="btn btn-primary">{% trans "Log in" %}</button>
-                </div>
-            </form>
-        </div>
-        <div class="span4">
-            {% include "account/_login_sidebar.html" %}
-        </div>
-	</td>
       </tr>
+
     </table>
     <p>&nbsp;</p>
   </body>

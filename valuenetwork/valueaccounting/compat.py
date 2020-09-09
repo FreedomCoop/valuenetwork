@@ -4,14 +4,14 @@ except ImportError:
     from django.contrib.contenttypes.generic import GenericForeignKey  # noqa
 
 try:
-    from urllib import quote
+    from urllib.parse import quote
 except ImportError:
     from urllib.parse import quote  # noqa
 
 try:
     from threading import get_ident
 except ImportError:
-    from thread import get_ident  # noqa
+    from _thread import get_ident  # noqa
 
 try:
     from account.decorators import login_required

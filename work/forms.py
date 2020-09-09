@@ -45,7 +45,7 @@ class WorkAgentCreateForm(AgentCreateForm):
     def __init__(self, agent=None, *args, **kwargs):
         super(WorkAgentCreateForm, self).__init__(*args, **kwargs)
         if agent:
-            #print "- agent: "+str(agent)+' - context? '+str(agent.agent_type.is_context)
+            #print("- agent: "+str(agent)+' - context? '+str(agent.agent_type.is_context))
             if agent.agent_type.is_context:
                 self.fields["agent_type"].queryset = AgentType.objects.filter(is_context=True)
                 self.fields["agent_type"].initial = agent.agent_type
@@ -72,26 +72,26 @@ class WorkAgentCreateForm(AgentCreateForm):
         if nick and name and email:
             ags = EconomicAgent.objects.filter(nick=nick).exclude(email=email).exclude(name=name)
             if ags:
-                #print "- ERROR nick present! "
+                #print("- ERROR nick present! ")
                 self.add_error('nick', _("This nickname is already present in the system."))
             ags = EconomicAgent.objects.filter(name=name).exclude(email=email).exclude(nick=nick)
             if ags:
-                #print "- ERROR name present! "
+                #print("- ERROR name present! ")
                 self.add_error('name', _("This name is already present in the system."))
             ags = EconomicAgent.objects.filter(email=email).exclude(nick=nick).exclude(name=name)
             if ags and not self.instance.is_context:
-                #print "- ERROR email present! "
+                #print("- ERROR email present! ")
                 self.add_error('email', _("This email is already present in the system."))
         else:
             if not email:
                 pass
             else:
-                pass #print "- ERROR clean WorkAgentCreateForm ! data: "+str(data)
+                pass #print("- ERROR clean WorkAgentCreateForm ! data: "+str(data))
 
 
     def _clean_fields(self):
         super(WorkAgentCreateForm, self)._clean_fields()
-        for name, value in self.cleaned_data.items():
+        for name, value in list(self.cleaned_data.items()):
             pass #self.cleaned_data[name] = bleach.clean(value)
 
 
@@ -164,7 +164,7 @@ class MembershipRequestForm(forms.ModelForm):
 
     def _clean_fields(self):
         super(MembershipRequestForm, self)._clean_fields()
-        for name, value in self.cleaned_data.items():
+        for name, value in list(self.cleaned_data.items()):
             self.cleaned_data[name] = bleach.clean(value)
 
 
@@ -223,7 +223,7 @@ class ProjectCreateForm(forms.ModelForm):
 
     def _clean_fields(self):
         super(ProjectCreateForm, self)._clean_fields()
-        for name, value in self.cleaned_data.items():
+        for name, value in list(self.cleaned_data.items()):
             self.cleaned_data[name] = bleach.clean(value)
 
     class Meta: #(AgentCreateForm.Meta):
@@ -347,7 +347,7 @@ class JoinRequestForm(forms.ModelForm):
         else:
             if len(exist_email) > 1:
                 self.add_error('email_address', _("The email address is already registered in the system for various agents! Please login here and we'll try to solve this:"))
-                print "DUPLICATE email agent: "+str(exist_email)
+                print("DUPLICATE email agent: "+str(exist_email))
             else:
                 if not exist_email[0].nick_en == username:
                     self.add_error('email_address', _("The email address is already registered in the system for another username. To join this project please login here with your existent OCP username.")) #+str(exist_email[0].nick))
@@ -355,7 +355,7 @@ class JoinRequestForm(forms.ModelForm):
                     self.add_error('email_address', _("The email address is already registered in the system with same username. To join this project please login here:"))
 
 
-        #print "- projid: "+str(projid)
+        #print("- projid: "+str(projid))
         #type_of_user = data["type_of_user"]
         #number_of_shares = data["number_of_shares"]
         #if type_of_user == "collective":
@@ -365,7 +365,7 @@ class JoinRequestForm(forms.ModelForm):
 
     def _clean_fields(self):
         super(JoinRequestForm, self)._clean_fields()
-        for name, value in self.cleaned_data.items():
+        for name, value in list(self.cleaned_data.items()):
             self.cleaned_data[name] = bleach.clean(value)
 
     def __init__(self, project=None, api_key=None, *args, **kwargs):
@@ -402,7 +402,7 @@ class JoinRequestInternalForm(forms.ModelForm):
 
     def _clean_fields(self):
         super(JoinRequestInternalForm, self)._clean_fields()
-        for name, value in self.cleaned_data.items():
+        for name, value in list(self.cleaned_data.items()):
             self.cleaned_data[name] = bleach.clean(value)
 
 
@@ -955,8 +955,8 @@ class WorkEventContextAgentForm(forms.ModelForm):
             if not context_agent.id in context_ids:
                 context_ids.append(context_agent.id)
             self.fields["ocp_skill_type"].queryset = Ocp_Skill_Type.objects.all().exclude( Q(resource_type__isnull=False), Q(resource_type__context_agent__isnull=False), ~Q(resource_type__context_agent__id__in=context_ids) ).order_by('tree_id','lft')
-        if kwargs.items():
-            for name, value in kwargs.items():
+        if list(kwargs.items()):
+            for name, value in list(kwargs.items()):
               if name == 'instance':
                 self.fields["ocp_skill_type"].initial = get_ocp_st_from_rt(value.resource_type)
                 #self.fields["ocp_skill_type"].label += " :"+str(value.from_agent) #get_ocp_st_from_rt(kwargs.items()[0][1])) #str(kwargs.items())
@@ -1202,7 +1202,7 @@ class ContextTransferForm(forms.Form):
 
             resini = self.fields["resource"].queryset.first()
             if resini:
-                print "++ found resource initial, get rt: "+str(resini)
+                print("++ found resource initial, get rt: "+str(resini))
                 self.fields["ocp_resource_type"].queryset = Ocp_Artwork_Type.objects.filter(resource_type=resini.resource_type)
                 self.fields["ocp_resource_type"].initial = Ocp_Artwork_Type.objects.get(resource_type=resini.resource_type)
                 #self.fields["ocp_resource_type"].label = str(self.fields["ocp_resource_type"].initial)
@@ -1429,7 +1429,7 @@ class WorkTodoForm(forms.ModelForm):
     due_date = forms.DateField(widget=forms.TextInput(attrs={'class': 'input-small date-entry',}))
     description = forms.CharField(
         required=False,
-        widget=forms.Textarea(attrs={'class': 'todo-description input-xlarge',}))
+        widget=forms.Textarea()) #attrs={'class': 'todo-description input-xlarge',}))
     url = forms.URLField(required=False, widget=forms.TextInput(attrs={'class': 'url input-xlarge',}))
 
     class Meta:

@@ -1,0 +1,93 @@
+{% load account_tags %}
+{% load i18n %}
+
+<ul class="navbar-nav pull-right">
+    {% if request.user.is_authenticated %}
+        <li class="dropdown nav-item">
+            {% get_current_language as LANGUAGE_CODE %}
+            <a href="#" class="dropdown-toggle nav-link" data-toggle="dropdown">
+                {{ LANGUAGE_CODE }}&nbsp;
+                <i class="world-icon"></i>
+
+                <b class="caret"></b>
+            </a>
+            <ul class="subnav dropdown-menu">
+                {% get_available_languages as LANGUAGES %}
+                {% get_language_info_list for LANGUAGES as languages %}
+                {% for language in languages %}
+                    <li>
+                        {% if not language.code == LANGUAGE_CODE %}
+                            <form action="{% url 'change_language' %}" method="post" id="lang-switch">{% csrf_token %}
+                                <input name="next" type="hidden" value="{{ request.get_full_path }}" />
+                                <input name="language" type="hidden" value="{{ language.code }}" />
+                                <button class="nav-link navlink">
+                                    {{ language.name_local|title }}
+                                </button>
+                            </form>
+                        {% else %}
+                            <a href="#" data-toggle="dropdown" class="nav-link disabled">{{ language.name_local|title }}</a>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </li>
+
+        <li class="dropdown nav-item">
+            <a href="#" class="dropdown-toggle nav-link" data-toggle="dropdown">
+                {% if request.user.agent.agent.name %}
+                    {{ request.user.agent.agent.name }}
+                {% else %}
+                    {% user_display request.user %}
+                {% endif %}
+                <b class="caret"></b>
+            </a>
+            <ul class="dropdown-menu last-menu">
+                {% if user.is_superuser %}
+                    <li class="nav-item"><a class="nav-link" href="/admin/"><i class="icon-wrench"></i> {% trans 'DB Admin' %}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url "start" %}"><i class="icon-wrench"></i> {% trans 'Coop Admin App' %}</a></li>
+                    <li class="nav-item divider"></li>
+                {% endif %}
+
+                {% if request.user.agent.agent.faircoin_resource %}
+                    <li class="nav-item" id="my-wallet" >
+                      <a class="nav-link" href="{% url "manage_faircoin_account" resource_id=request.user.agent.agent.faircoin_resource.id %}"
+                      title="{% trans 'Your personal faircoin account in OCP' %}"
+                      ><i class="icon-tasks"></i> {% trans 'Faircoin Account' %}</a>
+                    </li>
+                {% endif %}
+
+                <li class="nav-item" id="my-profile" >
+                      <a class="nav-link" href="{% url 'profile' %}"
+                        title="{% trans 'Your profile information and skills' %}"
+                      ><i class="icon-user"></i> {% trans 'Profile' %}</a>
+                </li>
+
+                <li class="nav-item" id="new-features">
+                    <a class="nav-link" href="{% url 'new_features' %}"
+                      title="{% trans 'New OCP Features' %}"
+                      ><i class="icon-star"></i> {% trans 'New Features' %}</a>
+                </li>
+
+                <li class="nav-item"><a class="nav-link" href="{% url "work_account_settings" %}"><i class="icon-cog"></i> {% trans "Settings" %}</a></li>
+
+
+                <li class="nav-item divider"></li>
+                <li class="nav-item"><a class="nav-link" href="{% url "account_logout" %}"><i class="icon-off"></i> {% trans "Log Out" %}</a></li>
+            </ul>
+        </li>
+    {% else %}
+        <li>
+            {% if request.path == '/' %}
+                <a class="nav-link" href="{% url "account_login" %}">
+            {% else %}
+                <a class="nav-link" href="{% url "account_login" %}?next={% firstof request.path '/' %}">
+            {% endif %}
+            Log in</a>
+        </li>
+        <!-- <li><a href="{% url "tutorials" %}"> {% trans "OCP Tutorials" %}</a></li> -->
+        {% if ACCOUNT_OPEN_SIGNUP %}
+            <li class="navbar-text">{% trans "or" %}</li>
+            <li><a class="nav-link" href="{% url "account_signup" %}">{% trans "Sign up" %}</a></li>
+        {% endif %}
+    {% endif %}
+</ul>

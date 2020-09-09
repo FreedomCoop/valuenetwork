@@ -12,7 +12,7 @@ class NotificationType(DjangoObjectType):
 
     class Meta:
         model = NoticeType
-        only_fields = ('id', 'label', 'display', 'description')
+        fields = ('id', 'label', 'display', 'description')
 
 
 class NotificationSetting(DjangoObjectType):
@@ -21,7 +21,7 @@ class NotificationSetting(DjangoObjectType):
 
     class Meta:
         model = NoticeSetting
-        only_fields = ('id', 'send')
+        fields = ('id', 'send')
 
     def resolve_agent(self, args, *rargs):
         return formatAgent(self.user.agent.agent)

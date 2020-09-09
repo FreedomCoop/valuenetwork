@@ -7,7 +7,7 @@ from valuenetwork.valueaccounting.models import AgentType
 from valuenetwork.api.types.Agent import OrganizationClassification
 
 
-class Query(graphene.AbstractType):
+class Query(object): #graphene.AbstractType):
 
     # define input query params
 

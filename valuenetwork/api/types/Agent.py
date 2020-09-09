@@ -22,7 +22,7 @@ class OrganizationClassification(DjangoObjectType):
 
     class Meta:
         model = AgentType
-        only_fields = ('id', 'name')
+        fields = ('id', 'name')
 
 
 class Agent(graphene.Interface):
@@ -125,10 +125,10 @@ class Agent(graphene.Interface):
 
     event_people_count = graphene.Int(year=graphene.Int(), month=graphene.Int())
 
-    def resolve_primary_location(self, args, *rargs):
+    def resolve_primary_location(self, context, **kwargs): #args, *rargs):
         return self.primary_location
 
-    def resolve_owned_economic_resources(self, args, context, info):
+    def resolve_owned_economic_resources(self, context, **args): #args, context, info):
         type = args.get('category', types.EconomicResourceCategory.NONE)
         resource_class_id = args.get('resourceClassificationId', None)
         page = args.get('page', None)
@@ -161,14 +161,14 @@ class Agent(graphene.Interface):
                     resources = paginator.page(paginator.num_pages)
         return resources
 
-    def resolve_search_owned_inventory_resources(self, args, context, info):
+    def resolve_search_owned_inventory_resources(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         search_string = args.get('search_string', "")
         if search_string == "":
             raise ValidationError("A search string is required.")
         return agent.search_owned_resources(search_string=search_string)
 
-    def resolve_agent_defined_resource_classifications(self, args, context, info):
+    def resolve_agent_defined_resource_classifications(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         action = args.get('action', None)
         rts = agent.defined_resource_types()
@@ -201,7 +201,7 @@ class Agent(graphene.Interface):
 
     # if an organization, this returns processes done in that context
     # if a person, this returns proceses the person has worked on
-    def resolve_agent_processes(self, args, context, info):
+    def resolve_agent_processes(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         if agent:
             agent_processes = agent.all_processes()
@@ -215,7 +215,7 @@ class Agent(graphene.Interface):
                 return agent_processes
         return None
 
-    def resolve_search_agent_processes(self, args, context, info):
+    def resolve_search_agent_processes(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         finished = args.get('is_finished', None)
         search_string = args.get('search_string', "")
@@ -227,7 +227,7 @@ class Agent(graphene.Interface):
 
     # if an organization, this returns plans from that context
     # if a person, this returns plans the person has worked on
-    def resolve_agent_plans(self, args, context, info):
+    def resolve_agent_plans(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         if agent:
             finished = args.get('is_finished', None)
@@ -248,11 +248,11 @@ class Agent(graphene.Interface):
                         dated_plans.append(plan)
                 plans = dated_plans
             if sort_desc:
-                plans.sort(lambda x, y: cmp(y.created_date, x.created_date))
+                plans.sort(key=lambda x: x.created_date, reverse=True)
             return plans
         return None
 
-    def resolve_search_agent_plans(self, args, context, info):
+    def resolve_search_agent_plans(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         finished = args.get('is_finished', None)
         search_string = args.get('search_string', "")
@@ -263,7 +263,7 @@ class Agent(graphene.Interface):
         return None
 
     # returns events where an agent is a provider, receiver, or scope agent, excluding exchange related events
-    def resolve_agent_economic_events(self, args, context, info):
+    def resolve_agent_economic_events(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         if agent:
             days = args.get('latest_number_of_days', 0)
@@ -286,7 +286,7 @@ class Agent(graphene.Interface):
         return None
 
     # returns commitments where an agent is a provider, receiver, or scope agent, excluding exchange related events
-    def resolve_agent_commitments(self, args, context, info):
+    def resolve_agent_commitments(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         page = args.get('page', None)
         finished = args.get('finished', None)
@@ -308,7 +308,7 @@ class Agent(graphene.Interface):
             return commits
         return None
 
-    def resolve_search_agent_commitments(self, args, context, info):
+    def resolve_search_agent_commitments(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         page = args.get('page', None)
         finished = args.get('finished', None)
@@ -333,7 +333,7 @@ class Agent(graphene.Interface):
             return commits
         return None
 
-    def resolve_agent_relationships(self, args, context, info):
+    def resolve_agent_relationships(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         cat = args.get('category')
         role_id = args.get('role_id')
@@ -356,7 +356,7 @@ class Agent(graphene.Interface):
                 return assocs
         return None
 
-    def resolve_agent_relationships_as_subject(self, args, context, info):
+    def resolve_agent_relationships_as_subject(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         cat = args.get('category')
         role_id = args.get('role_id')
@@ -365,7 +365,7 @@ class Agent(graphene.Interface):
         if agent:
             assocs = agent.active_associates_as_subject()
             filtered_assocs = []
-            if role_id: 
+            if role_id:
                 for assoc in assocs:
                     if assoc.association_type.id == role_id:
                         filtered_assocs.append(assoc)
@@ -379,7 +379,7 @@ class Agent(graphene.Interface):
                 return assocs
         return None
 
-    def resolve_agent_relationships_as_object(self, args, context, info):
+    def resolve_agent_relationships_as_object(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         cat = args.get('category')
         role_id = args.get('role_id')
@@ -388,7 +388,7 @@ class Agent(graphene.Interface):
         if agent:
             assocs = agent.active_associates_as_object()
             filtered_assocs = []
-            if role_id: 
+            if role_id:
                 for assoc in assocs:
                     if assoc.association_type.id == role_id:
                         filtered_assocs.append(assoc)
@@ -402,35 +402,35 @@ class Agent(graphene.Interface):
                 return assocs
         return None
 
-    def resolve_is_member_of(self, args, *rargs):
+    def resolve_is_member_of(self, context, **args): #args, *rargs):
         agent = _load_identified_agent(self)
         group_agent_id = args.get('agent_id')
         if agent and group_agent_id:
             return agent.is_member_of_agent(agent_id=group_agent_id)
         return False
 
-    def resolve_agent_roles(self, args, context, info):
+    def resolve_agent_roles(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         if agent:
             return agent.active_association_types()
         return None
 
-    def resolve_agent_recipes(self, args, context, info):
+    def resolve_agent_recipes(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         if agent:
             return agent.recipes()
         return None
 
-    def resolve_faircoin_address(self, args, *rargs):
+    def resolve_faircoin_address(self, context, **args): #args, *rargs):
         agent = _load_identified_agent(self)
         return agent.faircoin_address()
 
-    def resolve_agent_notification_settings(self, args, context, info):
+    def resolve_agent_notification_settings(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         return agent.notification_settings()
 
     #Returns member type associations ordered by the type (hard-coded manager then member).
-    def resolve_member_relationships(self, args, context, info):
+    def resolve_member_relationships(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         if agent:
             assocs = agent.all_active_associations()
@@ -444,15 +444,15 @@ class Agent(graphene.Interface):
             return filtered_assocs
         return None
 
-    def resolve_agent_skills(self, args, context, info):
+    def resolve_agent_skills(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         return agent.skills()
- 
-    def resolve_agent_skill_relationships(self, args, context, info):
+
+    def resolve_agent_skill_relationships(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         return agent.skill_relationships()
 
-    def resolve_commitments_matching_skills(self, args, context, info):
+    def resolve_commitments_matching_skills(self, context, **args): #args, context, info):
         agent = _load_identified_agent(self)
         page = args.get('page', None)
         if agent:
@@ -471,7 +471,7 @@ class Agent(graphene.Interface):
             return commits
         return None
 
-    def resolve_validated_events_count(self, args, *rargs):
+    def resolve_validated_events_count(self, context, **args): #args, *rargs):
         agent = _load_identified_agent(self)
         month = args.get('month')
         year = args.get('year')
@@ -491,7 +491,7 @@ class Agent(graphene.Interface):
             return count
         return None
 
-    def resolve_events_count(self, args, *rargs):
+    def resolve_events_count(self, context, **args): #args, *rargs):
         agent = _load_identified_agent(self)
         if agent:
             year = args.get('year')
@@ -510,7 +510,7 @@ class Agent(graphene.Interface):
             return count
         return None
 
-    def resolve_event_hours_count(self, args, *rargs):
+    def resolve_event_hours_count(self, context, **args): #args, *rargs):
         agent = _load_identified_agent(self)
         if agent:
             year = args.get('year')
@@ -529,7 +529,7 @@ class Agent(graphene.Interface):
             return count
         return None
 
-    def resolve_event_people_count(self, args, *rargs):
+    def resolve_event_people_count(self, context, **args): #args, *rargs):
         agent = _load_identified_agent(self)
         if agent:
             year = args.get('year')
@@ -565,7 +565,7 @@ class Person(DjangoObjectType):
     class Meta:
         interfaces = (Agent, )
         model = PersonModel #EconomicAgent
-        only_fields = ('id', 'name', 'image', 'note', 'primary_location', 'email')
+        fields = ('id', 'name', 'image', 'note', 'primary_location', 'email')
 
 
 # Organization - an Agent which is not a Person, and can be further classified from there
@@ -575,4 +575,4 @@ class Organization(DjangoObjectType):
     class Meta:
         interfaces = (Agent, )
         model = OrganizationModel #EconomicAgent
-        only_fields = ('id', 'name', 'image', 'note', 'primary_location', 'email')
+        fields = ('id', 'name', 'image', 'note', 'primary_location', 'email')

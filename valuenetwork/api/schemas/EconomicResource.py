@@ -11,7 +11,7 @@ from .Auth import AuthedInputMeta, AuthedMutation
 from django.core.exceptions import PermissionDenied, ValidationError
 
 
-class Query(graphene.AbstractType):
+class Query(object): #graphene.AbstractType):
 
     # define input query params
 
@@ -26,16 +26,16 @@ class Query(graphene.AbstractType):
     #                                          search_string=graphene.String())
 
 
-    def resolve_economic_resource(self, args, *rargs):
+    def resolve_economic_resource(self, context, **args): #args, *rargs):
         id = args.get('id')
         if id is not None:
             resource = EconomicResourceProxy.objects.get(pk=id)
             if resource:
                 #resource.current_quantity = self._current_quantity(quantity=resource.quantity, unit=resource.unit)
                 return resource
-        return None   
+        return None
 
-    def resolve_all_economic_resources(self, args, context, info):
+    def resolve_all_economic_resources(self, context, **args): #args, context, info):
         resources = EconomicResourceProxy.objects.all()
         #for resource in resources:
             #resource.current_quantity = self._current_quantity(quantity=resource.quantity, unit=resource.unit)
@@ -99,8 +99,8 @@ class UpdateEconomicResource(AuthedMutation):
 
     economic_resource = graphene.Field(lambda: EconomicResource)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         id = args.get('id')
         resource_classified_as_id = args.get('resource_classified_as_id')
         tracking_identifier = args.get('tracking_identifier')
@@ -140,8 +140,8 @@ class DeleteEconomicResource(AuthedMutation):
 
     economic_resource = graphene.Field(lambda: EconomicResource)
 
-    @classmethod
-    def mutate(cls, root, args, context, info):
+    #@classmethod
+    def mutate(root, info, **args): #cls, root, args, context, info):
         id = args.get('id')
         economic_resource = EconomicResourceProxy.objects.get(pk=id)
         if economic_resource:

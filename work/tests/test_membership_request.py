@@ -13,6 +13,8 @@ from work.tests import objects_for_work_tests
 from django.conf import settings
 from captcha.models import CaptchaStore
 
+import chromedriver_binary
+
 class MembershipRequestTestCase(LiveServerTestCase):
 
     # It helps selenium to wait for loading new pages.
@@ -20,7 +22,7 @@ class MembershipRequestTestCase(LiveServerTestCase):
         try:
             WebDriverWait(driver, 20).until(lambda driver: driver.find_element_by_xpath(xpath_string))
         except TimeoutException as ex:
-            print("Exception has been thrown. " + str(ex))
+            print(("Exception has been thrown. " + str(ex)))
             self.tearDownClass()
 
     # It helps selenium to wait for js/css changes of element visibility.
@@ -28,7 +30,7 @@ class MembershipRequestTestCase(LiveServerTestCase):
         try:
             WebDriverWait(driver, 20).until(EC.visibility_of_element_located((By.XPATH, xpath_string)))
         except TimeoutException as ex:
-            print("Exception has been thrown. " + str(ex))
+            print(("Exception has been thrown. " + str(ex)))
             self.tearDownClass()
 
     @classmethod
@@ -47,7 +49,7 @@ class MembershipRequestTestCase(LiveServerTestCase):
 
     # This is the membership request test.
     def test_membership_request(self):
-        print "------- JoinRequest Test 1 (start) -------"
+        print("------- JoinRequest Test 1 (start) -------")
         objects_for_work_tests.initial_test_data()
 
         theurl = self.live_server_url
@@ -94,23 +96,23 @@ class MembershipRequestTestCase(LiveServerTestCase):
         s.maximize_window()
 
         # Anonymous user fills the membership request form.
-        print "opening url: "+str('%s%s' % (theurl, "/freedom-coop"))
+        print("opening url: "+str('%s%s' % (theurl, "/freedom-coop")))
         s.get('%s%s' % (theurl, "/freedom-coop"))
-        print 't- 1: '+s.title
+        print('t- 1: '+s.title)
         #self.wait_loading(s, '//title[contains(text(), "Freedom Coop")]')
         self.assertIn("Freedom Coop", s.title)
         sel = s.find_element_by_xpath('//select[@name="language"]')
         opts = sel.find_elements_by_tag_name("option")
         for op in opts:
-            print "t- select option: " + op.get_attribute("value")
+            print("t- select option: " + op.get_attribute("value"))
             if op.get_attribute("value") == 'en':
                 op.click()
                 break
-        print 't- 2: '+s.title
+        print('t- 2: '+s.title)
         #self.wait_loading(s, '//a[contains(text(), "Join Freedom Coop")]')
         but = s.find_element_by_xpath('//a[contains(text(), "Join Freedom Coop")]')
         but.click()
-        print 't- 3: '+s.title
+        print('t- 3: '+s.title)
         self.assertIn("Request to Join: Freedom Coop", s.title)
         #print 't- 4: '+s.title
 
@@ -127,12 +129,12 @@ class MembershipRequestTestCase(LiveServerTestCase):
         s.find_element_by_id("id_captcha_1").send_keys(captcha.response)
 
         s.find_element_by_xpath('//input[@type="submit"]').click()
-        print 't- 5: '+s.title
+        print('t- 5: '+s.title)
         #import pdb; pdb.set_trace()
         self.assertIn("Thank you", s.title)
-        print "t- JoinRequest form Submitted! "
-        print "------- join-request test 1 completed -------"
-        print
+        print("t- JoinRequest form Submitted! ")
+        print("------- join-request test 1 completed -------")
+        print()
         # TODO: add freedom-coop project to objects_for_work_test.py
         '''
         # Admin login.

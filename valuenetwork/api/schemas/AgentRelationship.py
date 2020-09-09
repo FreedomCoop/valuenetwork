@@ -16,7 +16,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 
 # define public query API
 
-class Query(graphene.AbstractType):
+class Query(object): #graphene.AbstractType):
 
     agent_relationship = graphene.Field(AgentRelationship,
                                         id=graphene.Int())
@@ -64,7 +64,7 @@ class CreateAgentRelationship(AuthedMutation):
         user_agent = AgentUser.objects.get(user=context.user).agent
         is_authorized = user_agent.is_authorized(object_to_mutate=agent_relationship)
         if is_authorized:
-            agent_relationship.save()  
+            agent_relationship.save()
         else:
             raise PermissionDenied('User not authorized to perform this action.')
 
@@ -103,7 +103,7 @@ class UpdateAgentRelationship(AuthedMutation):
             user_agent = AgentUser.objects.get(user=context.user).agent
             is_authorized = user_agent.is_authorized(object_to_mutate=agent_relationship)
             if is_authorized:
-                agent_relationship.save()  
+                agent_relationship.save()
             else:
                 raise PermissionDenied('User not authorized to perform this action.')
 
@@ -126,9 +126,9 @@ class DeleteAgentRelationship(AuthedMutation):
                 user_agent = AgentUser.objects.get(user=context.user).agent
                 is_authorized = user_agent.is_authorized(object_to_mutate=agent_relationship)
                 if is_authorized:
-                    agent_relationship.delete() 
+                    agent_relationship.delete()
                 else:
-                    raise PermissionDenied('User not authorized to perform this action.') 
+                    raise PermissionDenied('User not authorized to perform this action.')
             else:
                 raise PermissionDenied("Process has economic events so cannot be deleted.")
 

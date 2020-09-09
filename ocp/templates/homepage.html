@@ -1,0 +1,62 @@
+{% extends "site_base.html" %}
+
+{% load staticfiles %}
+{% load i18n %}
+
+{% block head_title %}{% trans "Welcome" %}{% endblock %}
+
+{% block body_class %}home{% endblock %}
+
+{% block banner %}
+
+    {% if layout %}
+        {{ layout.banner|safe|urlize|linebreaks }}
+    {% else %}
+        {% if user.is_staff %}
+            <h1> Create content here using Home Page Layout in Admin. </h1>
+        {% else %}
+            <h1> An administrator can create content for this page. </h1>
+        {% endif %}
+    {% endif %}
+
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.map {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+</style>
+{% endblock %}
+
+{% block extra_script %}
+	<script src="https://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+    <script src="{% static 'js/jquery.maphilight.min.js' %}"></script>
+{% endblock %}
+
+{% block extra_body %}
+	{{ block.super }}
+
+    <script type="text/javascript">
+
+	$(document).ready(function(){
+
+		$('#home').addClass('active');
+
+		$( "#help" ).toggle( function(){
+            $('#help-content').show("slide", { direction: "right" }, "slow" );
+            $( "#help" ).text("Hide Help");
+        }, function() {
+            $('#help-content').hide("slide", { direction: "right" }, "slow");
+            $( "#help" ).text("Show Help");
+        })
+
+        $('.map').maphilight();
+
+	}); // end document.ready
+    </script>
+
+{% endblock %}
+

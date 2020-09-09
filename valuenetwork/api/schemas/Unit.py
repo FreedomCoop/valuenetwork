@@ -9,7 +9,7 @@ from valuenetwork.api.types.QuantityValue import Unit
 from valuenetwork.valueaccounting.models import Unit as UnitProxy
 
 
-class Query(graphene.AbstractType):
+class Query(object): #graphene.AbstractType):
 
     unit = graphene.Field(Unit,
                           id=graphene.Int())

@@ -1,16 +1,14 @@
---extra-index-url=http://dist.pinaxproject.com/dev/
---extra-index-url=http://dist.pinaxproject.com/alpha/
+-r requirements-zero.txt
+-r requirements-account.txt
 
-Django<2
+pinax-theme-bootstrap
+pinax-notifications
 django-extensions
-pinax-theme-bootstrap==2.0.4
-pinax-theme-bootstrap-account==1.0b2
 django-appconf==1.0.2
 webtest
 django-webtest
-pinax-notifications<6
 toposort
-django-cors-headers
+django-cors-headers==3.2.1
 rdflib
 rdflib-jsonld
 djangorestframework
@@ -20,15 +18,21 @@ html5lib>0.99999999
 bleach==2.0.0
 django-simple-captcha
 django-mptt
-django-fobi==0.12.2
+django-fobi # ==0.12.2
 django-modeltranslation<0.14
 pytz
-graphql-core==1.1
-graphene==1.4
-graphene-django==1.3
+graphql-core<3 # ==1.1
+graphene #>=2.0
+graphene-django<3 # ==1.3
 PyJWT
 six
 selenium
 mock
 passlib
 bcrypt
+django_forms_bootstrap
+django-bootstrap-form
+chromedriver_binary
+psycopg2-binary
+django-datatables-view
+

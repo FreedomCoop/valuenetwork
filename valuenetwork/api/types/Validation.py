@@ -16,7 +16,7 @@ class Validation(DjangoObjectType):
 
     class Meta:
         model = ValidationProxy
-        only_fields = ('id', 'validation_date', 'note')
+        fields = ('id', 'validation_date', 'note')
 
 
     def resolve_validated_by(self, args, *rargs):

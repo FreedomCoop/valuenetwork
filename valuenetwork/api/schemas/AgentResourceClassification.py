@@ -14,7 +14,7 @@ from .Auth import AuthedInputMeta, AuthedMutation
 from django.core.exceptions import PermissionDenied, ValidationError
 
 
-class Query(graphene.AbstractType):
+class Query(object): #graphene.AbstractType):
 
     agent_resource_classification = graphene.Field(AgentResourceClassification,
                                         id=graphene.Int())
@@ -62,7 +62,7 @@ class CreateAgentResourceClassification(AuthedMutation):
             user_agent = AgentUser.objects.get(user=context.user).agent
             is_authorized = user_agent.is_authorized(object_to_mutate=agent_resource_classification)
             if is_authorized:
-                agent_resource_classification.save()  
+                agent_resource_classification.save()
             else:
                 raise PermissionDenied('User not authorized to perform this action.')
 
@@ -83,8 +83,8 @@ class DeleteAgentResourceClassification(AuthedMutation):
             user_agent = AgentUser.objects.get(user=context.user).agent
             is_authorized = user_agent.is_authorized(object_to_mutate=agent_resource_classification)
             if is_authorized:
-                agent_resource_classification.delete() 
+                agent_resource_classification.delete()
             else:
-                raise PermissionDenied('User not authorized to perform this action.') 
+                raise PermissionDenied('User not authorized to perform this action.')
 
         return DeleteAgentResourceClassification(agent_resource_classification=agent_resource_classification)

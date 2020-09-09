@@ -1,8 +1,8 @@
-from __future__ import unicode_literals
+
 import copy
 from django import forms
 from django.contrib.admin.templatetags.admin_static import static
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.html import escape, format_html, format_html_join, smart_urlquote
 from django.utils.text import Truncator
 from django.utils.translation import ugettext as _
@@ -24,7 +24,7 @@ def url_params_from_lookup_dict(lookups):
 		params = {}
 		if lookups and hasattr(lookups, 'items'):
 				items = []
-				for k, v in lookups.items():
+				for k, v in list(lookups.items()):
 						if callable(v):
 								v = v()
 						if isinstance(v, (tuple, list)):
@@ -162,7 +162,7 @@ class ForeignKeyRawIdWidgetWrapper(contrib_ForeignKeyRawIdWidgetWrapper):
 
 			params = self.url_parameters()
 			if params:
-				url = '?' + '&amp;'.join('%s=%s' % (k, v) for k, v in params.items())
+				url = '?' + '&amp;'.join('%s=%s' % (k, v) for k, v in list(params.items()))
 			else:
 				url = ''
 
@@ -203,7 +203,7 @@ class ForeignKeyRawIdWidgetWrapper(contrib_ForeignKeyRawIdWidgetWrapper):
 		output = ""
 		if value:
 			java_remove = format_html(' onclick="remove_item_foreign(&#39;id_{0}&#39;); return false;"', name_desc)
-			out_link = "<a %s href='javascript:void;'>%s</a>" % ( java_remove, _(u"Remove").encode("utf-8") )
+			out_link = "<a %s href='javascript:void;'>%s</a>" % ( java_remove, _("Remove").encode("utf-8") )
 			obj_desc = obj_desc + " | " + out_link
 			#CRUD buttons
 			if self.can_change_related:
@@ -304,7 +304,7 @@ class ManyToManyRawIdWidgetWrapper(contrib_ManyToManyRawIdWidgetWrapper):
 					del_link += " title='" + delete_help_text.encode("utf-8") + "'>" + "</a>"
 				name = "manytomany_%s_%s" % ( field_name, obj.id )
 				java_remove = format_html(' onclick="remove_item(window,&#39;{0}&#39;,&#39;{1}&#39;, &#39;{2}&#39;); return false;"', name, hidden_ids_text_name, obj.id)
-				out_link = "<a %s href='javascript:void;'>%s</a>" % ( java_remove, _(u"Remove").encode("utf-8") )
+				out_link = "<a %s href='javascript:void;'>%s</a>" % ( java_remove, _("Remove").encode("utf-8") )
 				span = "<span name='%s' id='%s' value='%s'>%s - %s|%s|%s</span>" % (name, name, obj.id, obj, out_link, change_link, del_link);
 				output += "<li> %s </li>" % (span)
 		return mark_safe(output + "</ul>")
@@ -326,7 +326,7 @@ class ManyToManyRawIdWidgetWrapper(contrib_ManyToManyRawIdWidgetWrapper):
 
 			params = self.url_parameters()
 			if params:
-				url = '?' + '&amp;'.join('%s=%s' % (k, v) for k, v in params.items())
+				url = '?' + '&amp;'.join('%s=%s' % (k, v) for k, v in list(params.items()))
 			else:
 				url = ''
 			if "class" not in attrs:
@@ -410,11 +410,11 @@ class ForeignKeyRawIdWidgetWrapperAdmin(admin.ModelAdmin):
 		return formfield
 
 	def response_change(self, request, obj):
-		print "general.widgets:response_change"
+		print("general.widgets:response_change")
 		if '_popup' in request.REQUEST:
 			pk_value = obj._get_pk_val()
-			print "This is pop redirect to" + '<script type="text/javascript">opener.dismissEditRelatedPopup(window, "%s", "%s");</script>' % \
-			(escape(pk_value), escapejs(obj))
+			print(("This is pop redirect to" + '<script type="text/javascript">opener.dismissEditRelatedPopup(window, "%s", "%s");</script>' % \
+			(escape(pk_value), escapejs(obj))))
 			return HttpResponse('<script type="text/javascript">opener.dismissEditRelatedPopup(window, "%s", "%s");</script>' % \
 			# escape() calls force_unicode.
 			(escape(pk_value), escapejs(obj)))
@@ -422,10 +422,10 @@ class ForeignKeyRawIdWidgetWrapperAdmin(admin.ModelAdmin):
 			return super(ForeignKeyRawIdWidgetWrapperAdmin, self).response_change(request, obj)
 
 	def response_add(self, request, obj):
-		print "hace add"
+		print("hace add")
 		if '_popup' in request.REQUEST:
 			pk_value = obj._get_pk_val()
-			print "return"
+			print("return")
 			return HttpResponse('<script type="text/javascript">opener.dismissEditRelatedPopup(window, "%s", "%s");</script>' % \
 			# escape() calls force_unicode.
 			(escape(pk_value), escapejs(obj)))
@@ -433,7 +433,7 @@ class ForeignKeyRawIdWidgetWrapperAdmin(admin.ModelAdmin):
 			return super(ForeignKeyRawIdWidgetWrapperAdmin, self).response_change(request, obj)
 
 	def response_delete(self, request, obj_display):
-		print "hace del " + obj_display
+		print(("hace del " + obj_display))
 		if '_popup' in request.REQUEST:
 			return HttpResponse('<script type="text/javascript">opener.dismissDeleteRelatedPopup(window, "%s");</script>' % obj_display)
 		else:

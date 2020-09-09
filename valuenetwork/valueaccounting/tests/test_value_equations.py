@@ -318,7 +318,7 @@ class ValueEquationTest(TestCase):
         self.assertEqual(payment_for_expense.share, Decimal("10.0"))
 
         #for share in shares:
-        #    print share.from_agent, share.share
+        #    print(share.from_agent, share.share)
 
     def test_distribution(self):
         ve = self.recipe.value_equation
@@ -333,7 +333,7 @@ class ValueEquationTest(TestCase):
             serialized_filters[bucket.id] = serialized_filter
         agent_totals, details = ve.run_value_equation(amount_to_distribute=amount_to_distribute, serialized_filters=serialized_filters)
         for at in agent_totals:
-            #print at.to_agent, at.quantity
+            #print(at.to_agent, at.quantity)
             if at.to_agent.name == "worker":
                 self.assertEqual(at.quantity, Decimal("75.0"))
             elif at.to_agent.name == "contributor":
@@ -351,7 +351,7 @@ class ValueEquationTest(TestCase):
             testing = False
             if context_agent.name == "test context agent":
                 testing = True
-                print "### test_faircoin_distribution will create fake faircoin addresses and coins"
+                print("### test_faircoin_distribution will create fake faircoin addresses and coins")
             order = self.order
             orders = [order,]
             buckets = ve.buckets.all()
@@ -368,7 +368,7 @@ class ValueEquationTest(TestCase):
                 abbrev="fair",
                 name="FairCoin",
                 )
-            if c: print "t- created Unit: 'FairCoin'"
+            if c: print("t- created Unit: 'FairCoin'")
             #fc_unit.save()
             faircoin_rt, c = EconomicResourceType.objects.get_or_create(
                 name="FairCoin",
@@ -376,7 +376,7 @@ class ValueEquationTest(TestCase):
                 price_per_unit=Decimal('1'),
                 behavior='dig_curr',
                 )
-            if c: print "t- created EconomicResourceType: 'FairCoin'"
+            if c: print("t- created EconomicResourceType: 'FairCoin'")
             #faircoin_rt.save()
             faircoin_address_rt, c = EconomicResourceType.objects.get_or_create(
                 name="FairCoin Address",
@@ -384,13 +384,13 @@ class ValueEquationTest(TestCase):
                 price_per_unit=Decimal('1'),
                 behavior='dig_acct',
                 )
-            if c: print "t- created EconomicResourceType: 'FairCoin Address'"
+            if c: print("t- created EconomicResourceType: 'FairCoin Address'")
             #faircoin_address_rt.save()
             owner_role, c = AgentResourceRoleType.objects.get_or_create(
                 name="Owner",
                 is_owner=True,
                 )
-            if c: print "t- created AgentResourceRoleType: "+str(owner_role)
+            if c: print("t- created AgentResourceRoleType: "+str(owner_role))
             #owner_role.save()
             if testing:
                 address = context_agent.create_fake_faircoin_address()

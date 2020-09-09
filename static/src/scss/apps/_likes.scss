@@ -1,0 +1,31 @@
+.like-link {
+    @extend .btn;
+    @extend .btn-sm;
+
+    &.liked {
+        @include button-variant($primary, $primary);
+        &::after {
+            content: "Liked";
+        }
+    }
+    &.not-liked {
+        @include button-outline-variant($primary);
+        &::after {
+            content: "Like";
+        }
+    }
+}
+
+.count-label {
+    display: inline-block;
+    margin-left: 10px;
+    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem;
+    color: $gray-700;
+    .count {
+        border-radius: 15px;
+        padding: 5px;
+        background: $info;
+        color: $gray-200;
+    }
+}

@@ -3,7 +3,7 @@ import datetime
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseServerError, Http404, HttpResponseNotFound, HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.auth.models import User
 from django.template import RequestContext
 from django.core import serializers
@@ -28,17 +28,17 @@ def consumable_formset(consumable_rt, data=None):
     consumable_resources = EconomicResource.objects.filter(resource_type=consumable_rt)
     for res in consumable_resources:
         d = {"resource_id": res.id,}
-        init.append(d)   
+        init.append(d)
     formset = ConsumableFormSet(initial=init, data=data)
     for form in formset:
         id = int(form["resource_id"].value())
         resource = EconomicResource.objects.get(id=id)
         form.identifier = resource.identifier
-    return formset 
+    return formset
 
 @login_required
-def log_equipment_use(request, scenario, equip_resource_id, context_agent_id, pattern_id, 
-    sale_pattern_id, equip_svc_rt_id, equip_fee_rt_id, tech_rt_id, consumable_rt_id, 
+def log_equipment_use(request, scenario, equip_resource_id, context_agent_id, pattern_id,
+    sale_pattern_id, equip_svc_rt_id, equip_fee_rt_id, tech_rt_id, consumable_rt_id,
     payment_rt_id, tech_rel_id, ve_id, va_id, price_id, part_rt_id, cite_rt_id
 ):
     #scenario: 1=commercial, 2=project, 3=fablab, 4=techshop, 5=other
@@ -59,7 +59,7 @@ def log_equipment_use(request, scenario, equip_resource_id, context_agent_id, pa
     equip_form = EquipmentUseForm(equip_resource=equipment, context_agent=context_agent, tech_type=tech_rel_type, initial=init, data=request.POST or None)
     formset = consumable_formset(consumable_rt=consumable_rt)
     process_form = ProcessForm(data=request.POST or None)
-    
+
     if request.method == "POST":
         if equip_form.is_valid():
             data = equip_form.cleaned_data
@@ -155,7 +155,7 @@ def log_equipment_use(request, scenario, equip_resource_id, context_agent_id, pa
                 )
                 use_event.save()
                 total_price += use_event.price
-                
+
             #ephemeral output resource
             printer_service = EconomicResource(
                 resource_type=equipment_svc_rt,
@@ -253,8 +253,8 @@ def log_equipment_use(request, scenario, equip_resource_id, context_agent_id, pa
             #    use_ship_event.save()
             printer_service.quantity = 0
             printer_service.save()
-            
-            if scenario == '1': 
+
+            if scenario == '1':
                 next_process = Process(
                     name="Make commercial 3D printed part",
                     end_date=input_date,
@@ -289,7 +289,7 @@ def log_equipment_use(request, scenario, equip_resource_id, context_agent_id, pa
                     created_by = request.user,
                 )
                 output_part_event.save()
-            if scenario == '2' or scenario == '1': 
+            if scenario == '2' or scenario == '1':
                 if next_process:
                     use_event = EconomicEvent(
                         event_type = et_use,
@@ -321,7 +321,7 @@ def log_equipment_use(request, scenario, equip_resource_id, context_agent_id, pa
                         unit_of_value = equipment_svc_rt.unit_of_price,
                         created_by = request.user,
                     )
-                    svc_input_event.save()             
+                    svc_input_event.save()
 
             if next_process:
                 return HttpResponseRedirect('/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/'
@@ -329,7 +329,7 @@ def log_equipment_use(request, scenario, equip_resource_id, context_agent_id, pa
             else:
                 return HttpResponseRedirect('/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/'
                     % ('equipment/pay-equipment-use', scenario, sale.id, process.id, payment_rt_id, equip_resource_id, mtnce_fee_event.id, ve_id, quantity, who.id))
-    
+
     return render_to_response("equipment/log_equipment_use.html", {
         "equip_form": equip_form,
         "process_form": process_form,
@@ -340,7 +340,7 @@ def log_equipment_use(request, scenario, equip_resource_id, context_agent_id, pa
     }, context_instance=RequestContext(request))
 
 @login_required
-def pay_equipment_use(request, scenario, sale_id, process_id, payment_rt_id, equip_resource_id, 
+def pay_equipment_use(request, scenario, sale_id, process_id, payment_rt_id, equip_resource_id,
     mtnce_fee_event_id, ve_id, use_qty, who_id, next_process_id=None, cite_rt_id=None
 ):
     #scenario: 1=commercial, 2=project, 3=fablab, 4=techshop, 5=other
@@ -370,7 +370,7 @@ def pay_equipment_use(request, scenario, sale_id, process_id, payment_rt_id, equ
         if pay_form.is_valid():
             data = pay_form.cleaned_data
             payment_method = data["payment_method"]
-            
+
             cr_et = EventType.objects.get(name="Cash Receipt")
             money_resource = sale.context_agent.virtual_accounts()[0]
             cr_event = EconomicEvent(
@@ -417,7 +417,7 @@ def pay_equipment_use(request, scenario, sale_id, process_id, payment_rt_id, equ
                         '], "method": "Shipment"}'
                         ])
                     serialized_filters[bucket.id] = ser_string
-                    
+
                     #data[bucket.id] = [dist_shipment,]
                     #bucket_form = bucket.filter_entry_form(data=request.POST or None)
                     #if bucket_form.is_valid():
@@ -426,9 +426,9 @@ def pay_equipment_use(request, scenario, sale_id, process_id, payment_rt_id, equ
                     #    bucket.form = bucket_form
             ve_exchange = ve.run_value_equation_and_save(
                 cash_receipts=crs,
-                exchange=ve_exchange, 
-                money_resource=money_resource, 
-                amount_to_distribute=sale_total_no_fee, 
+                exchange=ve_exchange,
+                money_resource=money_resource,
+                amount_to_distribute=sale_total_no_fee,
                 serialized_filters=serialized_filters)
             #todo: this should send notifications some day?
             #for event in ve_exchange.distribution_events():
@@ -491,7 +491,7 @@ def log_additional_inputs(request, cite_rt_id, process_id):
                 work_event.is_contribution = True
                 work_event.created_by = request.user
                 work_event.save()
- 
+
 
     return render_to_response("equipment/log_additional_inputs.html", {
         "process": process,

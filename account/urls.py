@@ -1,10 +1,18 @@
 from django.conf.urls import url
 
-from account.views import SignupView, LoginView, LogoutView, DeleteView
-from account.views import ConfirmEmailView
-from account.views import ChangePasswordView, PasswordResetView, PasswordResetTokenView
-from account.views import SettingsView, WorkSettingsView, WorkChangePasswordView
-
+from account.views import (
+    ChangePasswordView,
+    ConfirmEmailView,
+    DeleteView,
+    LoginView,
+    LogoutView,
+    PasswordResetTokenView,
+    PasswordResetView,
+    SettingsView,
+    WorkSettingsView,
+    WorkChangePasswordView,
+    SignupView,
+)
 
 urlpatterns = [
     url(r"^signup/$", SignupView.as_view(), name="account_signup"),

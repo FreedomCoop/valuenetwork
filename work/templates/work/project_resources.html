@@ -35,18 +35,27 @@ ul.fancytree-container, .fancytree-treefocus, .fancytree-plain {
   background-color: #ccc;
   color: inherit;
 }
+#by_type span.fancytree-title {
+    white-space: normal;
+    width: 90%;
+    cursor: default;
+}
 
 #category-form {
   margin: 0 0 5px;
 }
 
-.span8 {
+/*.span8 {
   margin-left: 0;
   max-width: 738px;
 }
 .span3 {
   width: auto;
   float: right;
+}*/
+.miniform {
+    /*margin-left: 1em;*/
+    max-width: inherit;
 }
 .project-resources ul {
   margin-left: 1em;
@@ -107,12 +116,18 @@ img {
   -khtml-border-bottom-left-radius: 7px;
   border-bottom-left-radius: 7px;
 
-  margin-top: -1px;
+  margin-top: -4px;
+}
+.ui-tabs .ui-tabs-panel h4 {
+    margin: 0px 0 2px 0;
+}
+.ui-tabs .fancytree-expander {
+    margin-top: 2px;
 }
 .ui-tabs .ui-tabs-nav li {
-  margin-bottom: 1px;
+  /*margin-bottom: 1px;
   font-size: 1.1em;
-  background-color: #f0f0da;
+  background-color: #f0f0da;*/
 }
 .ui-tabs-nav a {
   color: #fff;
@@ -121,7 +136,10 @@ img {
   color: inherit;
 }
 .ui-widget-content a {
-  color: inherit;
+  color: #734279;
+}
+.ui-widget-content .res a:hover {
+    text-decoration: underline;
 }
 .ui-state-default a, .ui-state-default a:link, .ui-state-default a:visited {
   color: #734279;
@@ -133,10 +151,10 @@ img {
   background: none;
   background-color: #f0f0da;
 }
-.ui-tabs .ui-tabs-nav li.ui-tabs-active {
+/*.ui-tabs .ui-tabs-nav li.ui-tabs-active {
     margin-bottom: -3px;
     padding-bottom: 3px;
-}
+}*/
 
 
 .modal .helptext {
@@ -145,6 +163,8 @@ img {
   display: block;
   font-size: 0.9em;
 }
+
+
 
 </style>
 {% endblock %}
@@ -173,7 +193,9 @@ img {
 	    </legend>
       {{ rtype }}
 
-      <div class="span8 project-resources" id="tabs">
+<div class="container" style="padding: 1em 0px 1em 0;">
+   <div class="row no-gutters" style="width: 100%;">
+      <div class="col-sm span8 project-resources" id="tabs" style="min-width:63%;">
         <h3>
           {% trans "Inventory:" %}
         </h3>
@@ -251,11 +273,13 @@ img {
         </div>
       </div>
 
-      <div class="span4 filter miniform">
+      <div class="col-sm span4 filter miniform secondcol" style="padding-left:1em;">
 
         {% include "work/_treetypes_filter.html" %}
 
       </div>
+   </div>
+</div>
 {% endblock %}
 {% block extra_script %}
     <!-- <script src="https://code.jquery.com/ui/1.9.2/jquery-ui.js"></script> -->

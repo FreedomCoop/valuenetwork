@@ -17,7 +17,7 @@ from .Auth import AuthedInputMeta, AuthedMutation
 from django.core.exceptions import PermissionDenied
 
 
-class Query(graphene.AbstractType):
+class Query(object): #graphene.AbstractType):
 
     validation = graphene.Field(Validation,
                                 id=graphene.Int())
@@ -66,7 +66,7 @@ class CreateValidation(AuthedMutation):
             user_agent = AgentUser.objects.get(user=context.user).agent
             is_authorized = user_agent.is_authorized(object_to_mutate=validation, context_agent_id=economic_event.context_agent.id)
             if is_authorized:
-                validation.save()  
+                validation.save()
             else:
                 raise PermissionDenied('User not authorized to perform this action.')
 
@@ -87,7 +87,7 @@ class DeleteValidation(AuthedMutation):
             user_agent = AgentUser.objects.get(user=context.user).agent
             is_authorized = user_agent.is_authorized(object_to_mutate=validation, context_agent_id=validation.event.context_agent.id)
             if is_authorized:
-                validation.delete() 
+                validation.delete()
             else:
                 raise PermissionDenied('User not authorized to perform this action.')
 

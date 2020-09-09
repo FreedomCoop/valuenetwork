@@ -7,7 +7,7 @@ from operator import itemgetter, attrgetter, methodcaller
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseServerError, Http404, HttpResponseNotFound, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.auth.models import User
 from django.template import RequestContext
 from django.core import serializers
@@ -35,7 +35,14 @@ from valuenetwork.valueaccounting.utils import *
 from work.models import MembershipRequest, SkillSuggestion, Ocp_Artwork_Type
 from work.forms import ContextTransferForm, ContextTransferCommitmentForm, ResourceRoleContextAgentForm
 from work.utils import *
-from account.utils import password_generator
+#from account.utils import password_generator # TODO find another
+
+import string
+from random import *
+def password_generator():
+    characters = string.ascii_letters + string.punctuation  + string.digits
+    password =  "".join(choice(characters) for x in range(randint(8, 16)))
+    return password
 
 if "pinax.notifications" in settings.INSTALLED_APPS:
     from pinax.notifications import models as notification
@@ -253,7 +260,7 @@ def projects(request):
 
     try:
         projects = paginator.page(page)
-        print projects
+        print(projects)
         roots = [p for p in projects if p.is_root()]
         for root in roots:
             root.nodes = root.child_tree()
@@ -282,8 +289,8 @@ def projects(request):
     except EmptyPage:
         # If page is out of range (e.g. 9999), deliver last page of results.
         projects = paginator.page(paginator.num_pages)
-    except Exception, e:
-        print "EXCEPT: ", str(e)
+    except Exception as e:
+        print("EXCEPT: ", str(e))
 
 
     return render(request, "valueaccounting/projects.html", {
@@ -503,6 +510,7 @@ def agent(request, agent_id):
     user_form = None
     #if agent.is_individual():
     if not agent.username():
+        # TODO inactive until we find another 'password_generator'...
         password1 = password2 = password_generator()
         init = {"username": agent.nick, "password1": password1, "password2": password2,}
         user_form = UserCreationForm(initial=init)
@@ -526,9 +534,9 @@ def agent(request, agent_id):
         for ce in contributions:
             agents_stats.setdefault(ce.resource_type, Decimal("0"))
             agents_stats[ce.resource_type] += ce.quantity
-        for key, value in agents_stats.items():
+        for key, value in list(agents_stats.items()):
             individual_stats.append((key, value))
-        individual_stats.sort(lambda x, y: cmp(y[1], x[1]))
+        individual_stats.sort(key=lambda x: x[1], reverse=True)
 
     elif agent.is_context_agent():
 
@@ -546,9 +554,9 @@ def agent(request, agent_id):
             for event in events:
                 agents_stats.setdefault(event.from_agent.name, Decimal("0"))
                 agents_stats[event.from_agent.name] += event.quantity
-            for key, value in agents_stats.items():
+            for key, value in list(agents_stats.items()):
                 member_hours_recent.append((key, value))
-            member_hours_recent.sort(lambda x, y: cmp(y[1], x[1]))
+            member_hours_recent.sort(key=lambda x: x[1], reverse=True)
 
 
         ces = CachedEventSummary.objects.filter(
@@ -560,9 +568,9 @@ def agent(request, agent_id):
             for ce in ces:
                 agents_stats.setdefault(ce.agent.name, Decimal("0"))
                 agents_stats[ce.agent.name] += ce.quantity
-            for key, value in agents_stats.items():
+            for key, value in list(agents_stats.items()):
                 member_hours_stats.append((key, value))
-            member_hours_stats.sort(lambda x, y: cmp(y[1], x[1]))
+            member_hours_stats.sort(key=lambda x: x[1], reverse=True)
 
             agents_roles = {}
             roles = [ce.quantity_label() for ce in ces]
@@ -579,9 +587,9 @@ def agent(request, agent_id):
                     agents_roles[key][idx] += ce.quantity
             headings = ["Member",]
             headings.extend(roles)
-            for row in agents_roles.values():
+            for row in list(agents_roles.values()):
                 member_hours_roles.append(row)
-            member_hours_roles.sort(lambda x, y: cmp(x[0], y[0]))
+            member_hours_roles.sort(key=lambda x: x[0])
             roles_height = len(member_hours_roles) * 20
 
     return render(request, "valueaccounting/agent.html", {
@@ -811,7 +819,7 @@ class AddFacetValueFormFormSet(BaseModelFormSet):
 
     def _construct_forms(self):
         self.forms = []
-        for i in xrange(self.total_form_count()):
+        for i in range(self.total_form_count()):
             self.forms.append(self._construct_form(i, qs=self.qs))
 
 
@@ -978,7 +986,7 @@ def select_resource_types(facet_values):
         if fv.facet not in aspects:
             aspects[fv.facet] = []
         aspects[fv.facet].append(fv)
-    for facet, facet_values in aspects.items():
+    for facet, facet_values in list(aspects.items()):
         if len(facet_values) > 1:
             for fv in facet_values:
                 multis.append(fv)
@@ -1823,7 +1831,7 @@ def value_equation(request, project_id):
                     agent_sums[agent.id] = AgentSummary(agent)
                 agent_sums[agent.id].value += summary.value
                 total += summary.value
-            agent_totals = agent_sums.values()
+            agent_totals = list(agent_sums.values())
             for at in agent_totals:
                pct = at.value / total
                at.value = at.value.quantize(Decimal('.01'), rounding=ROUND_UP)
@@ -2915,7 +2923,7 @@ def json_customer_orders(request, customer_id):
     for order in os:
         fields = {
             "pk": order.pk,
-            "name": unicode(order)
+            "name": str(order)
         }
         orders.append({"fields": fields})
     data = simplejson.dumps(orders, ensure_ascii=False)
@@ -3862,7 +3870,7 @@ def condense_events(event_list):
                     event.process,
                     Decimal('0.0'))
             summaries[key].quantity += event.quantity
-        condensed_events = summaries.values()
+        condensed_events = list(summaries.values())
     return condensed_events
 
 
@@ -3891,7 +3899,7 @@ def this_week(request):
     total_participants = len(list(set(participants)))
     total_hours = sum(event.quantity for event in work_events)
     context_agents = assemble_weekly_activity(work_events)
-    cas = context_agents.keys()
+    cas = list(context_agents.keys())
     cas_ids = [ca.id for ca in cas]
     active = len(cas)
     non_active = EconomicAgent.objects.context_agents().exclude(id__in=cas_ids).count()
@@ -4151,9 +4159,9 @@ def agent_stats(request, agent_id):
             agents[c.from_agent] = Decimal("0")
         agents[c.from_agent] += c.quantity
     member_hours = []
-    for key, value in agents.iteritems():
+    for key, value in list(agents.items()):
         member_hours.append((key, value))
-    member_hours.sort(lambda x, y: cmp(y[1], x[1]))
+    member_hours.sort(key=lambda x: x[1], reverse=True)
     return render(request, "valueaccounting/agent_stats.html", {
         "agent": agent,
         "scores": scores,
@@ -4175,9 +4183,9 @@ def project_stats(request, context_agent_slug):
             for ce in ces:
                 agents.setdefault(ce.agent, Decimal("0"))
                 agents[ce.agent] += ce.quantity
-            for key, value in agents.items():
+            for key, value in list(agents.items()):
                 member_hours.append((key, value))
-            member_hours.sort(lambda x, y: cmp(y[1], x[1]))
+            member_hours.sort(key=lambda x: x[1], reverse=True)
     return render(request, "valueaccounting/project_stats.html", {
         "member_hours": member_hours,
         "page_title": "All-time project stats",
@@ -4201,9 +4209,9 @@ def recent_stats(request, context_agent_slug):
         for event in events:
             agents_stats.setdefault(event.from_agent, Decimal("0"))
             agents_stats[event.from_agent] += event.quantity
-        for key, value in agents_stats.items():
+        for key, value in list(agents_stats.items()):
             member_hours.append((key, value))
-        member_hours.sort(lambda x, y: cmp(y[1], x[1]))
+        member_hours.sort(key=lambda x: x[1], reverse=True)
     return render(request, "valueaccounting/project_stats.html", {
         "member_hours": member_hours,
         "page_title": "Last 2 months project stats",
@@ -4237,9 +4245,9 @@ def project_roles(request, context_agent_slug):
                     agents[key][idx] += ce.quantity
             headings = ["Member",]
             headings.extend(roles)
-            for row in agents.values():
+            for row in list(agents.values()):
                 member_hours.append(row)
-            member_hours.sort(lambda x, y: cmp(x[0], y[0]))
+            member_hours.sort(key=lambda x: x[0])
     return render(request, "valueaccounting/project_roles.html", {
         "project": project,
         "headings": headings,
@@ -8153,7 +8161,7 @@ def incoming_value_flows(request, resource_id):
                 if not flow.from_agent in totals:
                     totals[flow.from_agent] = Decimal("0")
                 totals[flow.from_agent] += flow.quantity
-    for key, value in totals.items():
+    for key, value in list(totals.items()):
         member_hours.append((key, value))
     return render(request, "valueaccounting/incoming_value_flows.html", {
         "resource": resource,
@@ -8326,7 +8334,7 @@ def resource_event_for_commitment(request, commitment_id):
     event = None
     events = ct.fulfillment_events.all()
     prefix = ct.form_prefix()
-    data = unicode('0')
+    data = str('0')
     if events:
         event = events[events.count() - 1]
         form = EconomicResourceForm(prefix=prefix, data=request.POST, instance=event.resource)
@@ -8371,7 +8379,7 @@ def resource_event_for_commitment(request, commitment_id):
                 changed_by = request.user,
             )
             event.save()
-        data = unicode(resource.quantity)
+        data = str(resource.quantity)
     return HttpResponse(data, content_type="text/plain")
 
 #todo: how to handle splits?
@@ -8584,7 +8592,7 @@ def failed_outputs(request, commitment_id):
             event.created_by = request.user
             event.changed_by = request.user
             event.save()
-            data = unicode(ct.failed_output_qty())
+            data = str(ct.failed_output_qty())
             return HttpResponse(data, content_type="text/plain")
 
 #todo: obsolete
@@ -9082,7 +9090,7 @@ class ProcessOutputFormSet(BaseModelFormSet):
 
     def _construct_forms(self):
         self.forms = []
-        for i in xrange(self.total_form_count()):
+        for i in range(self.total_form_count()):
             self.forms.append(self._construct_form(i, pattern=self.pattern))
 
 
@@ -9093,7 +9101,7 @@ class ProcessInputFormSet(BaseModelFormSet):
 
     def _construct_forms(self):
         self.forms = []
-        for i in xrange(self.total_form_count()):
+        for i in range(self.total_form_count()):
             self.forms.append(self._construct_form(i, pattern=self.pattern))
 
 
@@ -9104,7 +9112,7 @@ class ProcessCitationFormSet(BaseModelFormSet):
 
     def _construct_forms(self):
         self.forms = []
-        for i in xrange(self.total_form_count()):
+        for i in range(self.total_form_count()):
             self.forms.append(self._construct_form(i, pattern=self.pattern))
 
 
@@ -9115,7 +9123,7 @@ class ProcessWorkFormSet(BaseModelFormSet):
 
     def _construct_forms(self):
         self.forms = []
-        for i in xrange(self.total_form_count()):
+        for i in range(self.total_form_count()):
             self.forms.append(self._construct_form(i, pattern=self.pattern))
 
 
@@ -9672,7 +9680,7 @@ def process_selections(request, rand=0):
             consumed_rts = []
             used_rts = []
             work_rts = []
-            for key, value in dict(rp).iteritems():
+            for key, value in list(dict(rp).items()):
                 if "selected-context-agent" in key:
                     context_agent_id = key.split("~")[1]
                     selected_context_agent = EconomicAgent.objects.get(id=context_agent_id)
@@ -9926,7 +9934,7 @@ def plan_from_recipe(request):
                 start_or_due = date_name_form.cleaned_data["start_date_or_due_date"]
             else:
                 due_date = today
-            for key, value in dict(rp).iteritems():
+            for key, value in list(dict(rp).items()):
                 if "selected-context-agent" in key:
                     context_agent_id = key.split("~")[1]
                     selected_context_agent = EconomicAgent.objects.get(id=context_agent_id)
@@ -11895,10 +11903,10 @@ def value_equation_sandbox(request, value_equation_id=None):
                 sub.rate = 0
                 if sub.distr_amt and sub.quantity:
                     sub.rate = (sub.distr_amt / sub.quantity).quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
-            agent_subtotals = agent_subtotals.values()
+            agent_subtotals = list(agent_subtotals.values())
             agent_subtotals = sorted(agent_subtotals, key=methodcaller('key'))
 
-            details.sort(lambda x, y: cmp(x.from_agent, y.from_agent))
+            details.sort(key=lambda x: x.from_agent)
             event_count = len(details)
 
     else:
@@ -12178,7 +12186,7 @@ def cash_report(request):
             summary[event.account] = event.quantity
 
     balance = starting_balance + in_total - out_total
-    summary_list = sorted(summary.iteritems())
+    summary_list = sorted(summary.items())
 
     return render(request, "valueaccounting/cash_report.html", {
         "events": events,
@@ -12542,17 +12550,17 @@ def simplyframe(data):
         itemid = item.get('@id')
         if itemid:
             items[itemid] = item
-        for vs in item.values():
+        for vs in list(item.values()):
             for v in [vs] if not isinstance(vs, list) else vs:
                 if isinstance(v, dict):
                     refid = v.get('@id')
                     if refid and refid.startswith('_:'):
                         refs.setdefault(refid, (v, []))[1].append(item)
-    for ref, subjects in refs.values():
+    for ref, subjects in list(refs.values()):
         if len(subjects) == 1:
             ref.update(items.pop(ref['@id']))
             del ref['@id']
-    data['@graph'] = items.values()
+    data['@graph'] = list(items.values())
 
 def agent_jsonld(request):
     #test = "{'@context': 'http://json-ld.org/contexts/person.jsonld', '@id': 'http://dbpedia.org/resource/John_Lennon', 'name': 'John Lennon', 'born': '1940-10-09', 'spouse': 'http://dbpedia.org/resource/Cynthia_Lennon' }"
@@ -12647,7 +12655,7 @@ def agent_jsonld_query(request):
     from rdflib import Graph
     from rdflib.serializer import Serializer
     from rdflib import Namespace, URIRef
-    from urllib2 import urlopen
+    from urllib.request import urlopen
     from io import StringIO
 
     g = Graph()
@@ -12657,7 +12665,7 @@ def agent_jsonld_query(request):
     context = dict_data["@context"]
     graph = dict_data["@graph"]
     local_graph = simplejson.dumps(graph)
-    g.parse(StringIO(unicode(local_graph)), context=context, format="json-ld")
+    g.parse(StringIO(str(local_graph)), context=context, format="json-ld")
     local_expanded_json = g.serialize(format="json-ld", indent=4)
     local_expanded_dict = simplejson.loads(local_expanded_json)
 
@@ -12700,12 +12708,12 @@ def agent_jsonld_query(request):
     result += "========== Gory details from http://nrp.webfactional.com/accounting/agent-jsonld/ ==========\n"
 
     for item in local_expanded_dict:
-        for key, value in item.iteritems():
+        for key, value in list(item.items()):
             if type(value) is list:
                 value = value[0]
                 if type(value) is dict:
                     valist = []
-                    for key2, value2 in value.iteritems():
+                    for key2, value2 in list(value.items()):
                         valist.append(": ".join([key2, value2]))
                     value = ", ".join(valist)
             line = ": ".join([key, value])
@@ -12756,7 +12764,7 @@ def validate_resource_type_name(request):
     answer = True
     error = ""
     data = request.GET
-    values = data.values()
+    values = list(data.values())
     if values:
         name = values[0]
         try:
@@ -12841,6 +12849,7 @@ def membership_requests(request):
         #"agent_form": agent_form,
     })
 
+"""
 @login_required
 def membership_request(request, membership_request_id):
     user_agent = get_agent(request)
@@ -12869,6 +12878,7 @@ def membership_request(request, membership_request_id):
         "user_agent": user_agent,
         "nicks": nicks,
     })
+"""
 
 @login_required
 def decline_request(request, membership_request_id):
@@ -12945,7 +12955,7 @@ def send_fdc_welcome(request, agent_id):
 def send_email(request, user, faircoin_address, password):
     protocol = getattr(settings, "DEFAULT_HTTP_PROTOCOL", "http")
     current_site = get_current_site(request)
-    print current_site
+    print(current_site)
     ctx = {
         "user": user,
         "faircoin_address": faircoin_address,

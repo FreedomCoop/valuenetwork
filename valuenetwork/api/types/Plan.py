@@ -18,7 +18,7 @@ class Plan(DjangoObjectType):
 
     class Meta:
         model = Order
-        only_fields = ('id')
+        fields = ('id',)
 
 
     created_by = graphene.Field(lambda: types.Agent)
@@ -43,13 +43,13 @@ class Plan(DjangoObjectType):
 
     is_deletable = graphene.Boolean()
 
-    def resolve_scope(self, args, *rargs):
+    def resolve_scope(self, context, **args): #args, *rargs):
         return formatAgentList(self.plan_context_agents())
 
-    def resolve_created_by(self, args, *rargs):
+    def resolve_created_by(self, context, **args): #args, *rargs):
         return formatAgent(self.created_by_agent)
 
-    def resolve_plan_processes(self, args, context, info):
+    def resolve_plan_processes(self, context, **args): #args, context, info):
         year = args.get('year', None)
         month = args.get('month', None)
         if year and month:
@@ -61,24 +61,24 @@ class Plan(DjangoObjectType):
             return worked_procs
         return self.all_processes()
 
-    def resolve_working_agents(self, args, context, info):
+    def resolve_working_agents(self, context, **args): #args, context, info):
         return formatAgentList(self.all_working_agents())
 
-    def resolve_planned_non_work_inputs(self, args, context, info):
+    def resolve_planned_non_work_inputs(self, context, **args): #args, context, info):
         return self.non_work_incoming_commitments()
 
-    def resolve_planned_outputs(self, args, context, info):
+    def resolve_planned_outputs(self, context, **args): #args, context, info):
         return self.all_outgoing_commitments()
 
-    def resolve_non_work_inputs(self, args, context, info):
+    def resolve_non_work_inputs(self, context, **args): #args, context, info):
         return self.non_work_incoming_events()
 
-    def resolve_outputs(self, args, context, info):
+    def resolve_outputs(self, context, **args): #args, context, info):
         return self.all_outgoing_events()
 
     # returns "planned", "doing", "done"
-    def resolve_kanban_state(self, args, *rargs):
+    def resolve_kanban_state(self, context, **args): #args, *rargs):
         return self.kanban_state()
 
-    def resolve_is_deletable(self, args, *rargs):
+    def resolve_is_deletable(self, context, **args): #args, *rargs):
         return self.is_deletable()

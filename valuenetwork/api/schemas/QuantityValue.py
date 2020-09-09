@@ -10,7 +10,7 @@ from valuenetwork.api.models import QuantityValue as QuantityValueProxy
 from valuenetwork.api.types.QuantityValue import QuantityValue
 
 
-class Query(graphene.AbstractType):
+class Query(object): #graphene.AbstractType):
 
     # define input query params
 

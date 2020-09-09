@@ -1,15 +1,19 @@
 {% extends "work_base.html" %}
 
 {% load i18n %}
+{% load staticfiles %}
 
 {% block head_title %}{% trans "Transactions list" %}: {{ auth_user }}{% endblock %}
 
 {% block extra_head %}
 
 <style>
-    .dt-buttons {
+    /*.dt-buttons {
         float: right;
     }
+    .multiwallet table.dataTable thead .sorting::after, .multiwallet table.dataTable thead .sorting_asc::after, .multiwallet table.dataTable thead .sorting_desc::after {
+        top: 12px;
+    }*/
 </style>
 
 {% endblock %}
@@ -27,10 +31,18 @@
       </div>
     </legend>
     {% include "_messages.html" %}
-    <div class="infobox span2" style="margin-left:0;">
+    <div class="container">
+    <div class="row">
+    <div class="infobox span2 col-4" style="">
+        <h4>
+            {% trans "Totals:" %}
+        </h4>
       {% for bal in balance_clean %}{{ bal }}<br />{% endfor %}
     </div>
-    <br /><br /><br />
+    </div>
+    </div>
+
+    <div class="multiwallet">
     <table id="listable" class="table table-bordered table-hover table-condensed ">
       <caption style="text-align:left; margin-bottom: 5px;">{{ table_caption }}</caption>
       <thead>
@@ -55,6 +67,7 @@
             </tr>
           {% endfor %}
     </table>
+    </div>
     <div>
       {% if paginator.previous %}
         <a class="btn" href="{% url 'multicurrency_history' agent_id=agent.id oauth_id=oauth_id %}?limit={{ paginator.previous.limit }}&offset={{ paginator.previous.offset }}">&#60;&#60;&#32;newer movements</a>
@@ -66,16 +79,21 @@
         <a class="btn" href="{% url 'multicurrency_history' agent_id=agent.id oauth_id=oauth_id %}?limit={{ paginator.next.limit }}&offset={{ paginator.next.offset }}">older movements&#32;&#62;&#62;</a>
       {% endif %}
     </div>
+    <p>
+        &nbsp;
+    </p>
   </div>
 {% endblock %}
 
 {% block extra_script %}
 
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs/jszip-2.5.0/dt-1.10.18/b-1.5.2/b-colvis-1.5.1/b-html5-1.5.2/r-2.2.2/datatables.min.css"/>
+<script type="text/javascript" charset="utf8" src="{% static "js/jquery.expander.min.js" %}"></script>
 
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/v/bs/jszip-2.5.0/dt-1.10.18/b-1.5.2/b-colvis-1.5.1/b-html5-1.5.2/r-2.2.2/datatables.min.js"></script>
+<link rel="stylesheet" type="text/css" href="{% static 'css/datatables.min.css' %}"/>
+
+<script type="text/javascript" src="{% static 'js/pdfmake.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/vfs_fonts.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/datatables.min.js' %}"></script>
 
 {% endblock %}
 
@@ -92,11 +110,11 @@
             autoWidth: true,
             paging:   false,
             //ordering: false,
-            info:     false,
+            //info:     false,
             //order: [[1, 'desc']],
-            dom: '<ft<"right"B>i>', //'B<"clear">lfrtip',
+            dom: '<"row"<"col"ir><"col"f><"col"B>><"row bigbox"t><"row"<"col"l><"col"p>>', //'B<"clear">lfrtip',
             buttons: [
-                //'colvis',
+                'colvis',
                 {
                     extend: 'pdf',
                     exportOptions: {
@@ -109,8 +127,36 @@
                         columns: ':visible'
                     }
                 },
+            ],
+            columns: [
+                null, // id
+                null, // created
+                null, // updated
+                {"className": "textlong" }, // concept
+                null, // method
+                null, // IO
+                null, // account or address
+                null, // amount
+                null, // unit
+                { "className": "textlong longtext" }, // status
             ]
         });
+
+        function update_longs(){
+            $('.textlong').each(function(e) {
+                $(this).expander({
+                        slicePoint:       30,  // default is 100
+                        expandSpeed: 0,
+                        expandEffect: 'show',
+                        collapseSpeed: 0,
+                        collapseEffect: 'hide',
+                        expandPrefix:     ' ', // default is '... '
+                        expandText:       '&nbsp; <span style="font-weight:bold">+</span>', // default is 'read more'
+                        userCollapseText: '&nbsp; <span style="font-weight:bold">&ndash;</span>'  // default is 'read less'
+                });
+            });
+        };
+        update_longs();
     });
 </script>
 

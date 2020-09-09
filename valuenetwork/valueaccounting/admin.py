@@ -209,8 +209,8 @@ class EconomicAgentAdmin(TranslationAdmin):
 admin.site.register(EconomicAgent, EconomicAgentAdmin)
 
 class AgentAssociationAdmin(admin.ModelAdmin):
-    list_display = ('representation', 'association_type', 'state', 'is_associate', 'has_associate')
-    list_filter = ['association_type', 'state', 'is_associate', 'has_associate']
+    list_display = ('id', 'representation', 'association_type', 'state', 'is_associate', 'has_associate')
+    list_filter = ['association_type', 'state', 'is_associate'] #, 'has_associate']
 
 admin.site.register(AgentAssociation, AgentAssociationAdmin)
 
@@ -330,7 +330,7 @@ admin.site.register(Process, ProcessAdmin)
 class CommitmentAdmin(admin.ModelAdmin):
     date_hierarchy = 'due_date'
     list_display = ('id', 'resource_type', 'quantity', 'unit_of_quantity', 'event_type', 'due_date', 'finished', 'from_agent', 'to_agent', 'process', 'exchange', 'context_agent', 'order', 'independent_demand',
-        'description')
+        ) #'description')
     list_filter = ['independent_demand', 'event_type', 'resource_type', 'from_agent', 'context_agent']
     search_fields = ['event_type__name', 'from_agent__name', 'to_agent__name', 'resource_type__name']
 
@@ -344,7 +344,7 @@ class ClaimEvent2Inline(admin.TabularInline):
 class EconomicEventAdmin(admin.ModelAdmin):
     date_hierarchy = 'event_date'
     list_display = ('id', 'event_type', 'event_date', 'from_agent', 'to_agent', 'context_agent',
-        'process', 'exchange', 'resource_type', 'quantity', 'unit_of_quantity', 'description',)
+        'process', 'exchange', 'transfer', 'resource_type', 'quantity', 'unit_of_quantity', 'description',)
     list_filter = ['event_type', 'context_agent', 'resource_type', 'from_agent',]
     search_fields = ['description', 'process__name', 'event_type__name', 'from_agent__name', 'to_agent__name',
         'resource_type__name',]

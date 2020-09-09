@@ -14,13 +14,13 @@ from .Auth import AuthedInputMeta, AuthedMutation
 from django.core.exceptions import PermissionDenied, ValidationError
 
 
-class Query(graphene.AbstractType):
+class Query(object): #graphene.AbstractType):
 
     economic_event = graphene.Field(EconomicEvent,
                                     id=graphene.Int())
 
     all_economic_events = graphene.List(EconomicEvent)
-    
+
     filtered_economic_events = graphene.List(EconomicEvent,
                                              provider_id=graphene.Int(),
                                              receiver_id=graphene.Int(),
@@ -227,7 +227,7 @@ class CreateEconomicEvent(AuthedMutation):
         user_agent = AgentUser.objects.get(user=context.user).agent
         is_authorized = user_agent.is_authorized(object_to_mutate=economic_event)
         if is_authorized:
-            economic_event.save_api(user=context.user, create_resource=create_resource)                
+            economic_event.save_api(user=context.user, create_resource=create_resource)
             #find the first "owner" type resource-agent role, use it for a relationship so inventory will show up #TODO: make more coherent when VF does so
             if create_resource:
                 roles = AgentResourceRoleType.objects.filter(is_owner=True)

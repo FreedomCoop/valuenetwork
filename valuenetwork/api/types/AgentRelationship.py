@@ -23,7 +23,7 @@ class AgentRelationshipRole(DjangoObjectType):
 
     class Meta:
         model = AgentAssociationType
-        only_fields = ('id', 'label', 'inverse_label')
+        fields = ('id', 'label', 'inverse_label')
 
     def resolve_category(self, args, *rargs):
         return self.category
@@ -38,7 +38,7 @@ class AgentRelationship(DjangoObjectType):
 
     class Meta:
         model = AgentAssociation
-        only_fields = ('id')
+        fields = ('id',)
 
     def resolve_subject(self, args, *rargs):
         return formatAgent(self.subject)

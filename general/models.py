@@ -1,5 +1,5 @@
 #encoding=utf-8
-from __future__ import print_function
+
 
 from django.utils.safestring import mark_safe
 from django.db import models
@@ -40,8 +40,8 @@ def erase_id_link(field, id):
 #     C O N C E P T S - (Concepts, Ideas...)
 @python_2_unicode_compatible
 class Concept(MPTTModel):    # Abstract
-    name = models.CharField(unique=True, verbose_name=_(u"Name"), max_length=200, help_text=_(u"The name of the Concept"), default="")
-    description = models.TextField(blank=True, verbose_name=_(u"Description"))
+    name = models.CharField(unique=True, verbose_name=_("Name"), max_length=200, help_text=_("The name of the Concept"), default="")
+    description = models.TextField(blank=True, verbose_name=_("Description"))
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children', on_delete=models.CASCADE)
 
     def __str__(self):
@@ -49,20 +49,20 @@ class Concept(MPTTModel):    # Abstract
 
     class Meta:
         abstract = True
-        verbose_name = _(u"Concept")
-        verbose_name_plural = _(u"c- Concepts")
+        verbose_name = _("Concept")
+        verbose_name_plural = _("c- Concepts")
 
 
 
 @python_2_unicode_compatible
 class Type(Concept):    # Create own ID's (TREE)
     #concept = models.OneToOneField('Concept', primary_key=True, parent_link=True, on_delete=models.CASCADE)
-    clas = models.CharField(blank=True, verbose_name=_(u"Class"), max_length=200,
-                                                    help_text=_(u"Django model or python class associated to the Type"))
+    clas = models.CharField(blank=True, verbose_name=_("Class"), max_length=200,
+                                                    help_text=_("Django model or python class associated to the Type"))
   #types = TreeManyToManyField('self', through='rel_Type_Types', verbose_name=_(u"Related Types"), blank=True)
 
     class Meta:
-        verbose_name = _(u"c- Type")
+        verbose_name = _("c- Type")
         #verbose_name_plural = _(u"c- Types")
 
     def __str__(self):
@@ -115,8 +115,8 @@ class Being(models.Model):    # Abstract
 class Being_Type(Type):
     typ = models.OneToOneField('Type', primary_key=True, parent_link=True, on_delete=models.CASCADE)
     class Meta:
-        verbose_name= _(u"Type of entity")
-        verbose_name_plural = _(u"e--> Types of entities")
+        verbose_name= _("Type of entity")
+        verbose_name_plural = _("e--> Types of entities")
 
 """
 @python_2_unicode_compatible
@@ -166,7 +166,7 @@ class Human(Being):    # Create own ID's
     self_link = property (_selflink)
     def _ic_membership(self):
         try:
-            #print self.ic_membership_set.all()
+            #print(self.ic_membership_set.all())
             if hasattr(self, 'ic_person_membership_set'):
                 ic_ms = self.ic_person_membership_set.all()
                 out = ul_tag
@@ -209,7 +209,7 @@ class Human(Being):    # Create own ID's
         if not 'rel_tit' in globals():
             rel_tit = Relation.objects.get(clas='holder')
 
-        #print 'I N I T     H U M A N :    '+self.name
+        #print('I N I T     H U M A N :    '+self.name)
 
 
         '''if hasattr(self, 'accountsCes') and self.accountsCes.count() > 0:
@@ -231,7 +231,7 @@ class Human(Being):    # Create own ID's
             if recrels.count() == 0:
                 for acc in self.accountsCrypto.all():
                     newrec, created = rel_Human_Records.objects.get_or_create(human=self, record=acc, relation=rel_tit)
-                    print '- new_REC acc_Crypto: CREATED:'+str(created)+' :: '+str(newrec)
+                    print('- new_REC acc_Crypto: CREATED:'+str(created)+' :: '+str(newrec))
     '''
 
 @python_2_unicode_compatible
@@ -313,8 +313,8 @@ class Project(MPTTModel, Human):
 class Project_Type(Being_Type):
     projectType_being_type = models.OneToOneField('Being_Type', primary_key=True, parent_link=True, on_delete=models.CASCADE)
     class Meta:
-        verbose_name = _(u"Type of Project")
-        verbose_name_plural = _(u"e-> Types of Projects")
+        verbose_name = _("Type of Project")
+        verbose_name_plural = _("e-> Types of Projects")
 
 
 """
@@ -330,8 +330,8 @@ class Company(Human):
 class Company_Type(Being_Type):
     companyType_being_type = models.OneToOneField('Being_Type', primary_key=True, parent_link=True, on_delete=models.CASCADE)
     class Meta:
-        verbose_name = _(u"Type of Company")
-        verbose_name_plural = _(u"e-> Types of Companies")
+        verbose_name = _("Type of Company")
+        verbose_name_plural = _("e-> Types of Companies")
 
 
 """
@@ -520,10 +520,10 @@ class rel_Address_Jobs(models.Model):
 #     A R T S - (Verbs, Relacions, Arts, Oficis, Sectors...)
 @python_2_unicode_compatible
 class Art(MPTTModel):    # Abstract
-    name = models.CharField(unique=True, max_length=200, verbose_name=_(u"Name"), help_text=_(u"The name of the Art"))
-    verb = models.CharField(max_length=200, blank=True, verbose_name=_(u"Verb"), help_text=_(u"The verb of the action, infinitive"))
-    gerund = models.CharField(max_length=200, blank=True, verbose_name=_(u"Gerund"), help_text=_(u"The verb in gerund, present"))
-    description = models.TextField(blank=True, verbose_name=_(u"Description"))
+    name = models.CharField(unique=True, max_length=200, verbose_name=_("Name"), help_text=_("The name of the Art"))
+    verb = models.CharField(max_length=200, blank=True, verbose_name=_("Verb"), help_text=_("The verb of the action, infinitive"))
+    gerund = models.CharField(max_length=200, blank=True, verbose_name=_("Gerund"), help_text=_("The verb in gerund, present"))
+    description = models.TextField(blank=True, verbose_name=_("Description"))
 
     parent = TreeForeignKey('self', null=True, blank=True, related_name='subarts', on_delete=models.SET_NULL)
 
@@ -537,18 +537,18 @@ class Art(MPTTModel):    # Abstract
 
         abstract = True
 
-        verbose_name = _(u"Art")
-        verbose_name_plural = _(u"a- Arts")
+        verbose_name = _("Art")
+        verbose_name_plural = _("a- Arts")
 
 
 @python_2_unicode_compatible
 class Relation(Art):    # Create own ID's (TREE)
     #art = models.OneToOneField('Art', primary_key=True, parent_link=True, on_delete=models.CASCADE)
-    clas = models.CharField(blank=True, verbose_name=_(u"Class"), max_length=50,
-                                                    help_text=_(u"Django model or python class associated to the Relation"))
+    clas = models.CharField(blank=True, verbose_name=_("Class"), max_length=50,
+                                                    help_text=_("Django model or python class associated to the Relation"))
     class Meta:
-        verbose_name= _(u'Relation')
-        verbose_name_plural= _(u'a- Relations')
+        verbose_name= _('Relation')
+        verbose_name_plural= _('a- Relations')
     def __str__(self):
         if self.verb:
             if self.clas is None or self.clas == '':
@@ -565,7 +565,7 @@ class Relation(Art):    # Create own ID's (TREE)
 @python_2_unicode_compatible
 class Job(Art):        # Create own ID's (TREE)
     #art = models.OneToOneField('Art', primary_key=True, parent_link=True, on_delete=models.CASCADE)
-    clas = models.CharField(blank=True, verbose_name=_(u"Clas"), max_length=50, help_text=_(u"Django model or python class associated to the Job"))
+    clas = models.CharField(blank=True, verbose_name=_("Clas"), max_length=50, help_text=_("Django model or python class associated to the Job"))
     jobs = models.ManyToManyField(
         'self',
         through='rel_Job_Jobs',
@@ -575,8 +575,8 @@ class Job(Art):        # Create own ID's (TREE)
         verbose_name=_("related Skills"))
 
     class Meta:
-        verbose_name= _(u'Skill')
-        verbose_name_plural= _(u'a- Skills')
+        verbose_name= _('Skill')
+        verbose_name_plural= _('a- Skills')
     def __str__(self):
         if self.clas is None or self.clas == '':
             return self.name#+', '+self.verb
@@ -590,8 +590,8 @@ class rel_Job_Jobs(models.Model):
     job2 = TreeForeignKey('Job', on_delete=models.CASCADE, related_name="rel_jobs2") #, verbose_name=_(u"related Jobs")
     relation = TreeForeignKey('Relation', on_delete=models.SET_NULL, related_name='jo_job+', blank=True, null=True)
     class Meta:
-        verbose_name = _(u"J_job")
-        verbose_name_plural = _(u"Related jobs")
+        verbose_name = _("J_job")
+        verbose_name_plural = _("Related jobs")
     def __str__(self):
         if self.relation.gerund is None or self.relation.gerund == '':
             return self.job1.__str__()
@@ -606,7 +606,7 @@ class rel_Job_Jobs(models.Model):
 
 @python_2_unicode_compatible
 class Space(models.Model):    # Abstact
-    name = models.CharField(verbose_name=_(u"Name"), max_length=100, help_text=_(u"The name of the Space"))
+    name = models.CharField(verbose_name=_("Name"), max_length=100, help_text=_("The name of the Space"))
     #space_type = TreeForeignKey('Space_Type', blank=True, null=True, verbose_name=_(u"Type of space"), on_delete=models.SET_NULL)
     #m2 = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
@@ -620,45 +620,45 @@ class Space_Type(Type):
     typ = models.OneToOneField('Type', primary_key=True, parent_link=True, on_delete=models.CASCADE)
 
     class Meta:
-        verbose_name= _(u"Type of Space")
-        verbose_name_plural= _(u"s--> Types of Spaces")
+        verbose_name= _("Type of Space")
+        verbose_name_plural= _("s--> Types of Spaces")
 
 
 @python_2_unicode_compatible
 class Address(Space):    # Create own ID's
     #space = models.OneToOneField('Space', primary_key=True, parent_link=True, on_delete=models.CASCADE)
-    address_type = TreeForeignKey('Address_Type', blank=True, null=True, verbose_name=_(u"Type of address"), on_delete=models.SET_NULL)
-    p_address = models.CharField(max_length=200, verbose_name=_(u"Address"), help_text=_(u"Postal address able to receive by post"))
-    town = models.CharField(max_length=150, verbose_name=_(u"Town"), help_text=_(u"Town or City"))
-    postalcode = models.CharField(max_length=5, blank=True, null=True, verbose_name=_(u"Postal/Zip code"))
-    region = TreeForeignKey('Region', blank=True, null=True, related_name='rel_addresses', verbose_name=_(u"Region"), on_delete=models.SET_NULL)
+    address_type = TreeForeignKey('Address_Type', blank=True, null=True, verbose_name=_("Type of address"), on_delete=models.SET_NULL)
+    p_address = models.CharField(max_length=200, verbose_name=_("Address"), help_text=_("Postal address able to receive by post"))
+    town = models.CharField(max_length=150, verbose_name=_("Town"), help_text=_("Town or City"))
+    postalcode = models.CharField(max_length=5, blank=True, null=True, verbose_name=_("Postal/Zip code"))
+    region = TreeForeignKey('Region', blank=True, null=True, related_name='rel_addresses', verbose_name=_("Region"), on_delete=models.SET_NULL)
 
     #telephone = models.CharField(max_length=20, blank=True, verbose_name=_(u"Telephone"))
-    ic_larder = models.BooleanField(default=False, verbose_name=_(u"Is a Larder?"))
+    ic_larder = models.BooleanField(default=False, verbose_name=_("Is a Larder?"))
     #main_address = models.BooleanField(default=False, verbose_name=_(u"Main address?"))
-    size = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, verbose_name=_(u'Size'), help_text=_(u"Number of units (accept 2 decimals)"))
-    size_unit = models.ForeignKey('Unit', blank=True, null=True, verbose_name=_(u"Unit of measure"), on_delete=models.SET_NULL)
-    longitude = models.IntegerField(blank=True, null=True, verbose_name=_(u"Longitude (geo)"))
-    latitude = models.IntegerField(blank=True, null=True, verbose_name=_(u"Latitude (geo)"))
+    size = models.DecimalField(max_digits=20, decimal_places=2, blank=True, null=True, verbose_name=_('Size'), help_text=_("Number of units (accept 2 decimals)"))
+    size_unit = models.ForeignKey('Unit', blank=True, null=True, verbose_name=_("Unit of measure"), on_delete=models.SET_NULL)
+    longitude = models.IntegerField(blank=True, null=True, verbose_name=_("Longitude (geo)"))
+    latitude = models.IntegerField(blank=True, null=True, verbose_name=_("Latitude (geo)"))
 
-    jobs = models.ManyToManyField('Job', related_name='addresses', blank=True, verbose_name=_(u"Related Jobs"))
+    jobs = models.ManyToManyField('Job', related_name='addresses', blank=True, verbose_name=_("Related Jobs"))
 
-    description = models.TextField(blank=True, null=True, verbose_name=_(u"Description of the Address"), help_text=_(u"Exact localization, indications to arrive or comments"))
+    description = models.TextField(blank=True, null=True, verbose_name=_("Description of the Address"), help_text=_("Exact localization, indications to arrive or comments"))
 
     def _main_addr_of(self):
         '''rel = rel_Human_Addresses.objects.filter(address=self, main_address=True).first() #TODO accept various and make a list
         if rel:
             return rel.human
         else:'''
-        return _(u'nobody')
+        return _('nobody')
     _main_addr_of.allow_tags = True
-    _main_addr_of.short_description = _(u"Main address of")
+    _main_addr_of.short_description = _("Main address of")
     main_addr_of = property(_main_addr_of)
 
 
     class Meta:
-        verbose_name= _(u'Address')
-        verbose_name_plural= _(u's- Addresses')
+        verbose_name= _('Address')
+        verbose_name_plural= _('s- Addresses')
     def __str__(self):
         return self.name+' ('+self.p_address+' - '+self.town+')'
 
@@ -682,27 +682,27 @@ class Address(Space):    # Create own ID's
 class Address_Type(Space_Type):
     addrTypeSpace_type = models.OneToOneField('Space_Type', primary_key=True, parent_link=True, on_delete=models.CASCADE)
     class Meta:
-        verbose_name = _(u"Type of Address")
-        verbose_name_plural = _(u"s-> Types of Addresses")
+        verbose_name = _("Type of Address")
+        verbose_name_plural = _("s-> Types of Addresses")
 
 
 
 class Region(MPTTModel, Space):    # Create own ID's (TREE)
     #space = models.OneToOneField('Space', primary_key=True, parent_link=True, on_delete=models.CASCADE)
-    region_type = TreeForeignKey('Region_Type', blank=True, null=True, verbose_name=_(u"Type of region"), on_delete=models.SET_NULL)
+    region_type = TreeForeignKey('Region_Type', blank=True, null=True, verbose_name=_("Type of region"), on_delete=models.SET_NULL)
     parent = TreeForeignKey('self', null=True, blank=True, related_name='subregions', on_delete=models.SET_NULL)
 
-    description = models.TextField(blank=True, null=True, verbose_name=_(u"Description of the Region"))
+    description = models.TextField(blank=True, null=True, verbose_name=_("Description of the Region"))
 
     class Meta:
-        verbose_name= _(u'Region')
-        verbose_name_plural= _(u's- Regions')
+        verbose_name= _('Region')
+        verbose_name_plural= _('s- Regions')
 
 class Region_Type(Space_Type):
     regionType_space_type = models.OneToOneField('Space_Type', primary_key=True, parent_link=True, on_delete=models.CASCADE)
     class Meta:
-        verbose_name = _(u"Type of Region")
-        verbose_name_plural = _(u"s-> Types of Regions")
+        verbose_name = _("Type of Region")
+        verbose_name_plural = _("s-> Types of Regions")
 
 
 
@@ -710,9 +710,9 @@ class Region_Type(Space_Type):
 #     A R T W O R K S - (Obres, Coses, Registres, Documents...)
 @python_2_unicode_compatible
 class Artwork(models.Model):    # Abstract
-    name = models.CharField(verbose_name=_(u"Name"), max_length=200, blank=True, null=True) #, help_text=_(u"The name of the artwork (Record, Unit, Thing)"))
+    name = models.CharField(verbose_name=_("Name"), max_length=200, blank=True, null=True) #, help_text=_(u"The name of the artwork (Record, Unit, Thing)"))
     #artwork_type = TreeForeignKey('Artwork_Type', blank=True, verbose_name=_(u"Type of Artwork"), on_delete=models.SET_NULL)
-    description = models.TextField(blank=True, null=True, verbose_name=_(u"Description"))
+    description = models.TextField(blank=True, null=True, verbose_name=_("Description"))
 
     def __str__(self):
         return self.name
@@ -723,8 +723,8 @@ class Artwork(models.Model):    # Abstract
 class Artwork_Type(Type):
     typ = models.OneToOneField('Type', primary_key=True, parent_link=True, on_delete=models.CASCADE)
     class Meta:
-        verbose_name = _(u"Type of Artwork")
-        verbose_name_plural = _(u"o--> Types of Artworks")
+        verbose_name = _("Type of Artwork")
+        verbose_name_plural = _("o--> Types of Artworks")
 
 
 
@@ -803,8 +803,8 @@ class Nonmaterial(Artwork):    # Create own ID's
 class Nonmaterial_Type(Artwork_Type):
     nonmaterialType_artwork_type = models.OneToOneField('Artwork_Type', primary_key=True, parent_link=True, on_delete=models.CASCADE)
     class Meta:
-        verbose_name= _(u"Type of Non-material artwork")
-        verbose_name_plural= _(u"o-> Types of Non-material artworks")
+        verbose_name= _("Type of Non-material artwork")
+        verbose_name_plural= _("o-> Types of Non-material artworks")
 
 
 """
@@ -938,8 +938,8 @@ class Material(Artwork): # Create own ID's
 class Material_Type(Artwork_Type):
     materialType_artwork_type = models.OneToOneField('Artwork_Type', primary_key=True, parent_link=True, on_delete=models.CASCADE)
     class Meta:
-        verbose_name= _(u"Type of Material artwork")
-        verbose_name_plural= _(u"o-> Types of Material artworks")
+        verbose_name= _("Type of Material artwork")
+        verbose_name_plural= _("o-> Types of Material artworks")
 
 
 """
@@ -970,17 +970,17 @@ from valuenetwork.valueaccounting.models import Unit as Ocp_Unit
 
 @python_2_unicode_compatible
 class Unit(Artwork):    # Create own ID's
-    unit_type = TreeForeignKey('Unit_Type', blank=True, null=True, verbose_name=_(u"Type of Unit"), on_delete=models.SET_NULL)
-    code = models.CharField(max_length=4, verbose_name=_(u"Code or Symbol"))
+    unit_type = TreeForeignKey('Unit_Type', blank=True, null=True, verbose_name=_("Type of Unit"), on_delete=models.SET_NULL)
+    code = models.CharField(max_length=4, verbose_name=_("Code or Symbol"))
 
-    region = TreeForeignKey('Region', blank=True, null=True, verbose_name=_(u"related use Region"), on_delete=models.SET_NULL)
+    region = TreeForeignKey('Region', blank=True, null=True, verbose_name=_("related use Region"), on_delete=models.SET_NULL)
     #human = models.ForeignKey('Human', blank=True, null=True, verbose_name=_(u"related Entity"))
 
-    ocp_unit = models.OneToOneField(Ocp_Unit, blank=True, null=True, verbose_name=_(u"OCP Unit"), related_name="gen_unit", on_delete=models.SET_NULL)
+    ocp_unit = models.OneToOneField(Ocp_Unit, blank=True, null=True, verbose_name=_("OCP Unit"), related_name="gen_unit", on_delete=models.SET_NULL)
 
     class Meta:
-        verbose_name= _(u'Unit')
-        verbose_name_plural= _(u'o- Units')
+        verbose_name= _('Unit')
+        verbose_name_plural= _('o- Units')
 
     def __str__(self):
         if hasattr(self, 'ocp_unit') and self.ocp_unit:
@@ -992,8 +992,8 @@ class Unit_Type(Artwork_Type):
     unitType_artwork_type = models.OneToOneField('Artwork_Type', primary_key=True, parent_link=True, on_delete=models.CASCADE)
 
     class Meta:
-        verbose_name = _(u"Type of Unit")
-        verbose_name_plural = _(u"o-> Types of Units")
+        verbose_name = _("Type of Unit")
+        verbose_name_plural = _("o-> Types of Units")
 
 
 
@@ -1001,12 +1001,12 @@ class Unit_Type(Artwork_Type):
 
 @python_2_unicode_compatible
 class Record(Artwork):    # Create own ID's
-    record_type = TreeForeignKey('Record_Type', blank=True, null=True, verbose_name=_(u"Type of Record"), on_delete=models.SET_NULL)
+    record_type = TreeForeignKey('Record_Type', blank=True, null=True, verbose_name=_("Type of Record"), on_delete=models.SET_NULL)
     changed_date = models.DateTimeField(auto_now=True, blank=True, null=True, editable=False)
 
     class Meta:
-        verbose_name= _(u'Record')
-        verbose_name_plural= _(u'o- Records')
+        verbose_name= _('Record')
+        verbose_name_plural= _('o- Records')
     def __str__(self):
         if self.record_type is None or self.record_type == '':
             return self.name
@@ -1023,20 +1023,20 @@ class Record(Artwork):    # Create own ID's
 class Record_Type(Artwork_Type):
     recordType_artwork_type = models.OneToOneField('Artwork_Type', primary_key=True, parent_link=True, on_delete=models.CASCADE)
     class Meta:
-        verbose_name= _(u'Type of Record')
-        verbose_name_plural= _(u'o-> Types of Records')
+        verbose_name= _('Type of Record')
+        verbose_name_plural= _('o-> Types of Records')
 
 
 @python_2_unicode_compatible
 class UnitRatio(Record):
     record = models.OneToOneField('Record', primary_key=True, parent_link=True, on_delete=models.CASCADE)
 
-    in_unit = models.ForeignKey('Unit', related_name='ratio_in', verbose_name=_(u"in Unit"), on_delete=models.CASCADE)
-    rate = models.DecimalField(max_digits=50, decimal_places=9, verbose_name=_(u"Ratio multiplier"), default=Decimal("0.0"))
-    out_unit = models.ForeignKey('Unit', related_name='ratio_out', verbose_name=_(u"out Unit"), on_delete=models.CASCADE)
+    in_unit = models.ForeignKey('Unit', related_name='ratio_in', verbose_name=_("in Unit"), on_delete=models.CASCADE)
+    rate = models.DecimalField(max_digits=50, decimal_places=9, verbose_name=_("Ratio multiplier"), default=Decimal("0.0"))
+    out_unit = models.ForeignKey('Unit', related_name='ratio_out', verbose_name=_("out Unit"), on_delete=models.CASCADE)
     class Meta:
-        verbose_name = _(u"Equivalence between Units")
-        verbose_name_plural = _(u"o- Equivalences between Units")
+        verbose_name = _("Equivalence between Units")
+        verbose_name_plural = _("o- Equivalences between Units")
     def __str__(self):
         return self.in_unit.name+' * '+str(self.rate)+' = '+self.out_unit.name
 

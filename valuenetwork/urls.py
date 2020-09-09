@@ -28,7 +28,7 @@ urlpatterns = [
     url(r"^api/", include("valuenetwork.api.urls")),
     #url(r'^report_builder/', include('report_builder.urls')),
     url(r'^comments/', include('django_comments.urls')),
-    url(r'^membership/$', work.views.membership_request, name="membership_request"),
+    #url(r'^membership/$', work.views.membership_request, name="membership_request"),
     url(r'^membershipthanks/$', TemplateView.as_view(template_name='work/membership_thanks.html'), name='membership_thanks'),
     url(r'^captcha/', include('captcha.urls')),
     url(r'^i18n/', include('django.conf.urls.i18n')),

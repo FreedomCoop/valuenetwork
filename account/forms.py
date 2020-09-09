@@ -1,21 +1,34 @@
 import re
-
-try:
-    from collections import OrderedDict
-except ImportError:
-    OrderedDict = None
+from collections import OrderedDict
 
 from django import forms
-from django.utils.translation import ugettext_lazy as _
-
 from django.contrib import auth
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+from django.utils.encoding import force_text
+from django.utils.translation import gettext_lazy as _
 
 from account.conf import settings
+from account.hooks import hookset
 from account.models import EmailAddress
-
+from account.utils import get_user_lookup_kwargs
 
 alnum_re = re.compile(r"^\w+$")
+
+
+class PasswordField(forms.CharField):
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", forms.PasswordInput(render_value=False))
+        self.strip = kwargs.pop("strip", True)
+        super(PasswordField, self).__init__(*args, **kwargs)
+
+    def to_python(self, value):
+        if value in self.empty_values:
+            return ""
+        value = force_text(value)
+        if self.strip:
+            value = value.strip()
+        return value
 
 
 class SignupForm(forms.Form):
@@ -26,15 +39,18 @@ class SignupForm(forms.Form):
         widget=forms.TextInput(),
         required=True
     )
-    password = forms.CharField(
+    email = forms.EmailField(
+        label=_("Email"),
+        widget=forms.TextInput(), required=True
+    )
+    password = PasswordField(
         label=_("Password"),
-        widget=forms.PasswordInput(render_value=False)
+        strip=settings.ACCOUNT_PASSWORD_STRIP,
     )
-    password_confirm = forms.CharField(
+    password_confirm = PasswordField(
         label=_("Password (again)"),
-        widget=forms.PasswordInput(render_value=False)
+        strip=settings.ACCOUNT_PASSWORD_STRIP,
     )
-    email = forms.EmailField(widget=forms.TextInput(), required=True)
     code = forms.CharField(
         max_length=64,
         required=False,
@@ -44,7 +60,11 @@ class SignupForm(forms.Form):
     def clean_username(self):
         if not alnum_re.search(self.cleaned_data["username"]):
             raise forms.ValidationError(_("Usernames can only contain letters, numbers and underscores."))
-        qs = User.objects.filter(username__iexact=self.cleaned_data["username"])
+        User = get_user_model()
+        lookup_kwargs = get_user_lookup_kwargs({
+            "{username}__iexact": self.cleaned_data["username"]
+        })
+        qs = User.objects.filter(**lookup_kwargs)
         if not qs.exists():
             return self.cleaned_data["username"]
         raise forms.ValidationError(_("This username is already taken. Please choose another."))
@@ -65,15 +85,15 @@ class SignupForm(forms.Form):
 
 class LoginForm(forms.Form):
 
-    user = None
-    password = forms.CharField(
+    password = PasswordField(
         label=_("Password"),
-        widget=forms.PasswordInput(render_value=False)
+        strip=settings.ACCOUNT_PASSWORD_STRIP,
     )
     remember = forms.BooleanField(
-        label = _("Remember Me"),
-        required = False
+        label=_("Remember Me"),
+        required=False
     )
+    user = None
 
     def clean(self):
         if self._errors:
@@ -89,10 +109,7 @@ class LoginForm(forms.Form):
         return self.cleaned_data
 
     def user_credentials(self):
-        return {
-            "username": self.cleaned_data[self.identifier_field],
-            "password": self.cleaned_data["password"],
-        }
+        return hookset.get_user_credentials(self, self.identifier_field)
 
 
 class LoginUsernameForm(LoginForm):
@@ -104,7 +121,7 @@ class LoginUsernameForm(LoginForm):
     def __init__(self, *args, **kwargs):
         super(LoginUsernameForm, self).__init__(*args, **kwargs)
         field_order = ["username", "password", "remember"]
-        if not OrderedDict or hasattr(self.fields, "keyOrder"):
+        if hasattr(self.fields, "keyOrder"):
             self.fields.keyOrder = field_order
         else:
             self.fields = OrderedDict((k, self.fields[k]) for k in field_order)
@@ -118,7 +135,11 @@ class LoginEmailForm(LoginForm):
 
     def __init__(self, *args, **kwargs):
         super(LoginEmailForm, self).__init__(*args, **kwargs)
-        self.fields.keyOrder = ["email", "password", "remember"]
+        field_order = ["email", "password", "remember"]
+        if hasattr(self.fields, "keyOrder"):
+            self.fields.keyOrder = field_order
+        else:
+            self.fields = OrderedDict((k, self.fields[k]) for k in field_order)
 
 
 class ChangePasswordForm(forms.Form):
@@ -151,10 +172,6 @@ class ChangePasswordForm(forms.Form):
                 raise forms.ValidationError(_("You must type the same password each time."))
         return self.cleaned_data["password_new_confirm"]
 
-    def save(self, user):
-        user.set_password(self.cleaned_data["password_new"])
-        user.save()
-
 
 class PasswordResetForm(forms.Form):
 
@@ -163,20 +180,19 @@ class PasswordResetForm(forms.Form):
     def clean_email(self):
         value = self.cleaned_data["email"]
         if not EmailAddress.objects.filter(email__iexact=value).exists():
-            if not User.objects.filter(email__iexact=value).exists():
-                raise forms.ValidationError(_("Email address can not be found."))
+            raise forms.ValidationError(_("Email address can not be found."))
         return value
 
 
 class PasswordResetTokenForm(forms.Form):
 
     password = forms.CharField(
-        label = _("New Password"),
-        widget = forms.PasswordInput(render_value=False)
+        label=_("New Password"),
+        widget=forms.PasswordInput(render_value=False)
     )
     password_confirm = forms.CharField(
-        label = _("New Password (again)"),
-        widget = forms.PasswordInput(render_value=False)
+        label=_("New Password (again)"),
+        widget=forms.PasswordInput(render_value=False)
     )
 
     def clean_password_confirm(self):
@@ -192,15 +208,13 @@ class SettingsForm(forms.Form):
     timezone = forms.ChoiceField(
         label=_("Timezone"),
         choices=[("", "---------")] + settings.ACCOUNT_TIMEZONES,
-        required=False,
-        widget=forms.Select(attrs={'class': 'chzn-select'})
+        required=False
     )
     if settings.USE_I18N:
         language = forms.ChoiceField(
             label=_("Language"),
             choices=settings.ACCOUNT_LANGUAGES,
-            required=False,
-            widget=forms.Select(attrs={'class': 'chzn-select'})
+            required=False
         )
 
     def clean_email(self):

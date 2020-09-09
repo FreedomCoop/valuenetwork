@@ -14,7 +14,7 @@ class Place(DjangoObjectType):
 
     class Meta:
         model = Location
-        only_fields = ('id', 'name', 'address', 'latitude', 'longitude')
+        fields = ('id', 'name', 'address', 'latitude', 'longitude')
 
     place_resources = graphene.List(lambda: types.EconomicResource)
 

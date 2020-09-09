@@ -28,12 +28,9 @@
     margin-bottom: 1px;
 }
 #id_notes, #id_access_rules {
-  width: 500px;
   height: 100px;
 }
-.modal {
-    width: 600px;
-}
+
 .text-center {
     text-align: center;
 }
@@ -55,11 +52,17 @@
     margin: 2px;
 }
 
+.table-transparent {
+    border: none;
+}
+.table-transparent th, .table-transparent td {
+    border: none;
+}
 .table-transparent th {
     background: none;
     text-align: right;
     padding: 4px 8px;
-    width: 40%;
+    /*width: 40%;*/
 }
 
 </style>
@@ -93,10 +96,14 @@
     {% endif %}
 
         {% if agent and request.user.agent.agent.is_staff %}
-		    <div class="modal hide fade" id="resourceChangeForm" tabindex="-1" role="dialog" aria-labelledby="resource-change-label" aria-hidden="true">
+		  <div class="modal hide fade" id="resourceChangeForm" tabindex="-1" role="dialog" aria-labelledby="resource-change-label" aria-hidden="true">
+            <div class="modal-dialog">
+			  <div class="modal-content">
 			    <div class="modal-header">
-				    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
 				    <h3 id="resource-change-label">{% trans "Change" %} {{ resource }}</h3>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
 			    </div>
 			    <div class="modal-body">
 				    <form id="resource-change-form" action="{% url "change_faircoin_account" resource_id=resource.id %}" method="POST" >
@@ -123,19 +130,21 @@
                         </table>
                         {% endcomment %}
 				        <div class="modal-footer">
-					      <button class="btn" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
+					      <button class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
 					      <button class="btn btn-primary">{% trans "Save changes" %}</button>
 				        </div>
 				    </form>
                 </div>
+              </div>
             </div>
+          </div>
 
 
 	    {% endif %}
 
-		<div class="row-fluid">
+		<div class="row no-gutters row-fluid">
 
-		    <div class="span6 resource">
+		    <div class="col-sm span6 resource">
 
 	            <table class="table table-bordered" >
                     {% if resource.owner == request.user.agent.agent or resource.owner in request.user.agent.agent.managed_projects %}
@@ -177,9 +186,9 @@
 	                        <td>{{ resource.current_location }}</td>
                         </tr>
                     {% endif %}
-                    {% if resource.faircoin_address.address %}
-                        <tr>
-                            <th style="text-align: right;">{% trans "FairCoin Address" %}</th>
+                    <tr>
+                        <th style="text-align: right;">{% trans "FairCoin Address" %}</th>
+                        {% if resource.faircoin_address.address %}
                             <td>{% if wallet %}
                                     {% if is_wallet_address == False %}
                                         <span class="error">{{ resource.faircoin_address.address }} not in this wallet!!</span>
@@ -190,8 +199,12 @@
                                     {{ resource.faircoin_address.address }} &nbsp; <span class="error">{% trans "No wallet?" %}</span>
                                 {% endif %}
                             </td>
-                        </tr>
-                    {% endif %}
+                        {% else %}
+                            <td>
+                                <span class="error">{% trans "Missing faircoin address??" %}</span>
+                            </td>
+                        {% endif %}
+                    </tr>
                     {% if resource.notes %}
                         <tr>
 	                        <th style="text-align: right; vertical-align: top; ">{% trans "Notes" %}</th>
@@ -241,7 +254,7 @@
 
 	        </div>
 
-	        <div id="coins" class="span6">
+	        <div id="coins" class="col-sm span6 secondcol">
 
                 {% if payment_due %}
                     <div class="share-explanation">

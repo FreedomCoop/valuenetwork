@@ -12,7 +12,7 @@ from .Auth import AuthedInputMeta, AuthedMutation
 from django.core.exceptions import PermissionDenied
 
 
-class Query(graphene.AbstractType):
+class Query(object): #graphene.AbstractType):
 
     notification_setting = graphene.Field(NotificationSetting,
                                           id=graphene.Int())

@@ -1,0 +1,48 @@
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+main {
+  margin-top: 20px;
+  flex: 1;
+  .jumbotron {
+    margin-top: -20px;
+  }
+}
+#content-body {
+  @include make-container();
+  @include make-container-max-widths();
+}
+footer {
+  padding: 20px 0;
+  background-color: $footer-bg-color;
+  > div {
+    @include make-container();
+    @include make-container-max-widths();
+    display: flex;
+    justify-content: space-between;
+    .made-with-pinax {
+      text-align: right;
+      color: $gray-600;
+    }
+    .patches {
+        margin-top: 5px;
+        img {
+            width: 25px;
+            margin-left: 10px;
+        }
+    }
+  }
+}
+
+// Right align links inside a header
+.with-actions {
+  display: flex;
+  justify-content: space-between;
+  .button {
+      margin-top: auto;
+      @extend .btn;
+      @extend .btn-sm;
+  }
+}

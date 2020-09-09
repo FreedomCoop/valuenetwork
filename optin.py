@@ -14,8 +14,8 @@ for nt in nts:
     pass #nt.default = 0
     #nt.save()
 
-print ""
-print "not changed ", nts.count(), "NoticeType defaults to 0."
+print()
+print("not changed ", nts.count(), "NoticeType defaults to 0.")
 
 nsets = notification.NoticeSetting.objects.all()
 
@@ -23,6 +23,6 @@ for nset in nsets:
     pass #nset.send = False
     #nset.save()
 
-print "not changed ", nsets.count(), "NoticeSetting send flags to False."
-print "This don't turn off all email notifications."
+print("not changed ", nsets.count(), "NoticeSetting send flags to False.")
+print("This don't turn off all email notifications.")
 

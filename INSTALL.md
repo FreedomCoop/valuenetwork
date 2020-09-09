@@ -1,110 +1,147 @@
-# Installation
+# Basic install for a Linux local development instance
 
-NOTE: This is old documentation, and will not work any more!!!!
+OCP v1.0 has been successfully tested with Python 3.7+ (stable in Debian buster at the time of writing)
 
-## Install Docker
+1- Install system dependencies:
 
-Follow instructions from [Docker documentation](https://docs.docker.com/installation/).
+    sudo apt install python3-setuptools python3-pyqt5 python3-pip python3-venv npm git
 
-## Install Vagrant
+2- Point your terminal to your code projects folder (e.g. '~/Envs/') and create a python3 virtual environment (e.g. 'py3'):
 
-If you're a `OS X` or `Windows` user, you might want to use [vagrant](https://www.vagrantup.com/) to run a `Linux` box 
-from where to run `Docker`.
+    cd [installations dir]
+    python3 -m venv py3
 
-In order to do so, the `Vagrantfile` of the project root directory can be relied upon.
+3- Clone the repo and enter the project folder:
 
-`Vagrant` can be installed by following instructions from [Vagrant documentation](https://www.vagrantup.com/downloads.html)
+    git clone https://github.com/FreedomCoop/valuenetwork.git ocp
+    cd ocp
 
-Run a virtual machine (ubuntu 14.04)
+4- Activate the virtual environment and upgrade pip:
 
-```
-vagrant up
-```
+    source ../py3/bin/activate
+    pip install -U pip
+    pip install -U setuptools
 
-Access the virtual machine via ssh
+(If you prefer to nest the ocp folder inside the py3 env folder, adapt activate
+command accordingly)
 
-```
-vagrant ssh
-```
+5- Install python dependencies:
 
-Install a http proxy to access the Docker container from outside the vagrant box
+    pip install -U -r requirements.txt --trusted-host dist.pinaxproject.com
 
-Within the box
+6- Create npm build system and compile css+js:
 
-```
-sudo apt-get install apache2
-sudo a2enmod proxy_http
-cd /vagrant
-sudo cp docs/configuration/etc/apache2/sites-available/valuenetwork.conf /etc/apache2/sites-available
-sudo a2ensite valuenetwork.conf
-sudo service apache2 reload
-```
+    npm install
+    npm run compile
+    npm run optimize
 
-From the host machine, figure the ip address of the guest machine before adding a new entry to your host file.
+7- Create any possibly missing migrations (e.g. for 'fobi') and create the sqlite database:
 
-```
-VAGRANT_LOG=ERROR vagrant ssh -c 'ip address | grep eth0 | grep inet'
-```
+    ./manage.py makemigrations
+    ./manage.py migrate
 
-```
-VAGRANT_HOST=192.168.1.44
-sudo /bin/bash -c 'echo "'$VAGRANT_HOST'    valuenetwork.dev" >> /etc/hosts'
-```
+8- Create a superuser for yourself so you can login:
 
-Change directory before jumping to the next steps
+    ./manage.py createsuperuser 
+  
+  -- Prior to run a test you’ll need chrome/chromium and relative chromedrive version on your system, for that check here:
+    
+   https://chromedriver.chromium.org/downloads
 
-```
-cd /vagrant
-```
+   Once unzipped copy the binary overriding chromedriver version in the proper directory,
+   
+   here:
 
-## Build the application image
+   sudo cp where_downloaded/chromedriver install_directory/py3/lib64/python3.7/site-packages/chromedriver_binary/
 
-Prepare the user creation script to be executing when building the application image
-by exporting your own environment variables values for user, password and email.
+   or here:
 
-```
-export EMAIL='admin@example.com'
-export PASSWORD='mrY7rZZ6ztjN90fN6hy6'
-export USER='valuenetwork_user'
+   sudo  cp where_downloaded/chromedriver /py3/lib/python3.7/site-packages/chromedriver_binary/
+   
+   
+  -- If working on a local development environment, then:
+        
+    ./manage.py collectstatic    
+    
+    
+9- To check all and run the tests:
 
-sed "s/VALUE_NETWORK_EMAIL/$EMAIL/" cmd/create-user.sh.dist > cmd/create-user.sh
-sed -i "s/VALUE_NETWORK_PASSWORD/$PASSWORD/" cmd/create-user.sh
-sed -i "s/VALUE_NETWORK_USER/$USER/" cmd/create-user.sh
-```
+    ./manage.py check
+    ./manage.py test
+    
+10- To start a local server for development, the new way is (recompiling statics):
 
-```
-# Build image as super-user
-sudo docker build -t valuenetwork .
-```
+    npm run dev
+    
+...and the old way (non recompiling), just in case:
 
-Please note than python dependencies are installed twice using separate `RUN` command 
-and `requirements.txt` in order to leverage cache layers.
+    ./manage.py runserver
 
-## Run the application container
+Check everything is ok in http://127.0.0.1:8000 with web browser.
 
-```
-cd /vagrant
-sudo docker run --net=host -v `pwd`:/var/www/valuenetwork -d valuenetwork
-```
 
-## Access pages served by the web server
 
-When running the container from within a virtual machine using vagrant,
-the virtual network interface `eth0` of the box is relied upon to run a web server listening to port 8000.
+## Important:
 
-```
-# Option "--net" allows us to leverage the box virtual network interface
---net=host
-```
+- You'll need to create your own `local_settings.py` file (using the
+`local_settings_example.py` as a template) to redefine some `ocp/settings.py`
+values (e.g. languages, database, etc) and also to define the main context
+agents settings about their custom login domains, css and js, email notification
+servers, active services, etc.
 
-At image build time, the command which can be found in `cmd/run-server.sh` 
-would have been copied to `/var/www/valuenetwork` (path available from within the docker container).
+- To deal with a multi-language instance, please read carefully the
+`docs/translations.md` doc.
 
-As a result, the web server running from within the docker container, from within a virtual machine, 
-listens to requests on port 8000 of the guest loopback address.
+- To install also a faircoin wallet for the users to manage their own
+faircoin accounts in OCP, please follow [this doc](docs/install_ocp_faircoin.md)
 
-The apache2 proxy exposes the server from the host machine.
+- To deploy ocp in a production server please follow the
+instructions [here](docs/install_ocp_debian_apache_ssl.rst)
 
-At this step, you should be able to access `http://valuenetwork.dev` in a browser installed on your host:
 
-![Homepage](docs/images/homepage.png)
+## Initial Data:
+
+The migrate command runs a script to check for and create some basic units and types (required to run the actually deployed instances).
+
+When log in for the first time, it is recommended create your own EconomicAgent, for that, from the pull-down menu with your username on the upper right corner click on DB Admin, then click on Economic agents, and click again on "add economic agent".
+Fill in the form with as much info as you wish, then go to the page left bottom and select your username in the first USER widget before save and exiting. 
+
+All above is required for the first User only. To let other users/agents join through a moderated membership process, you must create a Project and configure the settings. 
+To do that just follow these steps:
+
+  - If not created yet, go to 'your projects' page and create a new project, whose coordinator will be your agent.
+  - Choose a 'moderated' joining style (or 'shares') and a 'public' visibility to have an external register form for non-logged users.
+  - Go to `/fobi` url and create a form with the name of the project. Be aware of the resulting 'slug' by checking the url of the link to view the form (e.g. in the view url `/fobi/view/slug-of-the-project-form`, is the last part: `slug-of-the-project-form`). That slug is not editable afterwards, only when creating/importing a form.
+    That slug will be also the main identifier of the project in the local_settings file objects.
+  - Define only the custom fields (questions) used in the project. Remember that the main user fields are already requested by OCP during registration process (individual or group type, name and surname, nickname/username, email, phone, address and website), so focus only on the really custom questions for the project context, and follow a few rules described below.
+  - Add the DB Store handler in the fobi form 'handlers' tab. 
+  - Once the form is ready, set its 'slug' in the project's 'Custom project url slug' field. Verify the project's connection with its form with the links to view
+    the form that appears in the project's page. 
+  - Check the local_settings objects are properly defined with the project's fobi 'slug' as a key for their options, and the project page shows the custom settings like the css and js rules, the background image behind the logo image, etc.
+
+Below you will find some useful rules on fobi custom fields, related to the active services for a project:
+
+  - To set-up a project with Payment Gateways:
+    - the selector fobi field must be internally named `payment_mode`.
+    - The select options of that field should use as keys a short string representing the gateway (e.g. `transfer`, `faircoin`, `btc`, `ccard`, etc).
+    - The local_settings PAYMENT_GATEWAYS object for the project should define for every gateway key a proper gateway block definition (see `ocp/local_settings_example.py`).
+
+  - To set up a project with Shares:
+    - The numeric fobi field that will store the amount of shares the user wants to get, must be internally named `projectname_shares` (being 'projectname' the
+        lowcase version of the project name without spaces).
+    - The local_settings PROJECTS_LOGIN object for the project should have the `shares` active in its `services` block.
+    - Edit the project details from the project page, and choose 'shares' as the joining style.
+    - To create the project Shares use the form that appears in the project page (in the 'Offered Shares' block), once all the above is ready.
+    - Once the share is defined (with its value related to any currency) and the payment gateways defined in the local_settings file appear correctly in the projects page (with a green 'ok'), then you should create the exchanges_types related the active payment gateways by clicking the button 'Create Shares Exchange Types'.
+
+
+  - To set up the Multicurrency system of Bank of the Commons, please bear in mind the following steps::
+   - The local_settings MULTICURRENCY object must be defined with the proper API urls and the BotC API secret key given to your instance.
+   - The local_settings PROJECTS_LOGIN object for the project should include the `multicurrency` option as an active service.
+   - For that project and their members will appear the option to connect with their existent BotC-Wallet account or create a new one from OCP.
+   - The connection with BotC-Wallet is still readonly, so to perform any banking action, such as transfer money transfer, it's mandatory to use it from [here] (https://wallet.bankofthecommons.coop).
+
+
+
+*Note: the original code fixtures are still broken. In the meantime, you can
+get a test database from somebody.*

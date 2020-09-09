@@ -36,7 +36,7 @@ class WorkModelChoiceField(forms.ModelChoiceField):
 
 class ResourceModelChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
-        label = obj.__unicode__()
+        label = obj.__str__()
         if obj.current_location:
             loc = obj.current_location.name
             label = " ".join([label, "at", loc])
@@ -2752,8 +2752,8 @@ class BalanceForm(forms.Form):
 
 
 class DateSelectionForm(forms.Form):
-    start_date = forms.DateField(widget=forms.TextInput(attrs={'class': 'input-small date-entry',}))
-    end_date = forms.DateField(widget=forms.TextInput(attrs={'class': 'input-small date-entry',}))
+    start_date = forms.DateField(widget=forms.TextInput(attrs={'class': 'input-small date-entry datepicker',}))
+    end_date = forms.DateField(widget=forms.TextInput(attrs={'class': 'input-small date-entry datepicker',}))
 
 
 class DueDateAndNameForm(forms.Form):

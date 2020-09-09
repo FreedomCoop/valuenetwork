@@ -5,6 +5,20 @@
 
 {% block head_title %}{% trans "Multicurrency authentication: " %}{{ agent.name }}{% endblock %}
 
+{% block extra_head %}
+<style>
+    table.table {
+        border: none;
+    }
+    table.table th, table.table td {
+        border: none;
+    }
+    .infobox {
+        margin-right: 10px;
+    }
+</style>
+{% endblock %}
+
 {% block body_base %}
 
   <div class="container">
@@ -18,9 +32,18 @@
       </div>
     </legend>
     {% include "_messages.html" %}
-    <div class="infobox span6">
-    <h3>{% trans "BotC-Wallet accounts for" %} {{ agent.name }}:</h3>
-      <table class="table" style="">
+
+    <div class="container">
+    <div class="row">
+    <div class="col-sm infobox span6">
+      <h3>{% trans "BotC-Wallet accounts for" %} {{ agent.name }}:</h3>
+      {% if jn_req %}
+        <p>{% trans "Related membership" %}: <a href="{% url 'project_feedback' agent_id=agent.id join_request_id=jn_req.id %}" class="btn btn-primary">
+            {% blocktrans with name=jn_req.project.agent.name %}{{ name }} Feedback{% endblocktrans %}</a>
+        </p>
+      {% endif %}
+
+      <table class="table" style="border:none;">
         <thead>
           <tr>
             <th class="span3"></th>
@@ -50,9 +73,13 @@
             <a href="#create-chipchap-user" role="button" class="btn btn-primary" data-toggle="modal">{% trans "Create new BotC-Wallet user" %}</a>
 
             <div class="modal hide fade" id="create-chipchap-user" tabindex="-1" role="dialog" aria-labelledby="agent-label" aria-hidden="true">
+              <div class="modal-dialog">
+              <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                     <h3 id="agent-label">{% trans "Create new BotC-Wallet Account" %}</h3>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
                 <div class="modal-body">
                     <form id="createForm" class="createMe" action="{% url 'multicurrency_createauth' agent_id=agent.id %}" method="POST" onsubmit="return validateRepassword()">
@@ -65,31 +92,26 @@
                           </div>
                         </div>
                         <div class="modal-footer">
-                            <button class="btn" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
+                            <button class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
                             <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Create BotC-Wallet User" %}' />
                         </div>
                     </form>
                 </div>
+              </div>
+              </div>
             </div>
 
           </td></tr>
         {% endfor %}
       </table>
     </div>
-    {% if jn_req %}
-        <div class="span4">
-            <h3>
-                {% trans "Related membership" %}:
-            </h3>
-            <br />
-            <p>
-                <a href="{% url 'project_feedback' agent_id=agent.id join_request_id=jn_req.id %}" class="btn btn-primary">{% trans "Feedback with" %} {{ jn_req.project.agent.name }}</a>
-            </p>
-        </div>
-    {% endif %}
-    <br /><br />
-    <div class="span6 miniform" style="margin-left:0">
-      <h3>{% trans "Authenticate an existing account in BotC-Wallet" %}:</h3>
+
+    <div class="col-sm span6 miniform" style="margin-left:0">
+      {% if oauths %}
+        <h3>{% trans "Authenticate another existing account in BotC-Wallet" %}:</h3>
+      {% else %}
+        <h3>{% trans "Authenticate an existing account in BotC-Wallet" %}:</h3>
+      {% endif %}
       <form id="oauthForm" class="validateMe" action="." method="POST" >
           {% csrf_token %}
           {{ oauth_form|as_bootstrap }}
@@ -99,6 +121,8 @@
         {% trans "By submitting your BotC-Wallet user/password you give permission to this site to access (read-only) to your wallet." %}<br />
         {% trans "Your password won't be stored, it's just necessary to check your identity in BotC-Wallet system." %}
       </small></p>
+    </div>
+    </div>
     </div>
   </div>
   <script type="text/javascript">

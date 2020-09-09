@@ -1,0 +1,100 @@
+
+{% load staticfiles %}
+{% load i18n %}
+{% load bootstrap_tags %}
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="https://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <title>{% trans "OCP: Open Collaborative Platform" %}</title>
+
+{% block extra_head %}
+
+<style>
+
+body {
+    /*font-family: Arial, sans-serif;
+    width: 600px;*/
+    margin: 0 auto;
+}
+
+.btn {
+    padding-top: 2px;
+    padding-bottom: 3px;
+    font-weight: bold;
+}
+
+
+</style>
+
+{% endblock %}
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" media="all">
+    <link rel="stylesheet" href="{% static 'css/coop.css' %}">
+   <!-- <link href="{% static "css/buttons.css" %}" rel="stylesheet"> -->
+
+  </head>
+
+
+  <body style="background-image: url({% static 'img/photo-OCP-1600x900_green.jpg' %}); text-align:center;">
+        <p>&nbsp;</p>
+
+    <form action="{% url 'set_language' %}" method="post" id="lang-switch">{% csrf_token %}
+      <input name="next" type="hidden" value="{{ redirect_to }}" />
+      <select name="language" onchange="this.form.submit()">
+          {% get_current_language as LANGUAGE_CODE %}
+          {% get_available_languages as LANGUAGES %}
+          {% get_language_info_list for LANGUAGES as languages %}
+          {% for language in languages %}
+              <option value="{{ language.code }}"{% if language.code == LANGUAGE_CODE %} selected="selected"{% endif %}>
+                  {{ language.name_local }}
+              </option>
+          {% endfor %}
+      </select>
+      <!-- <input type="submit" value="Go" id="lang-submit" style="display:none;"/> -->
+    </form>
+
+        <h4><img src="{% static 'img/logoFreedomCoop_terebum4_widealpha_white--.png' %}" title="{% trans "Freedom Coop's" %}"></h4>
+        <h1>{% trans "Open Collaborative Platform (OCP)" %}</h1>
+    <table class="landing" border="0" align="center" style="text-align:center">
+      <tr>
+        <td colspan="2"><p>
+        <p>{% trans "This is OCP, our Open Collaborative Platform. The OCP is the key organizational tool we offer to individuals, collectives, and project coordinators inside Freedom Coop." %}</p>
+        <p>{% trans "Therefore, it can be used to:" %}</p>
+        <ul><li>{% trans "Boost open collaborative projects between people in different places." %}</li>
+        <li>{% trans "Manage open collective projects and their team work by setting up task forces." %}</li>
+        <li>{% trans "Account the time spent by every member to use it as a base of income distribution and a way of self-actualization for any project." %}</li>
+        <li>{% trans "Use some legal services that can be covered with a quarterly fee and tax distribution between Freedom Coop members." %}</li>
+        <li>{% trans "Manage an online Faircoin wallet to accept and make payments." %}</li></ul>
+        <p>{% trans "Freedom Coop, will use OCP for our collective organization as an open cooperative process." %}</p>
+        </p></td>
+      </tr>
+      <tr>
+	<td width="50%" class="register-block">
+          <h3>{% trans "Request Membership" %}</h3>
+	  <p>{% trans "The first step to become a member of Freedom Coop and use OCP, is to fill the following membership form:" %}</p>
+	  <h4><a class="btn" href="{% url 'join_request' form_slug='freedom-coop' %}" id="join-page-but">{% trans "Join FreedomCoop" %}</a></h4>
+          </h3>
+        </td>
+        <td width="50%" class="login-block">
+          <h3>{% trans "Log in to the OCP" %}</h3>
+	  <p>{% trans "If you already did it, and have user and password, login here." %}</p>
+          <div class="log">
+            <form method="POST" action="{{ request.get_full_path }}" autocapitalize="off" class="form-horizontal"{% if form.is_multipart %} enctype="multipart/form-data"{% endif %}>
+                {% csrf_token %}
+                {{ form|as_bootstrap }}
+                <div class="form-actions">
+                    <a href="{% url "account_password_reset" %}" class="forgot-pass">{% trans "Forgot your password?" %}</a>
+                    <button type="submit" class="btn btn-primary">{% trans "Log in" %}</button>
+                </div>
+            </form>
+        </div>
+        <div class="span4">
+            {% include "account/_login_sidebar.html" %}
+        </div>
+	</td>
+      </tr>
+    </table>
+    <p>&nbsp;</p>
+  </body>
+</html>

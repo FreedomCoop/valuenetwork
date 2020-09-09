@@ -29,4 +29,4 @@ class Command(BaseCommand):
                         fcr.faircoin_address.address = new_address
                         fcr.save()
 
-        print "Finished %d wallet reassignments of %d wallets & %d total agents" % (reassigned, found, total)
+        print("Finished %d wallet reassignments of %d wallets & %d total agents" % (reassigned, found, total))

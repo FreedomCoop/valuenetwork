@@ -67,7 +67,7 @@ class ExchangeService(object):
                 sequence=1,
                 is_currency=True)
             if c:
-                print("- created TransferType: "+str(tt))
+                print(("- created TransferType: "+str(tt)))
 
         return tt
 

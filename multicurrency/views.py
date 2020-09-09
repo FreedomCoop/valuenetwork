@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django.shortcuts import render, redirect
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import Http404
@@ -309,7 +309,7 @@ def history(request, agent_id, oauth_id):
                     status = str(tx['id'])
                 multitxs = MultiwalletTransaction.objects.filter(tx_id=tx['id'])
                 if multitxs:
-                    status = u''
+                    status = ''
                     exch = None
                     for mtx in multitxs:
                         if hasattr(mtx.event, 'exchange'):
@@ -318,11 +318,11 @@ def history(request, agent_id, oauth_id):
                             exch = mtx.event.transfer.exchange
                         if exch:
                             status += "<b><a href='"+reverse("exchange_logging_work", args=(agent_id, 0, exch.id))+"'>"
-                            status += unicode(_("Exchange")) #exch.status()
+                            status += str(_("Exchange")) #exch.status()
                             status += "</a></b> "
                             if hasattr(exch, 'join_request'):
                                 status += "/ <b><a href='"+reverse("project_feedback", args=(agent_id, exch.join_request.id))+"'>"
-                                status += unicode(_("Feedback"))
+                                status += str(_("Feedback"))
                                 status += "</a></b>"
                             break
                 table_rows.append([
@@ -422,7 +422,7 @@ def authpayment(request, agent_id):
 
                 if share_payment['status'] == 'ok':
                     for payd in share_payment['data']:
-                        print payd
+                        print(payd)
 
 
             messages.success( request,
@@ -430,7 +430,6 @@ def authpayment(request, agent_id):
 
             return redirect('project_feedback', agent_id=agent_id, join_request_id=jnreq.id)
         else:
-            #print form
             messages.success( request,
                 _('Error in the transfer form: ')) #+str(form))
 

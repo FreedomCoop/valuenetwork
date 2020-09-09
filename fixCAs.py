@@ -10,11 +10,11 @@ for agent in agents:
         agent.save()
         count = count + 1
     except:
-        print "Unexpected error:", sys.exc_info()[0]
-        
-print "count = " + str(count)
-            
+        print("Unexpected error:", sys.exc_info()[0])
 
-        
-        
+print("count = " + str(count))
+
+
+
+
 

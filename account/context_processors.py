@@ -1,5 +1,4 @@
 from account.conf import settings
-
 from account.models import Account
 
 

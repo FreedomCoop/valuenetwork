@@ -10,7 +10,7 @@ def export_as_csv(modeladmin, request, queryset):
         raise PermissionDenied
     opts = modeladmin.model._meta
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename=%s.csv' % unicode(opts).replace('.', '_')
+    response['Content-Disposition'] = 'attachment; filename=%s.csv' % str(opts).replace('.', '_')
     writer = csv.writer(response)
     field_names = [field.name for field in opts.fields]
     # Write a first row with header information

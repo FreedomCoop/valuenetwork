@@ -7,7 +7,7 @@ from valuenetwork.api.models import QuantityValue as FulfillmentProxy
 from valuenetwork.api.types.EconomicEvent import Fulfillment
 
 
-class Query(graphene.AbstractType):
+class Query(object): #graphene.AbstractType):
 
     # define input query params
 

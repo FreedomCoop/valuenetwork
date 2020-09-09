@@ -1,0 +1,34 @@
+form {
+    .has-error {
+        .help-block {
+            color: $red;
+        }
+    }
+    p.help-text {
+        margin-top: 35px;
+        font-size: 80%;
+    }
+    .form-actions {
+        text-align: right;
+    }
+    button {
+        @include button-variant($primary, $primary);
+    }
+}
+
+button {
+    cursor: pointer;
+    @extend .btn;
+}
+
+a.cancel {
+    cursor: pointer;
+    @extend .btn;
+    @include button-variant($gray-100, $gray-100);
+}
+
+a.delete {
+    cursor: pointer;
+    @extend .btn;
+    @include button-variant($danger, $danger);
+}

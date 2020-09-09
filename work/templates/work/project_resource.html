@@ -29,11 +29,11 @@
     margin-bottom: 1px;
 }
 #id_notes, #id_access_rules {
-  width: 500px;
+  /*width: 500px;*/
   height: 100px;
 }
 .modal {
-    width: 600px;
+    width: auto;
 }
 .text-center {
     text-align: center;
@@ -62,7 +62,7 @@
             {% endif %}
           {% endif %}
           {% if user_agent.need_projects %}
-              <a class="indent" href="{% url "your_projects" %}">{% trans "Your Projects" %}</a>
+              <!-- <a class="indent" href="{% url "your_projects" %}">{% trans "Your Projects" %}</a> -->
           {% endif %}
         </div>
 
@@ -80,10 +80,14 @@
     {% endif %}
     {% if agent %}
         {% if request.user.is_superuser or resource.resource_type in user_agent.managed_rts %}
-		    <div class="modal hide fade" id="resourceChangeForm" tabindex="-1" role="dialog" aria-labelledby="resource-change-label" aria-hidden="true">
-			    <div class="modal-header">
-				    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+		  <div class="modal hide fade" id="resourceChangeForm" tabindex="-1" role="dialog" aria-labelledby="resource-change-label" aria-hidden="true">
+			<div class="modal-dialog">
+			  <div class="modal-content">
+                <div class="modal-header">
 				    <h3 id="resource-change-label">{% trans "Change" %} {{ resource }}</h3>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
 			    </div>
 			    <div class="modal-body">
 				    <form id="resource-change-form" action="{% url "change_resource" agent_id=agent.id resource_id=resource.id %}" method="POST" >
@@ -131,6 +135,7 @@
                         {% endfor %}
                         <br />
                         {% if not resource.resource_type.is_virtual_account or request.user.is_superuser %}
+                        <div class="bigbox">
                             {{ role_formset.management_form }}
                             <table>
                                 <tr>
@@ -149,6 +154,7 @@
                                     </tr>
                                 {% endfor %}
                             </table>
+                        </div>
                         {% endif %}
 				        <div class="modal-footer">
 					      <button class="btn" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
@@ -156,12 +162,19 @@
 				        </div>
 				    </form>
                 </div>
+              </div>
             </div>
+          </div>
 
-		      <div class="modal hide fade" id="resourceOrderForm" tabindex="-1" role="dialog" aria-labelledby="resource-order-label" aria-hidden="true">
+          {% if order_form %}
+		  <div class="modal hide fade" id="resourceOrderForm" tabindex="-1" role="dialog" aria-labelledby="resource-order-label" aria-hidden="true">
+            <div class="modal-dialog">
+			  <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                     <h3 id="resource-order-label">{% trans "Create Work Order for" %} {{ resource }}</h3>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
                 <div class="modal-body">
                     <form enctype="multipart/form-data" action="{% url "plan_work_order_for_resource" resource_id=resource.id %}" method="POST" >
@@ -172,14 +185,17 @@
                           <button class="btn btn-primary">{% trans "Save changes" %}</button>
                         </div>
                     </form>
+                </div>
               </div>
             </div>
+          </div>
+          {% endif %}
         {% endif %}
 	{% endif %}
 
-    <div class="row-fluid">
-
-        <div class="span6 resource">
+    <div class="container" style="padding:0;">
+      <div class="row no-gutters">
+        <div class="col-lg-6 col-sm-12 resource">
 
             <table class="table table-bordered" >
                 {% if resource.identifier %}
@@ -283,23 +299,23 @@
 
         </div>
 
-        <div class="span6 info">
-
-            {% if resource.demands %}
+    {% if resource.demands %}
+        <div class="col-lg-6 col-sm-12">
+            <div class="infobox secondcol">
                 <h4 class="">{% trans "Demands" %}:</h4>
                 <ul>
                 {% for ct in resource.demands %}
                     <li><a href="{{ ct.process.get_absolute_url }}">{{ ct }}</a></li>
                 {% endfor %}
                 </ul>
-            {% endif %}
-
+            </div>
         </div>
+    {% endif %}
 
-    </div>
+
     {% if not resource.resource_type.is_virtual_account %}
-      <div class="row-fluid" tyle="margin-top: 1em;">
-          <div class="span6">
+        <div class="col-lg-6 col-sm-12">
+            <div class="infobox">
                 <h3 class="">{% trans "Where from" %}:</h3>
                 {% if resource.where_from_events %}
                     <ul>
@@ -368,8 +384,10 @@
                     {% endif %}
                 {% endif %}
             </div>
+        </div>
 
-            <div class="span6">
+        <div class="col-lg-6 col-sm-12">
+            <div class="infobox secondcol">
               <h3 class="">{% trans "Where to" %}:</h3>
 
               {% if resource.where_to_events %}
@@ -411,9 +429,11 @@
 
             {% endif %}
 
-	    </div>
-      </div>
+	        </div>
+        </div>
     {% endif %}
+    </div>
+    </div>
 {% endblock %}
 
 {% block extra_script %}

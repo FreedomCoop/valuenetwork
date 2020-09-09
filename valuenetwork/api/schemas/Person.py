@@ -11,7 +11,7 @@ from valuenetwork.valueaccounting.models import EconomicAgent
 from valuenetwork.api.types.Agent import Person
 from valuenetwork.api.models import formatAgent, formatAgentList
 
-class Query(graphene.AbstractType):
+class Query(object): #graphene.AbstractType):
 
     # define input query params
 

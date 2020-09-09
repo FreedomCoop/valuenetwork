@@ -44,10 +44,10 @@ class EconomicEvent(DjangoObjectType):
 
     class Meta:
         model = EconomicEventProxy
-        only_fields = ('id')
+        fields = ('id',)
 
     fulfills = graphene.List(lambda: types.Fulfillment)
-    
+
     validations = graphene.List(lambda: types.Validation)
 
     is_validated = graphene.Boolean()
@@ -56,35 +56,35 @@ class EconomicEvent(DjangoObjectType):
 
     user_is_authorized_to_delete = graphene.Boolean()
 
-    def resolve_input_of(self, args, *rargs):
+    def resolve_input_of(self, context, **args): #args, *rargs):
         return self.input_of
 
-    def resolve_output_of(self, args, *rargs):
+    def resolve_output_of(self, context, **args): #args, *rargs):
         return self.output_of
 
-    def resolve_provider(self, args, *rargs):
+    def resolve_provider(self, context, **args): #args, *rargs):
         return formatAgent(self.provider)
 
-    def resolve_receiver(self, args, *rargs):
+    def resolve_receiver(self, context, **args): #args, *rargs):
         return formatAgent(self.receiver)
 
-    def resolve_scope(self, args, *rargs):
+    def resolve_scope(self, context, **args): #args, *rargs):
         return formatAgent(self.scope)
 
-    #def resolve_affected_taxonomy_item(self, args, *rargs):
+    #def resolve_affected_taxonomy_item(self, context, **args): #args, *rargs):
     #    return self.affected_taxonomy_item
 
-    def resolve_affects(self, args, *rargs):
+    def resolve_affects(self, context, **args): #args, *rargs):
         res = self.affects
         if res == None:
             res = EconomicResourceProxy(resource_type=self.affected_resource_classified_as)
         return res
 
-    def resolve_affected_quantity(self, args, *rargs):
+    def resolve_affected_quantity(self, context, **args): #args, *rargs):
         return QuantityValueProxy(numeric_value=self.quantity, unit=self.unit_of_quantity)
 
     # This is valid only for process related events, may need to re-look at when doing exchanges
-    def resolve_fulfills(self, args, context, info):
+    def resolve_fulfills(self, context, **args): #args, context, info):
         commitment = self.commitment
         if commitment:
             fulfillment = Fulfillment(
@@ -97,20 +97,20 @@ class EconomicEvent(DjangoObjectType):
             return ff_list
         return []
 
-    def resolve_validations(self, args, context, info):
+    def resolve_validations(self, context, **args): #args, context, info):
         return self.validations.all()
-    
-    def resolve_is_validated(self, args, *rargs):
+
+    def resolve_is_validated(self, context, **args): #args, *rargs):
         return self.is_double_validated()
 
-    def resolve_user_is_authorized_to_update(self, args, context, *rargs):
-        token = rargs[0].variable_values['token']
+    def resolve_user_is_authorized_to_update(self, context, **args): #args, context, *rargs):
+        token = args[0].variable_values['token']
         context.user = _authUser(token)
         user_agent = AgentUser.objects.get(user=context.user).agent
         return user_agent.is_authorized(object_to_mutate=self)
 
-    def resolve_user_is_authorized_to_delete(self, args, context, *rargs):
-        token = rargs[0].variable_values['token']
+    def resolve_user_is_authorized_to_delete(self, context, **args): #args, context, *rargs):
+        token = args[0].variable_values['token']
         context.user = _authUser(token)
         user_agent = AgentUser.objects.get(user=context.user).agent
         return user_agent.is_authorized(object_to_mutate=self)
@@ -120,5 +120,5 @@ class Fulfillment(DjangoObjectType):
 
     class Meta:
         model = FulfillmentProxy
-        only_fields = ('id', 'fulfilled_by', 'fulfills', 'fulfilled_quantity', 'note')
+        fields = ('id', 'fulfilled_by', 'fulfills', 'fulfilled_quantity', 'note')
 

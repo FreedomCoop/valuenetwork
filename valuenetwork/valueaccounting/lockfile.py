@@ -11,30 +11,30 @@ Usage:
 >>> try:
 ...     lock.acquire()
 ... except AlreadyLocked:
-...     print "somefile", "is locked already."
+...     print("somefile", "is locked already.")
 ... except LockFailed:
-...     print "somefile", "can\\'t be locked."
+...     print("somefile", "can\\'t be locked.")
 ... else:
-...     print "got lock"
+...     print("got lock")
 got lock
->>> print lock.is_locked()
+>>> print(lock.is_locked())
 True
 >>> lock.release()
 
 >>> lock = FileLock("somefile")
->>> print lock.is_locked()
+>>> print(lock.is_locked())
 False
 >>> with lock:
-...    print lock.is_locked()
+...    print(lock.is_locked())
 True
->>> print lock.is_locked()
+>>> print(lock.is_locked())
 False
 >>> # It is okay to lock twice from the same thread...
 >>> with lock:
 ...     lock.acquire()
 ...
 >>> # Though no counter is kept, so you can"t unlock multiple times...
->>> print lock.is_locked()
+>>> print(lock.is_locked())
 False
 
 Exceptions:
@@ -48,7 +48,7 @@ Exceptions:
             NotMyLock - File was locked but not by the current thread/process
 """
 
-from __future__ import division
+
 
 import sys
 import socket
@@ -272,7 +272,7 @@ class LinkFileLock(LockBase):
             open(self.unique_name, "wb").close()
         except IOError:
             raise LockFailed("failed to create %s" % self.unique_name)
-        
+
         logger.debug("opened LinkFile")
 
         end_time = time.time()
@@ -288,7 +288,7 @@ class LinkFileLock(LockBase):
                 # Link creation failed.  Maybe we"ve double-locked?
                 _, e, _ = sys.exc_info()
                 logger.critical("an exception occurred in acquire_lock: {0}".format(e))
-                
+
                 nlinks = os.stat(self.unique_name).st_nlink
                 if nlinks == 2:
                     logger.debug("Link creation ok")

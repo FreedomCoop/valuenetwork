@@ -1,4 +1,4 @@
-from __future__ import unicode_literals, division
+
 from decimal import Decimal
 import requests
 import logging
@@ -90,7 +90,7 @@ class MulticurrencyAuth(models.Model):
                 if saldo < pend:
                     out_text = str(_("The balance in your wallet needs some more "))+unit.upper()
                 else:
-                    out_text = '<b>'+unicode(_("You can pay the shares now!"))+'</b>'
+                    out_text = '<b>'+str(_("You can pay the shares now!"))+'</b>'
                     if user and user.is_superuser:
                         out_text += ' '+str(saldo)+" "+punit.symbol+" >= "+str(remove_exponent(pend))+" "+punit.symbol
                         if jn_req.payment_payed_amount():
@@ -102,14 +102,14 @@ class MulticurrencyAuth(models.Model):
                         'amount': pend,
                         'unit': unit,
                     }
-                    #print reqdata
+                    #print(reqdata)
                     #payform = PaySharesForm(data=reqdata, initial=reqdata) #initial={'jnreq': jn_req, 'auth': self, 'amount': pend, 'unit': unit})
             elif balobj:
-                out_text = _("Not enough balance in your wallet for the chosen currency:")+' <b>'+str(punit)+'</b>'
+                out_text = _("Not enough balance in your wallet for the chosen currency:")+' <b>'+str(punit.name)+'</b>'
             else:
                 out_text = _("Error retrieving your balance... ")
                 if user and user.is_superuser:
-                    out_text += "(punit: "+str(punit)+")" #balance['status'])
+                    out_text += "(punit: "+str(punit.name)+")" #balance['status'])
         return out_text, reqdata
 
 

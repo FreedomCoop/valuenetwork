@@ -9,7 +9,7 @@ from valuenetwork.valueaccounting.models import AgentAssociationType
 from valuenetwork.api.types.AgentRelationship import AgentRelationshipRole
 
 
-class Query(graphene.AbstractType):
+class Query(object): #graphene.AbstractType):
 
     agent_relationship_role = graphene.Field(AgentRelationshipRole,
                                             id=graphene.Int())

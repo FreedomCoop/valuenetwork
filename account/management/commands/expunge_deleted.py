@@ -4,9 +4,9 @@ from account.models import AccountDeletion
 
 
 class Command(BaseCommand):
-    
+
     help = "Expunge accounts deleted more than 48 hours ago."
-    
+
     def handle(self, *args, **options):
         count = AccountDeletion.expunge()
-        print "%d expunged." % count
+        print("{0} expunged.".format(count))

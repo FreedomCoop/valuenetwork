@@ -12,7 +12,7 @@ class Unit(DjangoObjectType):
 
     class Meta:
         model = UnitProxy
-        only_fields = ('id', 'name', 'symbol')
+        fields = ('id', 'name', 'symbol')
 
 
 class QuantityValue(DjangoObjectType):
@@ -22,7 +22,7 @@ class QuantityValue(DjangoObjectType):
 
     class Meta:
         model = QuantityValueProxy
-        only_fields = ('numeric_value', 'unit')
+        fields = ('numeric_value', 'unit')
 
     def resolve_unit(self, args, *rargs):
         return self.unit

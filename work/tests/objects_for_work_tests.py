@@ -28,37 +28,37 @@ def initial_test_data():
             password='admin_passwd',
             email='admin_user@example.com'
         )
-        print "t- created User: 'admin_user'"
+        print("t- created User: 'admin_user'")
 
     # AgentTypes
     individual_at, c = AgentType.objects.get_or_create(
         name='Individual', party_type='individual', is_context=False)
-    if c: print "t- created AgentType: 'Individual'"
+    if c: print("t- created AgentType: 'Individual'")
 
     project_at, c = AgentType.objects.get_or_create(
         name='Project', party_type='team', is_context=True)
-    if c: print "t- created AgentType: 'Project'"
+    if c: print("t- created AgentType: 'Project'")
 
     cooperative_at, c = AgentType.objects.get_or_create(
         name='Cooperative', party_type='organization', is_context=True)
-    if c: print "t- created AgentType: 'Cooperative'"
+    if c: print("t- created AgentType: 'Cooperative'")
 
     # EconomicAgent for admin_user related to him/her.
     admin_ea, c = EconomicAgent.objects.get_or_create(name='admin_agent',
         nick='admin_agent', agent_type=individual_at,  is_context=False)
-    if c: print "t- created EconomicAgent: 'admin_agent'"
+    if c: print("t- created EconomicAgent: 'admin_agent'")
 
     au, c = AgentUser.objects.get_or_create(agent=admin_ea, user=admin_user)
-    if c: print "t- created AgentUser: "+str(au)
+    if c: print("t- created AgentUser: "+str(au))
 
     # EconomicAgent for Freedom Coop
     fdc, c = EconomicAgent.objects.get_or_create(name='Freedom Coop',
         nick='Freedom Coop', agent_type=cooperative_at, is_context=True)
-    if c: print "t- created EconomicAgent: 'Freedom Coop'"
+    if c: print("t- created EconomicAgent: 'Freedom Coop'")
 
     # Project for FreedomCoop
     pro, c = Project.objects.get_or_create(agent=fdc, joining_style="shares", fobi_slug='freedom-coop')
-    if c: print "t- created Project: "+str(pro)
+    if c: print("t- created Project: "+str(pro))
     pro.visibility = 'public'
     pro.save()
 
@@ -71,7 +71,7 @@ def initial_test_data():
     request.user = admin_user
     form_entry = perform_form_entry_import(request, form_data)
     if form_entry:
-        print "t- created fobi FormEntry importing freedom-coop.json: "+str(form_entry)
+        print("t- created fobi FormEntry importing freedom-coop.json: "+str(form_entry))
         #import pdb; pdb.set_trace()
 
     json_data.close()
@@ -81,25 +81,25 @@ def initial_test_data():
     # EconomicAgent for Memebership Request
     #fdcm, c = EconomicAgent.objects.get_or_create(name='FreedomCoop Membership',
     #    nick=settings.SEND_MEMBERSHIP_PAYMENT_TO, agent_type=project_at, is_context=True)
-    #if c: print "t- created EconomicAgent: 'FreedomCoop Membership'"
+    #if c: print("t- created EconomicAgent: 'FreedomCoop Membership'")
 
     # EventType for todos
     et, c = EventType.objects.get_or_create(name='Todo', label='todo',
         relationship='todo', related_to='agent', resource_effect='=')
-    if c: print "t- created EventType: 'Todo'"
+    if c: print("t- created EventType: 'Todo'")
 
     hr = Unit.objects.get(name='Hours')
     ert, c = EconomicResourceType.objects.get_or_create(name='some_skill_of_Admin', unit=hr, unit_of_use=hr, behavior='work')
-    if c: print "t- created EconomicResourceType: "+str(ert)
+    if c: print("t- created EconomicResourceType: "+str(ert))
 
     # Manage FairCoin
     FC_unit = Unit.objects.get(name='FairCoin') #_or_create(unit_type='value', name='FairCoin', abbrev='fair')
-    if FC_unit: print "t- found Unit: 'FairCoin'"
+    if FC_unit: print("t- found Unit: 'FairCoin'")
 
     ert = EconomicResourceType.objects.get(name_en='Faircoin Ocp Account') #, unit=FC_unit, unit_of_use=FC_unit,
         #value_per_unit_of_use=decimal.Decimal('1.00'), substitutable=True, behavior='dig_acct')
-    if ert: print "t- found EconomicResourceType: 'Faircoin Ocp Account'"
+    if ert: print("t- found EconomicResourceType: 'Faircoin Ocp Account'")
 
     arrt, c = AgentResourceRoleType.objects.get_or_create(name_en='Owner', is_owner=True)
-    if c: print "t- created AgentResourceRoleType: "+str(arrt)
+    if c: print("t- created AgentResourceRoleType: "+str(arrt))
 

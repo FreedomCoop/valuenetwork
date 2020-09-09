@@ -28,7 +28,10 @@ class ProjectAdmin(admin.ModelAdmin):
 
 admin.site.register(Project, ProjectAdmin)
 
+class MetaInfoAdmin(admin.ModelAdmin):
+    list_display = ('id', 'agent', 'type', 'changed_date')
 
+admin.site.register(MetaInfo, MetaInfoAdmin)
 
 class NewFeatureAdmin(admin.ModelAdmin):
     list_display = ('name', 'deployment_date', 'description', 'url',)

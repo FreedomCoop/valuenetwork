@@ -5,11 +5,12 @@
 {% load bootstrap_tags %}
 {% load mptt_tags %}
 {% load filters %}
+{% load comments %}
 
 {% block head_title %}{% trans "Exchanges" %}{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="https://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" />
+<link rel="stylesheet" href="{% static 'css/jquery-ui.css' %}" /> <!-- https://code.jquery.com/ui/1.12.1/themes/base/ -->
 <link rel="stylesheet" href="{% static 'css/chosen.css' %}" />
 <link rel="stylesheet" href="{% static 'css/skin-lion/ui.fancytree.min.css' %}" />
 
@@ -31,29 +32,28 @@ span.pending, span.complete, span.empty {
   /*float: left;*/
   padding: 0 0.1em 0 0;
 }
-h3 {
+/*h3 {
     font-size: 19.5px;
+}*/
+
+#filter-form .controls input {
+    max-width: 110px;
 }
 
+
 .totals {
-    /*border: solid 2px firebrick;
-    background-color: oldlace;
-    margin-bottom: 12px;
-    padding-left: 1em;
-  padding-top: 16px;
-  padding-bottom: 16px;
-  max-width: 323px;
-  float: right;
-  width: 310px;
-  margin-left: 16px;*/
   display: inline-block;
 }
 .totals table {
   position: relative;
+  border: none;
 }
-/*.totals table thead {
+.totals table thead {
   border-bottom: 1px solid #ddd;
-}*/
+}
+.totals table thead th {
+  border: none;
+}
 .totals table tbody tr {
   border-top: 1px solid #ddd;
 }
@@ -61,12 +61,14 @@ h3 {
   border-top: none;
 }
 .totals table tr td {
+  border: none;
   border-left: 1px solid #ddd;
   padding: 5px 10px;
   text-align: right;
   /*font-weight: bold;*/
 }
 .totals table tr th {
+  border: none;
   text-align: right;
   padding: 5px 10px;
   color: #476B6B;
@@ -74,11 +76,17 @@ h3 {
   font-weight: normal;
 }
 .totals table tr:first-child th {
-  border-right: none;
+  /*border-right: none;*/
   padding: 0 10px;
   text-align: left;
 }
-.totals table tr th:last-child {
+.totals table tbody th {
+    border-left: none;
+}
+.totals table tbody tr:last-child td, .totals table tbody tr:last-child th {
+    border-bottom: none;
+}
+.totals table tr th:last-child, .totals table tr td:last-child {
   border-right: none;
 }
 .totals table tr th h4 {
@@ -104,18 +112,42 @@ span.total {
 .table thead th .sub-th {
     font-size: 90%;
     color: grey;
+    line-height: 1.2em;
+    display: inline-block;
 }
-.exlist table.dataTable.table-condensed .sorting::after, .exlist table.dataTable.table-condensed .sorting_asc::after, .exlist table.dataTable.table-condensed .sorting_desc::after {
-    top: 24px;
-    /*right: 6px;*/
+.exlist table.dataTable {
+    border-collapse: collapse !important;
 }
-div.dataTables_filter {
+.exlist table.dataTable th {
+    padding: .3rem .7rem;
+}
+.exlist table.dataTable thead .sorting::after,
+.exlist table.dataTable thead .sorting_asc::after, .exlist table.dataTable thead .sorting_desc::after {
+    top: 30px;
+    right: 5px;
+}
+.exlist table.dataTable thead .sorting::before,
+.exlist table.dataTable thead .sorting_asc::before, .exlist table.dataTable thead .sorting_desc::before {
+    top: 30px;
+    right: 12px;
+}
+.dt-buttons {
     float: right;
+}
+div.dataTables_filter, div.dt-buttons, div.dataTables_info, div.dataTables_length, div.row > div.col > div.dataTables_paginate {
+    margin-top: 10px;
+}
+div.row > div.col >  div.dataTables_paginate ul.pagination {
+    justify-content: flex-start;
+}
+/*div.dataTables_wrapper div.dataTables_info {
+    padding-top: inherit !important;
 }
 div.dataTables_length {
     float: right;
     margin-right: 4em;
-}
+}*/
+
 td.qty {
     text-align: right;
 }
@@ -125,6 +157,14 @@ th.give {
 
 small {
   font-size: 90%;
+}
+
+td.alignright {
+    text-align: right;
+}
+
+td {
+    line-height: 1.2em;
 }
 
 #exchangeTypeForm {
@@ -186,15 +226,16 @@ hr {
   /*max-height: 97px;*/
 }
 .miniform {
-  margin-left: 0px;
-  /*float: left;*/
+    margin-bottom: 0;
+  /*margin-left: 0px;
+  float: left;*/
 }
+
 #exchangeForm p {
   margin: 0 0 5px;
 }
 .filter {
   float: right;
-  width: 310px;
 }
 
 .showhide {
@@ -341,13 +382,13 @@ hr {
                 {% endif %}
               {% endif %}
               {% if request.user.agent.agent.need_projects %}
-                  <a class="indent" href="{% url "your_projects" %}">{% trans "Your Projects" %}</a>
+                  <!-- <a class="indent" href="{% url "your_projects" %}">{% trans "Your Projects" %}</a> -->
               {% endif %}
             </div>
         </legend>
-
-    <div class="span12">
-        <div class="span8" style="margin-left:0;">
+    <div class="container span12" style="padding: 0px;">
+      <div class="row" style="width: 100%;">
+        <div class="col-lg-auto col-sm-12" style="margin-left:0;">
           {% if request.user.agent.agent in context_agent.managers or request.user.agent.agent == context_agent or request.user.is_superuser %}
             <div class="totals infobox" style="min-width:320px; padding-bottom:13px;">
               <span class="showhide" id="sh-totals" style="float:right;">(SHOW)</span>
@@ -359,7 +400,7 @@ hr {
                   {% trans "There are no exchanges to count..." %}
                 </p>
               {% else %}
-              <table>
+              <table class="totalbox">
                 <thead>
                   <tr>
                     <th> &nbsp; </th>
@@ -375,14 +416,12 @@ hr {
                 </thead>
                 <tbody>
                   <tr>
-                    <th style="min-width: 65px;">
-                      &nbsp; <span class="list" id="list-totals_B"><b style="font-size:110%">{% trans "Balance:" %}</b></span>
+                    <th style="min-width: 65px; text-align:right; padding: 5px 10px;">
+                      <span class="list" id="list-totals_B"><b style="font-size:110%">{% trans "Balance:" %}</b></span>
                     </th>
                     {% for tt in total_transfers %}
                       {% if tt.name %}
-                          <td>&nbsp; &nbsp; <b style="">{{ tt.balance|safe }}</b>
-                              {% if tt.balnote %}<br/>? {{ tt.balnote }} {{ tt.abbr }}
-                              {% elif not tt.balance|first == '<' %} <b>{{ tt.abbr }}</b> {% elif '' == '>' %}
+                          <td> <b style="">{{ tt.balance|safe }}</b>{% if tt.balnote %}<br/>? {{ tt.balnote }} {{ tt.abbr }}{% elif not tt.balance|first == '<' %}&nbsp;<b>{{ tt.abbr }}</b> {% elif '' == '>' %}
                               {% endif %}</td>
                       {% endif %}
                     {% endfor %}
@@ -393,7 +432,7 @@ hr {
                     </th>
                     {% for tt in total_transfers %}
                       {% if tt.name %}
-                        <td>&nbsp; + {{ tt.income }} {{ tt.abbr }}<br/>{% if tt.incommit %}({{ tt.incommit }} {{ tt.abbr }}){% else %}&nbsp;{% endif %}</td>
+                        <td> +&nbsp;{{ tt.income }}&nbsp;{{ tt.abbr }}<br/>{% if tt.incommit %}({{ tt.incommit }}&nbsp;{{ tt.abbr }}){% else %}&nbsp;{% endif %}</td>
                       {% endif %}
                     {% endfor %}
                   </tr>
@@ -403,7 +442,7 @@ hr {
                     </th>
                     {% for tt in total_transfers %}
                       {% if tt.name %}
-                          <td>&nbsp; - {{ tt.outgo }} {{ tt.abbr }}<br/>{% if tt.outcommit %}({{ tt.outcommit }} {{ tt.abbr }}){% else %}&nbsp;{% endif %}</td>
+                          <td> -&nbsp;{{ tt.outgo }}&nbsp;{{ tt.abbr }}<br/>{% if tt.outcommit %}({{ tt.outcommit }}&nbsp;{{ tt.abbr }}){% else %}&nbsp;{% endif %}</td>
                       {% endif %}
                     {% endfor %}
                   </tr>
@@ -425,19 +464,14 @@ hr {
                 </tbody>
               </table>
               {% endif %}
-              <!-- <span class="total">Incoming total: {{ total_transfers }} </span><br/>
-              <span class="total">Outgoing total: {{ total_rec_transfers }} </span>
-
-              <br />{% trans "* Note these totals are meaningful only if the events selected all use the same currency. <br/>(We'll do a multi total per unit-type box soon)" %} -->
 
             </div>
-            <br/><br/>
           {% endif %}
         </div>
 
-        <div class="span4">
+        <div class="col-lg-auto col-sm-12 ">
 
-          <div class="filter miniform">
+          <div class="miniform" style="margin-bottom: 20px">
             {% comment %}
             {% if exchanges %}
                 <div>
@@ -445,44 +479,66 @@ hr {
                 </div>
             {% endif %}
             {% endcomment %}
-            <h3 style="margin-bottom:8px;">{% trans "Filters:" %}</h3>
-            <form id="filter-form" action="." method="POST" style="margin-bottom:6px;">
+
+            <form id="filter-form" action="" method="POST" style="overflow:auto;">
 	            {% csrf_token %}
-                <div id="div_id_start_date" class="control-group" style="display:inline-block; margin-bottom:0;" >
-                    <label for="id_start_date" class="control-label required-field" style="display:inline-block;" >
-                        {% trans "Start:" %}
-                    </label>
-                    <div class="controls" style="display: inline-flex;" >
-                        {{ dt_selection_form.start_date }}
-                    </div> &nbsp;
+              <div class="row no-gutters">
+                <div class="col-lg-2 col-sm-4">
+                  <h3 style="margin-bottom:8px;">{% trans "Filters:" %}&nbsp;</h3>
                 </div>
-                <div id="div_id_end_date" class="control-group" style="display:inline-block; margin-bottom:0;" >
-                    <label for="id_end_date" class="control-label required-field" style="display:inline-block;" >
-                        {% trans "End:" %}
-                    </label>
-                    <div class="controls" style="display: inline-flex;" >
-                        {{ dt_selection_form.end_date }}
+                <div class="col-lg-4 col-sm-12"">
+                  <div id="div_id_start_date" class="control-group" style="display:inline-block; margin-top:3px;" >
+                      <label for="id_start_date" class="control-label required-field" style="display:inline-block;" >
+                          {% trans "Start:" %}
+                      </label>
+                      <div class="controls" style="display: inline-flex;" >
+                          {{ dt_selection_form.start_date }}
+                      </div> &nbsp;
+                  </div>
+                  <div id="div_id_end_date" class="control-group" style="display:inline-block; margin-top:3px;" >
+                      <label for="id_end_date" class="control-label required-field" style="display:inline-block;" >
+                          {% trans "End:" %}
+                      </label>
+                      <div class="controls" style="display: inline-flex;" >
+                          {{ dt_selection_form.end_date }}
+                      </div> &nbsp;
+                  </div>
+                </div>
+
+                <div class="col-lg-6 col-sm-12"">
+                  <div class="" style="margin-top:5px;">
+                      <span class="title"> {% trans "More filters:" %}</span> &nbsp;
+                      <span class="showhide" id="sh-filter_by_type" >(SHOW)</span>&nbsp;
+                      <input type="submit" id="btn-filter" name="submit" class="btn btn-info" value="{% trans 'Filter' %}"
+                           style="float:right; margin: 0 0 5px 5px;"/>
+                  </div>
+                </div>
+              </div>
+	            <div class="list" id="list-filter_by_type" style="display:none; margin-top:10px;">
+                <div class="row no-gutters">
+                  <div class="col-lg-2 col-sm-4" style="margin-bottom:10px">
+                    <input type="checkbox" class="category" id="all" name="all" value="all" />&nbsp;<label for="all" style="margin-bottom:0">{% trans "All" %}</label>
+                    <br/><span class="small">({% trans "in the date range" %})</span>
+                  </div>
+                  <div class="col-lg-4 col-sm-5">
+                    <h5>{% trans "Filter by Status" %}:</h5>
+                    <div><input type="radio" class="category" id="pending" name="status" value="pending" />&nbsp;<label for="pending">{% trans "Pending" %}</label> &nbsp;
+                        <input type="radio" class="category" id="complete" name="status" value="complete" />&nbsp;<label for="complete">{% trans "Complete" %}</label>
                     </div>
+                  </div>
+                  <div class="col-lg-6 col-sm-12">
+                    <h5>{% trans "Filter by Type" %}:</h5>
+                    <div>
+                      <input type="radio" class="category" id="donations" name="mode" value="donations" />&nbsp;<label for="donations">{% trans "Donations" %}:</label> &nbsp;
+                      <input type="radio" class="category" id="give" name="mode" value="give" />&nbsp;<label for="give">{% trans "Give" %}</label> &nbsp;
+                      <input type="radio" class="category" id="receive" name="mode" value="receive" />&nbsp;<label for="receive">{% trans "Receive" %}</label> &nbsp;
+                      <br/>
+                      <input type="radio" class="category" id="exchang" name="mode" value="exchanges" />&nbsp;<label for="exchang">{% trans "Exchanges" %}:</label> &nbsp;
+                      <input type="radio" class="category" id="memberships" name="mode" value="memberships" />&nbsp;<label for="memberships">{% trans "to Membership" %}</label>
+                    </div>
+                  </div>
                 </div>
-	            <div class="list" id="list-filter_by_type" style="display:none;">
-                <p><span class="title"> {% trans "Filter by Type" %}:</span>
-                </p>
-                <p><input type="checkbox" class="category" id="all" name="all" value="all" {% if select_all %}checked="yes"{% endif %} /> {% trans "All in the date range" %}</p>
-                {% for x in exchanges_by_type %}
-                  {% if user.is_staff or request.user.agent.agent in context_agent.managers or request.user.agent.agent in x.related_agents %}
-                    {% with x.exchange_type as et %}
-                      {% with et.ocp_record_type.get_ancestors|slice:"5:6"|first as useca %}
-                        {% ifchanged useca %}
-                          <h5>{{ useca.name }}</h5>
-                        {% endifchanged %}
-                      {% endwith %}
-                      {% ifchanged et.ocp_record_type and et.ocp_record_type.name %}
-                        <p><input type="checkbox" class="category" id="{{ et.id }}" name="{{ et.id }}" value="{{ et.id }}" /> {% if not et.ocp_record_type %}{{ et }} (!){% else %}{{ et.ocp_record_type.name }}{% endif %}</p>
-                      {% endifchanged %}
-                    {% endwith %}
-                  {% endif %}
-                {% endfor %}
-                </div>
+              </div>
 
 {% comment %}
                 {% if references %}
@@ -493,53 +549,55 @@ hr {
 	            {% endif %}
 {% endcomment %}
 
-                <div style="float:right; margin-top:5px;">
-                    <span class="title"> {% trans "by type:" %}</span> &nbsp; <span class="showhide" id="sh-filter_by_type" >(SHOW)</span>
-                </div>
+
 	            <input type="hidden" id="categories" name="categories" value=" {{ selected_values }} " />
-	            <input type="submit" id="btn-filter" name="submit" class="btn btn-info" value="{% trans 'Filter' %}"
-                       style="float:left; margin-bottom:5px;"/>
+
             </form>
           </div>
         </div>
+      </div>
     </div>
     <div class="span12">
 
       <!-- </div> -->
       <div class="exlist" style="">
       {% if exchanges_by_type %}
-        <h3>
+        <h3 id="title-list">
           {% trans "List of Exchanges" %}{% if not user.is_staff and not request.user.agent.agent in context_agent.managers and not request.user.agent.agent == context_agent %}
             <span>({% trans "related to you" %})</span>
-            {% endif %}: &nbsp;<span style="font-size:80%" class="small">({% trans "listing" %} {{ exchanges.count }} of {{ exchanges_by_type.count }})</span>
+            {% endif %}: &nbsp;<span class="small" style="font-size:65%">({% trans "total" %} {{ exchanges_by_type.count }})</span>
         </h3>
         <table id="exchanges" style="width: 100%;" class="table table-bordered table-hover table-condensed cell-border order-column stripe" >
         <thead>
-            <th>{% trans "State" %}</th>
+            <th>{% trans "State" %} / {% trans "Actions" %}</th>
             <th>{% trans "Date" %}</th>
-            <th>{% trans "Action" %}</th>
             <th>{% trans "Agent" %}</th>
             <th class="give">{% trans "Give" %}<br/>
                 <span class="sub-th">{% trans "Qty" %}</span>
             </th>
             <th class="give"><br/><span class="sub-th">{% trans "Resource" %}</span></th>
             <th class="give"><br/><span class="sub-th">{% trans "Last date" %}</span></th>
-            <th class="receive">{% trans "Receive" %}<br/>
+            <th class="receive" style="padding-right:5px;">{% trans "Receive" %}<br/>
                 <span class="sub-th">{% trans "Qty" %}</span>
             </th>
             <th class="receive"><br/><span class="sub-th">{% trans "Resource" %}</span></th>
             <th class="receive"><br/><span class="sub-th">{% trans "Last date" %}</span></th>
         </thead>
         <tbody>
+        {% comment %}
         {% for x in exchanges %}
             {% if request.user.agent.agent in context_agent.managers or request.user.agent.agent == context_agent or request.user.is_superuser %}
                 <tr>
                     <td>
-
-                            <a href="{% url "exchange_logging_work" context_agent_id=context_agent.id exchange_type_id=0 exchange_id=x.id %}"
-                               class="{{ x.statuss }}" >
-                                {{ x.statuss|title }}
-                            </a>
+                        <a href="{% url "exchange_logging_work" context_agent_id=context_agent.id exchange_type_id=0 exchange_id=x.id %}"
+                           class="{{ x.statuss }}" >
+                            {{ x.statuss|title }}
+                        </a>
+                        {% if x.join_request %}
+                            {% get_comment_count for x.join_request as ncom %}
+                            <a href="{% url "project_feedback" agent_id=context_agent.id join_request_id=x.join_request.id %}"
+                               class="btn-mini-icon"><i class="icon-comment" style="margin: 2px 3px 0px -1px;"></i>{{ ncom }}</a>
+                        {% endif %}
 
                         {% if user == x.created_by or user.is_superuser%}
                             <!-- <a class="btn btn-info btn-mini" href="{% url "exchange_logging_work" context_agent_id=context_agent.id exchange_type_id=0 exchange_id=x.id %}">{% trans "Change" %}</a> -->
@@ -559,18 +617,6 @@ hr {
                     </td>
                     <td>
                         {{ x.start_date|date:"Y-m-d" }}
-                    </td>
-                    <td>
-                        {{ x.exchange_type|show_name:context_agent|safe }}
-                        {% if x.join_request %}
-                            {% trans "shares" %}
-                            <a href="{% url "project_feedback" agent_id=context_agent.id join_request_id=x.join_request.id %}"
-                               style="font-weight:bold;">
-                            {% trans "Request" %}
-                            </a>
-                        {% else %}
-
-                        {% endif %}
                     </td>
                     <td class="agent">
                         {% if x.join_request %}
@@ -657,7 +703,7 @@ hr {
                                   {% elif x.transfers.all|length == 1 %}
                                     {% with x.transfers.all|first as tx %}
                                       {% if tx.from_agent == context_agent %}
-                                        <span class="{{ tx.status }}">&#9679;</span>
+                                        <span class="{{ tx.status }}">&#9899;</span>
                                         {% if tx.quantity %}
                                             {{ tx.quantity }}
                                             {% if tx.actual_quantity and not tx.actual_quantity == tx.quantity %}({{ tx.actual_quantity }}){% endif %}
@@ -681,7 +727,7 @@ hr {
                         {% elif x.transfers.all %} tr!
                             {% for tx in x.transfers.all %}
                                 {% if tx.from_agent == context_agent or x.join_request.project.agent == context_agent and not tx.from_agent %}
-                                    <span class="{{ tx.status }}">&#9679;</span>
+                                    <span class="{{ tx.status }}">&#9899;</span>
                                         {% if tx.quantity %}
                                             {{ tx.quantity }}
                                             {% if tx.actual_quantity and not tx.actual_quantity == tx.quantity %}({{ tx.actual_quantity }}){% endif %}
@@ -736,7 +782,7 @@ hr {
                         {% if x.slots %}
                             {% for slot in x.slots %}
                                 {% if context_agent in slot.agents_from %}
-                                    <span class="{{ slot.status }}">&#9679;</span> {{ slot.last_date }}
+                                    <span class="{{ slot.status }}">&#9899;</span> {{ slot.last_date }}
                                 {% endif %}
                             {% endfor %}
                         {% endif %}
@@ -804,7 +850,7 @@ hr {
                         {% elif x.transfers.all %} tr!
                             {% for tx in x.transfers.all %}
                                 {% if tx.to_agent == context_agent or x.join_request.agent == context_agent and not tx.to_agent %}
-                                    <span class="{{ tx.status }}">&#9679;</span>
+                                    <span class="{{ tx.status }}">&#9899;</span>
                                     {% if tx.quantity %}
                                         {{ tx.quantity }}
                                         {% if tx.actual_quantity and not tx.actual_quantity == tx.quantity %}({{ tx.actual_quantity }}){% endif %}
@@ -855,7 +901,7 @@ hr {
                         {% if x.slots %}
                             {% for slot in x.slots %}
                                 {% if context_agent in slot.agents_to %}
-                                    <span class="{{ slot.status }}">&#9679;</span> {{ slot.last_date }}
+                                    <span class="{{ slot.status }}">&#9899;</span> {{ slot.last_date }}
                                 {% endif %}
                             {% endfor %}
                         {% endif %}
@@ -863,13 +909,16 @@ hr {
                 </tr>
             {% endif %}
 		{% endfor %}
+        {% endcomment %}
         </tbody>
         </table>
       {% endif %}
       </div>
 
+      <p> &nbsp; </p>
+      {% comment %}
       {% if False and request.user.agent.agent in context_agent.managers or request.user.agent.agent == context_agent and request.user.is_superuser %}
-            <p> &nbsp; </p>
+
             <div id="new_exchange" class="miniform">
             <form id="exchangeForm" style="margin:0; padding-bottom:11px;" method="POST" action="">
                 <h3 style="display:inline-block;">{% trans "Create a new Exchange" %}:</h3> &nbsp;
@@ -1123,10 +1172,14 @@ hr {
                 &nbsp; <input style="display: inline; vertical-align: top;" type="submit" name="new-exchange-type" value="{% trans 'New Exchange Type' %}" class="btn btn-primary btn-mini" />
             </form> -->
 
-            <div class="modal hide fade" id="addResourceTypeModal" tabindex="-1" role="dialog" aria-labelledby="commit" aria-hidden="true"  style="width:590px;">
+            <div class="modal hide fade" id="addResourceTypeModal" tabindex="-1" role="dialog" aria-labelledby="commit" aria-hidden="true" style="">
+              <div class="modal-dialog">
+              <div class="modal-content">
               <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                 <h3><span id="name_action">{% trans "Add a new " %}</span> {% trans "Resource Type:" %}</h3>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
               </div>
               <div class="modal-body">
                 <form class="validateMe" id="resourceForm" enctype="multipart/form-data" action="{% url "new_resource_type" agent_id=context_agent.id %}" method="POST" >
@@ -1148,11 +1201,17 @@ hr {
                   </div>
                 </form>
               </div>
+              </div>
+              </div>
             </div>
-            <div class="modal hide fade" id="addSkillTypeModal" tabindex="-1" role="dialog" aria-labelledby="commit" aria-hidden="true"  style="width:590px;">
+            <div class="modal hide fade" id="addSkillTypeModal" tabindex="-1" role="dialog" aria-labelledby="commit" aria-hidden="true"  style="">
+              <div class="modal-dialog">
+              <div class="modal-content">
               <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                 <h3><span id="name_action">{% trans "Add a new" %}</span> {% trans "Skill Type:" %}</h3>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
               </div>
               <div class="modal-body">
                 <form class="validateMe" id="skillForm" enctype="multipart/form-data" action="{% url "new_skill_type" agent_id=context_agent.id %}" method="POST" >
@@ -1175,11 +1234,17 @@ hr {
                   </div>
                 </form>
               </div>
+              </div>
+              </div>
             </div>
-            <div class="modal hide fade" id="editExchangeTypeModal" tabindex="-1" role="dialog" aria-labelledby="commit" aria-hidden="true"  style="width:590px;">
+            <div class="modal hide fade" id="editExchangeTypeModal" tabindex="-1" role="dialog" aria-labelledby="commit" aria-hidden="true"  style="">
+              <div class="modal-dialog">
+              <div class="modal-content">
               <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                 <h3><span id="name_action">{% trans "Edit an " %}</span> {% trans "Exchange Type:" %}</h3>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
               </div>
               <div class="modal-body">
                 <form class="validateMe" id="exchangeTypeForm" enctype="multipart/form-data" action="" method="POST" >
@@ -1201,29 +1266,33 @@ hr {
                   </div>
                 </form>
               </div>
+              </div>
+              </div>
             </div>
 
           </div>
 
           {% endif %}
-
+      {% endcomment %}
       </div>
 </div>
 {% endblock %}
 
 {% block extra_script %}
-	<!-- <script src="https://code.jquery.com/ui/1.9.2/jquery-ui.js"></script> -->
-  <script src="https://code.jquery.com/jquery-1.12.1.min.js"></script>
-  <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+	<!-- <script src="https://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+  <script src="https://code.jquery.com/jquery-1.12.1.min.js"></script> -->
+
+  <script src="{% static 'js/jquery-ui.min.js' %}"></script> <!-- https://code.jquery.com/ui/1.12.1/jquery-ui.min.js -->
   <script src="{% static 'js/chosen.jquery.js' %}"></script>
   <script src="{% static 'js/jquery.fancytree-all.min.js' %}"></script>
-  <script src="{% static 'js/ocp-trees.js' %}"></script>
+  <script type="text/javascript" charset="utf8" src="{% static 'js/ocp-trees.js' %}"></script>
+  <script type="text/javascript" charset="utf8" src="{% static 'js/jquery.expander.min.js' %}"></script>
 
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs/jszip-2.5.0/dt-1.10.18/b-1.5.2/b-colvis-1.5.1/b-html5-1.5.2/r-2.2.2/datatables.min.css"/>
+<link rel="stylesheet" type="text/css" href="{% static 'css/datatables.min.css' %}"/> <!-- https://cdn.datatables.net/v/bs4/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/r-2.2.5/ -->
 
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/v/bs/jszip-2.5.0/dt-1.10.18/b-1.5.2/b-colvis-1.5.1/b-html5-1.5.2/r-2.2.2/datatables.min.js"></script>
+<script type="text/javascript" src="{% static 'js/pdfmake.min.js' %}"></script> <!-- https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/ -->
+<script type="text/javascript" src="{% static 'js/vfs_fonts.js' %}"></script> <!-- https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/ -->
+<script type="text/javascript" src="{% static 'js/datatables.min.js' %}"></script> <!-- https://cdn.datatables.net/v/bs4/dt-1.10.21/b-1.6.2/b-colvis-1.6.2/b-html5-1.6.2/r-2.2.5/ -->
 
 {% endblock %}
 
@@ -1234,45 +1303,99 @@ hr {
 
   $(document).ready(function(){
 
-    $("#exchanges").DataTable({
-        stateSave: true,
-        autoWidth: true,
-        order: [[1, 'desc']],
-        dom: 'rfltBip', //'B<"clear">lfrtip',
-        buttons: [
-            'colvis',
-            {
-                extend: 'pdf',
-                exportOptions: {
-                    columns: ':visible'
-                }
-            },
-            {
-                extend: 'csv',
-                exportOptions: {
-                    columns: ':visible'
-                }
-            },
-        ],
-        "columnDefs": [
-            {
-                // The `data` parameter refers to the data for the cell (defined by the
-                // `data` option, which defaults to the column being worked with, in
-                // this case `data: 0`.
-                "render": function ( data, type, row ) {
-                    //arr = data.split(', ');
-                    //if (arr.length == 2){
-                    //    return arr[1]+', '+arr[0];
-                    //} else {
-                    //    return data +' ('+ row+')';
-                    //}
-                    return data
-                },
-                "targets": 1
+    var table = $("#exchanges")
+        .on( 'processing.dt', function ( e, settings, processing ) {
+            $('#exchanges_processing').css('border', '0').css('top','16px').css('left','167px').css( 'display', processing ? 'block' : 'none' );
+            $('.table-condensed').attr('style', processing ? 'pointer-events:none; opacity:0.5;' : 'pointer-events:inherit; opacity:1;');
+            if(!processing){
+                update_longs();
             }
-        ]
+        } )
+        .DataTable({
+            "stateSave": true,
+            "autoWidth": true,
+            "order": [[1, 'desc']],
+            "dom": '<"row no-gutters"<"col"ri><"col right"l>><"row no-gutters bigbox"t><"row no-gutters"<"col left"p><"col"B>>',//'irftBpl', //'B<"clear">lfrtip',
+            "buttons": [
+                'colvis',
+                {
+                    extend: 'pdf',
+                    exportOptions: {
+                        columns: ':visible'
+                    }
+                },
+                {
+                    extend: 'csv',
+                    exportOptions: {
+                        columns: ':visible'
+                    }
+                },
+            ],
+
+            "lengthMenu": [[5, 10, 25, 50, 100, 500], [5, 10, 25, 50, 100, 500]],
+
+            "processing": true,
+            "serverSide": true,
+            "ajax": {
+                "url": "{% url 'exchange_list_json' agent_id=context_agent.id start=start end=end %}",
+                "type": "POST",
+                "data": function(d){
+                            d.filters = $('#categories').prop('value').trim();
+                            d.start_date = $('#id_start_date').val(); //prop('value')),
+                            d.end_date = $('#id_end_date').val(); //prop('value')),
+                        },
+            },
+            "language": {
+                "processing": "<img src='{% static 'img/loading.gif' %}' />"
+            },
+
+            "columns": [
+                { "orderable": false }, // actions
+                null, //{ "data": "exchange_date" },
+                { "orderable": false,
+                  "type": "html" }, //{ "data": "agent" },
+                { className: "alignright",
+                  "orderable": false }, //{ "data": "give_qty" },
+                { className: "textlong",
+                  "orderable": false }, //{ "data": "give_resource" },
+                { "orderable": false }, //{ "data": "give_lastdate" },
+                { className: "alignright",
+                  "orderable": false }, //{ "data": "receive_qty",
+                { className: "textlong",
+                  "orderable": false }, //{ "data": "receive_resource",
+                { "orderable": false }, //{ "data": "receive_lastdate",
+            ],
+        });
+
+    $('#btn-filter').click(function(event){
+        event.preventDefault();
+        table.ajax.reload();
+        var tit = $('#title-list').text().trim().split(' ');
+        var cats = $('#categories').prop('value').trim().split(',');
+        for(var ca in cats){
+            if(tit.includes(cats[ca])){
+                alert(tit);
+            } else {
+                //alert(cats[ca]+" tit:"+tit);
+            }
+        }
     });
 
+    function update_longs(){
+        $('.textlong').each(function(e) {
+            $(this).expander({
+                    slicePoint:       50,  // default is 100
+                    expandSpeed: 0,
+                    expandEffect: 'show',
+                    collapseSpeed: 0,
+                    collapseEffect: 'hide',
+                    expandPrefix:     ' ', // default is '... '
+                    expandText:       '&nbsp; <span style="font-weight:bold">+</span>', // default is 'read more'
+                    userCollapseText: '&nbsp; <span style="font-weight:bold">&ndash;</span>'  // default is 'read less'
+            });
+        });
+    };
+    update_longs();
 
     $( "#help" ).toggle( function(){
         $('#help-content').show("slide", { direction: "right" }, "slow" );
@@ -1282,7 +1405,7 @@ hr {
         $( "#help" ).text("Show Help");
     });
 
-		$('.date-entry').datepicker({ dateFormat: "yy-mm-dd" });
+	$('.datepicker').datepicker({ dateFormat: "yy-mm-dd" });
 
     $('#tabs').removeAttr('style').tabs({
       classes: {
@@ -1341,41 +1464,50 @@ hr {
     //   C A T E G O R I E S
 
 		var selectedCats = "{{ selected_values }}";
+    var cats = $('#categories').val();
+    if(cats && cats !== selectedCats){
+      selectedCats = cats;
+    }
+    if(!selectedCats || selectedCats.trim() == 'all'){
+        $('.category').each(function(){
+            $(this).prop('checked', false);
+        });
+        $('#all').prop('checked', true);
+        selectedCats = 'all';
+    } else {
+        $('#all').prop('checked', false);
+        $('.category').each(function(){
+            var cat = $(this)[0];
+            if (selectedCats.indexOf(cat.value+',') > -1 || selectedCats.indexOf(','+cat.value) > -1 || selectedCats == cat.value ) {
+                $(this).prop('checked', true);
+                $("#sh-filter_by_type").click();
+            }
+		    });
+    }
+    $('#categories').prop('value', selectedCats);
 
-		$('.category').each(function(){
-			var cat = $(this)[0];
-      if (selectedCats.indexOf(cat.name+',') > -1 || selectedCats.indexOf(','+cat.name) > -1 || selectedCats == cat.name ) {
-				$(this).prop('checked', true);
-			}
-		});
-
-		$('.category').click(function()
-		{
-			var checkedCats = [];
-			var checkedBox = $(this)[0];
-			var allBox = $('#all')[0];
-			if (checkedBox == allBox)
-			{
-				$('.category').each(function()
-				{
-		            $(this).prop('checked', false);
-				});
-				$('#all').prop('checked', true);
-				checkedCats.push('all');
-			}
-			else
-			{
-				$('#all').prop('checked', false);
-				$('.category').each(function()
-				{
-					var cat = $(this)[0];
-		            if (cat.checked)
-					{
-						checkedCats.push(cat.value);
-					}
-				});
-			}
-			$('#categories').prop('value', checkedCats);
+		$('.category').click(function(){
+  			var checkedCats = [];
+  			var checkedBox = $(this)[0];
+  			var allBox = $('#all')[0];
+  			if (checkedBox == allBox){
+            $('.category').each(function(){
+  		            $(this).prop('checked', false);
+  				  });
+  				  $('#all').prop('checked', true);
+  				  checkedCats.push('all');
+  			} else {
+    				$('#all').prop('checked', false);
+    				$('.category').each(function(){
+      					var cat = $(this)[0];
+      		            if (cat.checked)
+      					{
+      						checkedCats.push(cat.value);
+      					}
+    				});
+  			}
+  			$('#categories').prop('value', checkedCats);
+        //alert(checkedCats);
 		});
 
 

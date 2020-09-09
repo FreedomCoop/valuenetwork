@@ -7,7 +7,7 @@ from valuenetwork.valueaccounting.models import Transfer as TransferProxy
 from valuenetwork.api.types.Exchange import Transfer
 
 
-class Query(graphene.AbstractType):
+class Query(object): #graphene.AbstractType):
 
     # define input query params
 

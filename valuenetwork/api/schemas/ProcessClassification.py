@@ -10,7 +10,7 @@ from valuenetwork.api.types.EconomicEvent import Action
 from django.db.models import Q
 
 
-class Query(graphene.AbstractType):
+class Query(object): #graphene.AbstractType):
 
     process_classification = graphene.Field(ProcessClassification,
                                             id=graphene.Int())

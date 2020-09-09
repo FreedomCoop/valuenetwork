@@ -243,9 +243,12 @@ th, td {
       {% trans "The options you already have in OCP are:" %}
     </p>
   {% endif %}
-
+</div>
+<div class="container" style="padding:0;">
+  <div class="row no-gutters" style="width:100%;">
   {% if agent.is_active_freedom_coop_member or agent.need_projects %}
     {% if agent.is_participant %}
+    <div class="col-sm">
     <div id="home-projects" class="home-block" >
       <h3>
         {% trans "Projects:" %}
@@ -270,9 +273,11 @@ th, td {
         </li>
       </ul>
     </div>
+    </div>
     {% endif %}
   {% endif %}
   {% if agent.need_tasks and agent.is_participant %}
+    <div class="col-sm">
     <div id="home-tasks" class="home-block" >
       <h3>
         {% trans "Tasks:" %}
@@ -292,8 +297,10 @@ th, td {
         </li>
       </ul>
     </div>
+    </div>
   {% endif %}
   {% if agent.joinaproject_requests %}
+      <div class="col-sm">
       <div id="joinaprojects" class="home-block">
         <h3>
           {% trans "Joining Projects:" %}
@@ -311,18 +318,22 @@ th, td {
         {% endfor %}
         </ul>
       </div>
+      </div>
   {% endif %}
 
   {% if request.user.agent.agent.faircoin_resource and not agent.joinaproject_requests %}
+    <div class="col-sm">
     <div id="home-account" class="home-block" >
       <h3><a href="{% url "manage_faircoin_account" resource_id=request.user.agent.agent.faircoin_resource.id %}">{% trans "Faircoin Account" %}</a></h3>
       <p>{% trans "Here you can manage your online Faircoin account in the OCP. In this account you will receive internal payments for the tasks you did. You can see your Faircoin address and you can send here external Faircoins from your personal wallet (or from Euros using <a href='https://getfaircoin.net' target='_blank'>https://getfaircoin.net</a>) if you need to pay something in OCP and have not earned enough Faircoins doing tasks." %}
       </p>
     </div>
+    </div>
   {% endif %}
 
     {% with request.user.agent.agent.membership_request as mreq %}
     {% if False and mreq %}
+    <div class="col-sm">
     <div id="home-membership" class="home-block" >
       <h3>
             <a href="{% url 'membership_discussion' membership_request_id=mreq.id %}">{% trans "Membership" %}</a>
@@ -341,18 +352,24 @@ th, td {
       <p>{% trans "Your FreedomCoop membership request data and a comments thread to comunicate with the Welcome Team about your particular case or project." %}
       </p>
     </div>
+    </div>
     {% endif %}
     {% endwith %}
 
+    <div class="col-sm">
     <div id="home-profile" class="home-block" >
       <h3><a href="{% url "profile" %}">{% trans "Profile" %}</a></h3>
       <p>{% trans "In this page you can see and edit your personal data and image, see your relations to projects and resources." %}
       </p>
     </div>
+    </div>
 
 
   </div>
-
+</div>
+    <p>
+        &nbsp;
+    </p>
 </div>
 {% endblock %}
 {% block extra_script %}

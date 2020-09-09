@@ -210,7 +210,7 @@ def project_process_resource_agent_graph(project_list, process_list):
                 agent_dict[a] = []
             agent_dict[a].append(p)
 
-    for agnt, procs in agent_dict.items():
+    for agnt, procs in list(agent_dict.items()):
         da = {
             "name": agnt.name,
             "type": "agent",
@@ -345,7 +345,7 @@ def project_process_graph(project_list, process_list):
     for p in process_list:
         next_ids = [n.node_id() for n in p.next_processes()]
         p.dp["next"].extend(next_ids)
-    for agnt, procs in agent_dict.items():
+    for agnt, procs in list(agent_dict.items()):
         da = {
             "name": agnt.name,
             "processes": []
@@ -662,13 +662,13 @@ def xbill_dfs(node, all_nodes, visited, depth):
         visited.append(node)
         #to_return = [XbillNode(node,depth),]
         to_return.append(XbillNode(node,depth))
-        #print "+created node:+", node, depth
+        #print("+created node:+", node, depth)
         for subnode in all_nodes:
             parents = subnode.xbill_parent_object().xbill_parents()
             xclass = subnode.xbill_class()
             if subnode.node_id() != node.node_id():
                 if parents and node in parents:
-                    #print "*active node:*", node, "*depth:*", depth, "*subnode:*", subnode, "*parent_object:*", subnode.xbill_parent_object(), "*parents:*", parents
+                    #print("*active node:*", node, "*depth:*", depth, "*subnode:*", subnode, "*parent_object:*", subnode.xbill_parent_object(), "*parents:*", parents)
                     to_return.extend(xbill_dfs(subnode, all_nodes, visited, depth+1))
     return to_return
 
@@ -699,8 +699,7 @@ def generate_xbill(resource_type):
     for kid in resource_type.xbill_children():
         to_return.extend(xbill_dfs(kid, nodes, visited, 1))
     annotate_tree_properties(to_return)
-    #to_return.sort(lambda x, y: cmp(x.xbill_object().name,
-    #                                y.xbill_object().name))
+    #to_return.sort(key=lambda x: x.xbill_object().name)
     return to_return
 
 
@@ -716,7 +715,7 @@ def annotate_tree_properties(nodes):
     it = iter(nodes)
 
     # get the first item, this will fail if no items !
-    old = it.next()
+    old = next(it)
 
     # first item starts a new thread
     old.open = True
@@ -728,10 +727,10 @@ def annotate_tree_properties(nodes):
 
         else: # c.depth <= old.depth
             # close some depths
-            old.close = range(old.depth - c.depth)
+            old.close = list(range(old.depth - c.depth))
 
         # iterate
         old = c
 
-    old.close = range(old.depth)
+    old.close = list(range(old.depth))
 

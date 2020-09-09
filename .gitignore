@@ -1,4 +1,10 @@
 *.pyc
+node_modules/
+dev.db
+site_media/
+static/dist/
+.DS_Store
+
 local_settings.py
 *.sqlite
 *.py~
@@ -8,6 +14,7 @@ local_settings.py
 *.swp
 *.swo
 *.log
+*.bak
 faircoin/faircoin.log*
 faircoin/faircoin_cron.log*
 .vagrant
@@ -19,14 +26,10 @@ media/logos/*.jpg
 media/avatars/*.jpg
 media/logos/*.png
 media/avatars/*.png
-valuenetwork/site_media/media/photos/*.jpg
-valuenetwork/site_media/media/photos/*.JPG
-valuenetwork/site_media/media/photos/*.jpeg
-valuenetwork/site_media/media/photos/*.JPEG
-valuenetwork/site_media/media/photos/*.png
-valuenetwork/site_media/media/photos/*.PNG
+
 faircoin/daemon/daemon.conf
 faircoin/daemon/daemon.py
 faircoin/daemon/daemon_service
 faircoin/daemon/new_privkeys.txt
 fixtures/*.json
+

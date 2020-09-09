@@ -33,10 +33,10 @@ class OrganizationType(DjangoObjectType):
 
     class Meta:
         model = AgentType
-        only_fields = ('id', 'name')
+        fields = ('id', 'name')
 
 
-class Query(graphene.AbstractType):
+class Query(object): #graphene.AbstractType):
 
     # define input query params
 

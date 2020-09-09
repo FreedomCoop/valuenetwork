@@ -1,9 +1,9 @@
 {% load i18n %}
 {% load mptt_tags %}
 
-<h3>{% trans "Filter Resource Types:" %}</h3>
+<h3 style="margin-bottom:2px;">{% trans "Filter Resource Types:" %}</h3>
 <form id="category-form" action="." method="POST">
-    {% if request.user.is_staff %}<p><em>(full trees only shown to admins)</em></p>{% endif %}
+    {% if request.user.is_staff %}<p class="helptext"><em>(full trees only shown to admins)</em><br></p>{% endif %}
 
 	{% csrf_token %}
 	<p><input type="checkbox" class="category" id="all" name="all" value="all" {% if select_all %}checked="yes"{% endif %} /> {% trans "All" %}

@@ -1,0 +1,59 @@
+body.announcements {
+    h2 {
+        a {
+            @include button-variant($primary, $primary);
+        }
+    }
+    .announcement {
+        @extend .card;
+        margin: 20px 0;
+        .announcement-body {
+            font-weight: 300;
+            @extend .card-body;
+        }
+        .announcement-title {
+            font-weight: 700;
+        }
+        .announcement-meta {
+            @extend .card-footer;
+            display: flex;
+            justify-content: space-between !important;
+        }
+    }
+    @media (min-width: 576px) {  // @include media-breakpoint-up(xs) { ... } seems to be ignored
+        main form {
+            margin: 0 auto;
+            width: 600px;
+        }
+    }
+    button.delete {
+        @include button-variant($danger, $danger);
+    }
+    form {
+        padding-bottom: 20px;
+    }
+}
+
+a.announcement-edit-link {
+    @extend .btn;
+    @include button-outline-variant($primary);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    line-height: 1;
+}
+
+div.announcement-container {
+    width: 100%;
+    margin: 20px auto;
+    @extend .card;
+    @extend .card-body;
+    .content {
+        font-weight: 300;
+    }
+}
+
+@media (min-width: 576px) {  // @include media-breakpoint-up(xs) { ... } seems to be ignored
+    div.announcement-container {
+        width: 600px;
+    }
+}

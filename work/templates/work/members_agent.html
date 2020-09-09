@@ -38,15 +38,12 @@
     width: 500px;
     height: 100px;
   }
-  .modal {
-      width: 600px;
-  }
   .text-center {
       text-align: center;
   }
-  .assoc li {
+  /*.assoc li {
       margin-left: 3em;
-  }
+  }*/
   .indent {
       margin-left: .9em;
       }
@@ -128,6 +125,7 @@
     width: 88%;
   }
 
+
 </style>
 
 {% endblock %}
@@ -137,9 +135,10 @@
 {% block body_base %}
     <div class="container">
         {% if messages %}
+          {% if user_agent.is_staff or user_agent in agent.managers or user_agent == agent %}
             {% regroup messages|dictsort:"tags" by tags as messags %}
             {% for message in messags %}
-                <div class="alert fade in alert-{{ message.grouper }}">
+                <div class="alert alert-warning fade-in alert-{{ message.grouper }}">
                     <a class="close" href="#" data-dismiss="alert">×</a>
                         {% for messa in message.list|dictsort:"message" %}
                           {% ifchanged messa.message %}
@@ -148,10 +147,11 @@
                         {% endfor %}
                 </div>
             {% endfor %}
+          {% endif %}
         {% endif %}
 
 		<legend>
-			  {{ agent.agent_type }}: <b>{{ agent.name }}</b>
+			  {{ agent.agent_type.name }}: <b>{{ agent.name }}</b>
         {% if user_agent.is_staff or user_agent in agent.managers %}
             <!-- {% if agent.is_individual %}
                     <a class="indent smaller" href="{% url "contribution_history" agent_id=agent.id %}">{% trans "Contributions" %}: {{ agent.contributions_count }}</a>
@@ -172,21 +172,21 @@
                     <a class="indent" href="{% url "fake_kanban" agent_id=agent.id %}">{% trans "Kanbans" %}</a>
                 {% endif %}
                {% if agent.faircoin_resource %}
-                 {% if user_agent in agent.managers or user_agent == agent %}
+                 {% if user_agent in agent.managers or user_is_agent %}
                   <a class="indent" href="{% url "manage_faircoin_account" resource_id=agent.faircoin_resource.id %}">{% trans "FairAccount" %}</a>
                  {% endif %}
                {% endif %}
-               {% if user_agent.is_staff or user_agent in agent.managers or user_agent in agent.participants or user_agent == agent %}
+               {% if user_agent.is_staff or user_agent in agent.managers or user_agent in agent.participants or user_is_agent %}
                   {% if agent.is_context and agent.need_tasks %}
                     <a class="indent" href="{% url "value_equations_work" agent_id=agent.id %}">{% trans "Value Equations" %}</a>
                   {% endif %}
                {% endif %}
-               {% if user_agent.is_staff or user_agent in agent.managers or user_agent in agent.participants or user_agent == agent %}
+               {% if user_agent.is_staff or user_agent in agent.managers or user_agent in agent.participants or user_is_agent %}
                  {% if agent.need_exchanges %}
                    <a class="indent" href="{% url "exchanges_all" agent_id=agent.id %}">{% trans "Exchanges" %}</a>
                  {% endif %}
                {% endif %}
-               {% if user_agent.is_staff or user_agent in agent.managers or user_agent == agent %}
+               {% if user_agent.is_staff or user_agent in agent.managers or user_is_agent %}
                    <a class="indent" href="{% url "project_resources" agent_id=agent.id %}">{% trans "Resources" %}</a>
                {% endif %}
                {% if user_agent in agent.managers and agent.project.fobi_slug and agent.project.join_requests %}
@@ -211,7 +211,7 @@
                <!-- <a class="indent" href="{% url "project_work" %}">{% trans "Projects Tasks" %}</a> -->
         </div>
 		</legend>
-		<div class="button-row">
+		<div class="button-row row">
 
             {% if user_agent in agent.managers or user_agent == agent or user_agent.is_staff %}
                 {% if auto_resource %}<div class="alert">
@@ -220,6 +220,7 @@
                 {% endif %}
                 {% if agent.is_context %}
                   {% if agent.is_active_freedom_coop_member or user_agent in agent.managers or user.is_staff %}
+                    <div class="col-auto">
                       <a href="#agentChangeForm" role="button" class="btn btn-primary" data-toggle="modal">
                         {% if not agent.project %}
                           {% trans "Upgrade to an OCP Project" %}
@@ -227,17 +228,22 @@
                           {% trans "Edit Project" %}
                         {% endif %}</a>
                       {% if not agent.project %}
-                      <div class="infobox3 alert" style="display:inline-block; padding-right:13px; margin:0 13px;">
-                        {% trans "This agent is not yet a regular ocp's 'project', only is pending to be defined the visibility and the joining style." %}
-                      </div>
+                        </div>
+                        <div class="col">
+                          {% trans "This agent is not yet a regular ocp's 'project', only is pending to be defined the visibility and the joining style." %}
+
                       {% endif %}
+                    </div>
                   {% endif %}
                 {% elif user.is_staff or user_agent == agent or user_agent in agent.managers %}
-                    <a href="#agentChangeForm" role="button" class="btn btn-primary" data-toggle="modal">{% trans "Change" %}</a>
+                    <div class="col-auto">
+                        <a href="#agentChangeForm" role="button" class="btn btn-primary" data-toggle="modal">{% trans "Change" %}</a>
+                    </div>
                 {% endif %}
                 {% if not agent.faircoin_address and not agent.multicurrencyauth_set.count %}
                   {% if agent.need_faircoins %}
-                    <form
+                    <div class="col-auto">
+                      <form
                         style="display: inline;"
                         class="faircoin-form indent"
                         id="createFairCoinAddressForm"
@@ -247,7 +253,8 @@
                         <button style="display: inline;"  class="btn btn-primary" title="Create FairCoin Address" >
                             {% trans "Request FairCoin Address" %}
                         </button>
-                    </form>
+                      </form>
+                    </div>
                   {% endif %}
                 {% endif %}
                 {% if user_agent in agent.managers or user_agent == agent %}
@@ -256,7 +263,9 @@
                           {% if agent.multicurrencyauth_set.count %}
 
                           {% else %}
+                            <div class="col-auto">
                               &nbsp; <a href="{% url "multicurrency_auth" agent_id=agent.id %}" class="btn btn-primary">{% trans "Create Multicurrency Wallet Access" %}</a>
+                            </div>
                           {% endif %}
                         {% endif %}
                     {% endfor %}
@@ -264,6 +273,7 @@
             {% endif %}
 
             {% if user.is_staff and agent.is_deletable %}
+              <div class="col-auto">
                 {% if agent.project_join_requests.count == 1 and user_agent in agent.project_join_requests.first.project.agent.managers %}
                     <form
                         style="display: inline;"
@@ -285,6 +295,7 @@
                         <button style="display: inline;"  class="btn btn-warning btn-mini" title="Delete Agent" >{% trans "Delete Agent" %}</button>
                     </form>
                 {% endif %}
+              </div>
             {% endif %}
 
             {% if False and user.is_staff and user_form %}
@@ -299,40 +310,9 @@
                 </form>
             {% endif %}
 
-            {% if user_agent in agent.managers or user_agent == agent or user.is_staff %}
-                {% if agn_form.errors %}
-                  <div class="error">{% trans "error found!" %}
-                  {% for fil in agn_form %}
-                    {% if fil.errors and not fil.name == 'name' and not fil.name == 'nick' and not fil.name == 'email' %}
-                        {{ fil.name }}: {{ fil.errors }}
-                    {% endif %}
-                  {% endfor %}
-                  </div>
-                {% endif %}
-                <div class="modal hide fade" id="agentChangeForm" tabindex="-1" role="dialog" aria-labelledby="agent-change-label" aria-hidden="true">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                        <h3 id="agent-change-label">{% trans "Change" %} {{ agent.name }}</h3>
-                    </div>
-                    <div class="modal-body">
-                        <form id="agentForm" enctype="multipart/form-data" action="{% url 'members_agent' agent_id=agent.id %}"
-                              method="POST" name="{{ agent.id }}" >
-                            {% csrf_token %}
-                            {{ agn_form|as_bootstrap }}
-                            {% if pro_form %}
-                                {{ pro_form|as_bootstrap }}
-                            {% endif %}
-                            <div class="modal-footer">
-                            <button class="btn" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
-                            <button class="btn btn-primary">{% trans "Save changes" %}</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            {% endif %}
 
-            {% if False and user.is_staff and user_form %}
-                <div class="modal hide fade" id="createUserForm" tabindex="-1" role="dialog" aria-labelledby="create-user-label" aria-hidden="true">
+            {% if False and user.is_staff and user_form.fields %}
+                <!-- <div class="modal hide fade" id="createUserForm" tabindex="-1" role="dialog" aria-labelledby="create-user-label" aria-hidden="true">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                         <h3 id="create-user-label">{% trans "Create login user for" %} {{ agent.name }}</h3>
@@ -349,24 +329,58 @@
                             </div>
                         </form>
                     </div>
-                </div>
+                </div> -->
             {% endif %}
 
-    </div>
-		<div class="row-fluid">
+        </div>
 
-		    <div class="span5" id="agent-table-block" style="width: 48%;">
+        {% if user_agent in agent.managers or user_agent == agent or user.is_staff %}
+            {% if agn_form.errors %}
+                <div class="error">{% trans "error found!" %}
+                  {% for fil in agn_form %}
+                    {% if fil.errors and not fil.name == 'name' and not fil.name == 'nick' and not fil.name == 'email' %}
+                        {{ fil.name }}: {{ fil.errors }}
+                    {% endif %}
+                  {% endfor %}
+                </div>
+            {% endif %}
+            <div class="modal hide fade" id="agentChangeForm" tabindex="-1" role="dialog"
+                 aria-labelledby="agent-change-label" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h3 class="modal-title" id="agent-change-label">{% trans "Change" %} {{ agent.name }}</h3>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                      </div>
+                      <div class="modal-body">
+                        <form id="agentForm" enctype="multipart/form-data" action="{% url 'members_agent' agent_id=agent.id %}"
+                              method="POST" name="{{ agent.id }}" >
+                            {% csrf_token %}
+                            {{ agn_form|as_bootstrap }}
+                            {% if pro_form %}
+                                {{ pro_form|as_bootstrap }}
+                            {% endif %}
 
-	            <table class="table table-bordered" >
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans "Cancel" %}</button>
+                                <input type="submit" class="btn btn-primary" value='{% trans "Save changes" %}' />
+                            </div>
+                        </form>
+                      </div>
+                    </div>
+                </div>
+            </div>
 
-
-                  <tr>
-                    <th style="text-align: right; vertical-align: top; ">{% trans "Image" %}</th>
-                    <td style="{% if agent.project.background_url %} background-image: url({% static agent.project.background_url %}); {% endif %}">
-                      <div class="modal hide fade" id="uploadPicture" tabindex="-1" role="dialog" aria-labelledby="upload-label" aria-hidden="true">
+            <div class="modal hide fade" id="uploadPicture" tabindex="-1" role="dialog" aria-labelledby="upload-label" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
                         <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
                             <h3 id="upload-label">{% trans "Upload Picture for " %} {{ agent.name }}</h3>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
                         </div>
                         <div class="modal-body">
                             <form id="uploadForm" enctype="multipart/form-data" action="{% url "upload_picture" agent_id=agent.id %}" method="POST" >
@@ -374,23 +388,69 @@
                                 {{ upload_form|as_bootstrap }}
 
                                 <div class="modal-footer">
-                                <button class="btn" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
-                                <button class="btn btn-primary">{% trans "Save" %}</button>
+                                    <button class="btn btn-secondary" data-dismiss="modal">{% trans "Cancel" %}</button>
+                                    <input type="submit" class="btn btn-primary" value='{% trans "Save" %}' />
                                 </div>
                             </form>
                         </div>
+                    </div>
+                </div>
+            </div>
+            {% if Stype_form %}
+            <div class="modal hide fade" id="addSkillTypeModal" tabindex="-1" role="dialog" aria-labelledby="commit" aria-hidden="true"  style="">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h3><span id="name_action">{% trans "Add a new" %}</span> {% trans "Skill Type:" %}</h3>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                       </div>
+                      <div class="modal-body">
+                        <form class="validateMe" id="skillForm" enctype="multipart/form-data" action="{% url 'new_skill_type' agent_id=agent.id %}" method="POST" >
+                          {% csrf_token %}
+                          {{ Stype_form|as_bootstrap }}
+
+
+                          <!-- <input type="hidden" id="edid" name="edid" value="" /> -->
+                          <input type="hidden" id="next" name="next" value="members_agent" />
+                          <div class="modal-footer">
+                            <button class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
+                            <input type="submit" class="btn btn-primary" name="new_skill_type" value="{% trans 'Save' %}" />
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endif %}
+
+
+    <div class="container-fluid" style="padding:0;">
+        <div class="row no-gutters">
+          <div class="col-md-6 col-sm-12 " id="agent-table-block">
+
+	            <table class="table table-bordered" >
+
+
+                  <tr>
+                    <th style="text-align: right; vertical-align: top; ">{% trans "Image" %}</th>
+                    <td style="{% if agent.project.background_url %}
+                               background-image: url({% static agent.project.background_url %});
+                               background-size: cover; {% endif %}">
+
                       {% if agent.photo and photo_size %}
                         {% if agent.photo.readable %}
-                          <img src="{% thumbnail agent.photo photo_size %}" />
+                          <img src="{% thumbnail agent.photo photo_size %}" style="width:auto; max-width:100%;" />
                         {% elif agent.photo.url and not agent.photo.url == 'None' %}
-                          <img src="{{ agent.photo.url }}" style="width:auto;"/>
+                          <img src="{{ agent.photo.url }}" style="width:auto; max-width:100%;" />
                         {% else %}
                           <span class="error">{% trans "Error: can't read the image." %}</span>
                           {% if request.user.is_superuser %}<br>{{ agent.photo.url }}{% endif %}
                         {% endif %}
                       {% elif agent.photo_url %}
-                        <img src="{{ agent.photo_url }}" style="width:auto;"/><br>
+                        <img src="{{ agent.photo_url }}" style="width:auto; max-width:100%;"/><br>
                       {% endif %}
                       {% if user_agent in agent.managers or user_is_agent or user.is_superuser %}
                         <a href="#uploadPicture" role="button" class="btn btn-primary btn-mini" data-toggle="modal"
@@ -484,7 +544,7 @@
 
                     <tr>
                         <th style="text-align: right; vertical-align: top; ">{% trans "Email" %}</th>
-                        <td>{% if agent.email %}{{ agent.email }}{% else %}<span class="error">{% trans "Address Missing!" %}</span>{% endif %} {% if agn_form.email.errors %}<br> -> <span class="error">"{{ agn_form.email.value }}": {{ agn_form.email.errors|first }}</span>{% endif %}
+                        <td class="email-td">{% if agent.email %}{{ agent.email }}{% else %}<span class="error">{% trans "Address Missing!" %}</span>{% endif %} {% if agn_form.email.errors %}<br> -> <span class="error">"{{ agn_form.email.value }}": {{ agn_form.email.errors|first }}</span>{% endif %}
                           {% if user_agent in agent.managers or user_is_agent %}
                             {% if not agent.email == agent.email_en %}
                                 <br><span class="small">(en: {{ agent.email_en }})</span>
@@ -512,6 +572,7 @@
                                   {{ agent.address }}
                                 {% endif %}
                                 {% if user_agent in agent.members or user_is_agent %}
+                                  {% if agent.address %}
                                     {% if not agent.address == agent.address_en %}
                                         <br><span class="small">(en: {{ agent.address_en }})</span>
                                     {% endif %}
@@ -521,6 +582,7 @@
                                     {% if not agent.address == agent.address_ca %}
                                         <br><span class="small">(ca: {{ agent.address_ca }})</span>
                                     {% endif %}
+                                  {% endif %}
                                 {% endif %}
                             </td>
                           </tr>
@@ -577,7 +639,7 @@
                   {% if agent.faircoin_resources %}
                         <tr>
                             <th style="text-align: right; vertical-align: top; ">{% trans "FairCoin address" %}</th>
-                            <td>{% for fcr in agent.faircoin_resources %}<span class="small">{{ fcr.faircoin_address.address }}</span>
+                            <td>{% for fcr in agent.faircoin_resources %}<span class="small longtext">{{ fcr.faircoin_address.address }}</span>
                                   {% if user_agent in agent.managers or user_is_agent %}
                                     {% if fcr.id %} &nbsp; <b><a href="{% url "manage_faircoin_account" resource_id=fcr.id %}"
                                                                  class="btn btn-primary btn-mini">Manage</a></b>
@@ -619,7 +681,7 @@
                       </tr>
                       {% if agent.project.is_moderated %}
                           <tr>
-                            <th>{% trans "Auto create users+agents and confirm email:" %}</th>
+                            <th>{% trans "Auto create users, agents and confirm email:" %}</th>
                             <td>{{ agent.project.auto_create_pass }}</td>
                           </tr>
                       {% endif %}
@@ -679,7 +741,7 @@
                                       class="create-shares-form miniform"
                                       id="createSharesForm"
                                       action="{% url "create_project_shares" agent_id=agent.id %}"
-                                      method="POST" style="width: max-content;">
+                                      method="POST" style="width: auto;">
                                     {% csrf_token %}
                                     <label for="shareabbr">{% trans "Share unit abbrev" %}:</label>
                                     <input type="text" id="shareabbr" name="shareabbr"
@@ -687,10 +749,10 @@
                                                value="{{ agent.project.shares_account_type.unit_of_price.abbrev }}"
                                            {% else %}
                                                value="{{ agent.project.abbrev_name }}"
-                                           {% endif %}>
+                                           {% endif %}><br>
                                     <label for="shareprice">{% trans "Share price" %}:</label>
                                     <input type="text" id="shareprice" name="shareprice"
-                                           value="{{ agent.project.shares_type.price_per_unit }}">
+                                           value="{{ agent.project.shares_type.price_per_unit }}"><br>
                                     <label for="priceunit">{% trans "Unit of price" %}:</label>
                                     <select id="priceunit" name="priceunit">
                                         <option value="">...</option>
@@ -727,9 +789,9 @@
                         {% if agent.project.payment_options %}
                           <tr>
                             <th>{% trans "Payment Options:" %}</th>
-                            <td><ul style="margin-left:15px;">
+                            <td><ul style="padding-left:15px;">
                               {% for typ in agent.project.payment_options %}
-                                <li>{{ typ|safe }}</li>
+                                <li class="small">{{ typ|safe }}</li>
                               {% endfor %}
                             </ul>
                             {% if request.user.is_superuser %}
@@ -780,13 +842,13 @@
                         {% if agent.project.custom_css %}
                           <tr>
                             <th>{% trans "Custom CSS:" %}</th>
-                            <td>{{ agent.project.custom_css }}</td>
+                            <td class="small">{{ agent.project.custom_css }}</td>
                           </tr>
                         {% endif %}
                         {% if agent.project.custom_js %}
                           <tr>
                             <th>{% trans "Custom JS:" %}</th>
-                            <td>{{ agent.project.custom_js }}</td>
+                            <td class="small">{{ agent.project.custom_js }}</td>
                           </tr>
                         {% endif %}
                       {% endif %}
@@ -896,7 +958,7 @@
 	      </div>
 
 
-        <div class="span6">
+          <div class="col-md-5 col-sm-12 secondcol">
           {% if user_agent in agent.managers or user_is_agent or user_agent in agent.members %}
             {% if agent.project and form_entries and fobi_name and user_agent in agent.managers %}
             <div class="requests span6" style="width:100%;">
@@ -934,10 +996,11 @@
             {% endif %}
           {% endif %}
 
-
           {% if agent.is_individual and agent.need_skills or user_is_agent and agent.need_skills %}
               <div class="span6 infobox skills-box" style="width:100%;">
-                  <h3 class="">{% trans "Skills" %}:</h3>
+                  <h3 class="">{% trans "Skills" %}:
+                      <span class="showhide" id="sh-skillsbox" style="float:right; font-size:.7em; line-height:1.9em;">SHOW</span></h3>
+                  <div class="list" id="list-skillsbox" style="display:none">
                   {% if agent.skills %}
                     {% if user_agent in agent.managers or user_is_agent %}
                       <a href="#skillAssnForm" role="button" class="btn btn-primary btn-mini" data-toggle="modal" style="float:right;">{% trans "Edit offered skills" %}</a>
@@ -955,16 +1018,20 @@
 
                   {% if user_agent in agent.managers or user_is_agent %}
                     <div class="modal hide fade" id="skillAssnForm" tabindex="-1" role="dialog" aria-labelledby="assn-label" aria-hidden="true">
-                      <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                        <h3 id="assn-label">{% trans "Assigned Skills for" %} {{ agent }}</h3>
-                      </div>
-                      <div class="modal-body">
-                        <!-- <form id="skillAssnForm" enctype="multipart/form-data" action="{% url "assign_skills" agent_id=agent.id %}" method="POST" > -->
-                        <form class="register" name="register" enctype="multipart/form-data" action="{% url "update_skills" agent_id=agent.id %}" method="POST" >
-                            {% csrf_token %}
-                            <ul style="list-style:none;">
-                            {% for skill in agent.skills %}
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h3 id="assn-label">{% trans "Assigned Skills for" %} {{ agent }}</h3>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                          </div>
+                          <div class="modal-body">
+                            <!-- <form id="skillAssnForm" enctype="multipart/form-data" action="{% url "assign_skills" agent_id=agent.id %}" method="POST" > -->
+                            <form class="register" name="register" enctype="multipart/form-data" action="{% url "update_skills" agent_id=agent.id %}" method="POST" >
+                              {% csrf_token %}
+                              <ul style="list-style:none;">
+                              {% for skill in agent.skills %}
                                 <li>
                                     <input type="checkbox" name="skillChoice" value="{{ skill.id }}" {% if skill.checked %} checked="checked" {% endif %} />
                                     {{ skill }}
@@ -972,15 +1039,17 @@
                                         &nbsp;&nbsp;&nbsp;<em class="thanks">({% trans "Thanks for the suggestion!" %})</em>
                                     {% endif %}
                                 </li>
-                            {% endfor %}
-                                <!-- <li> {{ other_form|as_bootstrap }} </li> -->
-                            </ul>
+                              {% endfor %}
+                                <!-- <li> { { other_form|as_bootstrap } } </li> -->
+                              </ul>
 
-                            <div class="modal-footer">
-                              <button class="btn" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
-                              <button class="btn btn-primary">{% trans "Save" %}</button>
-                            </div>
-                        </form>
+                              <div class="modal-footer">
+                                <button class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
+                                <button class="btn btn-primary">{% trans "Save" %}</button>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
                       </div>
                     </div>
                     <p>
@@ -988,7 +1057,7 @@
                     </p>
                     <div class="list" id="list-choose_skill" style="display:none">
 
-                      <div style="display:block; ">
+                      <!-- <div style="display:block; "> -->
                         <form id="addSkillForm" enctype="multipart/form-data" action="{% url "assign_skills" agent_id=agent.id %}" method="POST" style="margin-bottom:5px;" >
                           {% csrf_token %}
                           {{ add_skill_form.skill_type }} &nbsp;
@@ -997,8 +1066,8 @@
                         <span>
                           <span class="showhide" id="sh-skill_tree" >SHOW</span> {% trans "as a Tree" %}
                         </span>
-                        <span><!--<div style="display:inline-flex; float:right; position:absolute;">-->
-                          <ul style="display:inline-table; list-style:none; margin:7px 0; float:right; text-align:right;">
+                          <!--<div style="display:inline-flex; float:right; position:absolute;">-->
+                          <ul style="display:inline-table; list-style:none; margin:7px 0; width:100%; text-align:right;">
                             <li class="edit_skill_type" style="display:none; margin-bottom:10px;">{% trans "...you created this skill:" %}&nbsp;<a href="#addSkillTypeModal" id="edit_st_but" role="button" class="btn btn-primary btn-mini edit_skill_type" data-toggle="modal" title="Edit a skill type">{% trans "Edit" %}</a></li>
                             <li>{% trans "...if no one fits:" %}&nbsp; <a href='#addSkillTypeModal' role="button" class='btn btn-primary btn-mini btn_skill_type' data-toggle="modal" title="Create a new skill resource type">{% trans "New Skill Service Type" %}</a></li>
                           </ul>
@@ -1011,10 +1080,10 @@
                               </ul>
                             </div><br> &nbsp; <br> &nbsp; <br>
                           {% endif %}{% endif %}
-                        </span><!--</div>-->
+                          <!-- </span><!--</div>-->
                         <br/>
                         <div class="list" id="list-skill_tree" style="display:none">
-                          <div id="skill_type_tree" class="skill_type_tree fancytree-radio" style="max-width:300px; min-width:200px; float:left;  margin: 0px 0px 1px 1px;">
+                          <div id="skill_type_tree" class="skill_type_tree fancytree-radio" style="max-width:300px; min-width:200px;  margin: 0px 0px 1px 1px;">
                             <ul class="root" id="treeData" style="/*display: none;*/">
                               {% recursetree Stype_tree %}
                               {% if True or node.resource_type or request.user.is_staff %}
@@ -1057,37 +1126,12 @@
                           </div>
                         </div>
 
-                      </div>
+                      <!-- </div> -->
                     </div>
 
-                    <div class="modal hide fade" id="addSkillTypeModal" tabindex="-1" role="dialog" aria-labelledby="commit" aria-hidden="true"  style="width:590px;">
-                      <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                        <h3><span id="name_action">{% trans "Add a new" %}</span> {% trans "Skill Type:" %}</h3>
-                      </div>
-                      <div class="modal-body">
-                        <form class="validateMe" id="skillForm" enctype="multipart/form-data" action="{% url 'new_skill_type' agent_id=agent.id %}" method="POST" >
-                          {% csrf_token %}
-                          {% for fil in Stype_form %}
-                            <div class="modal-field" {% if fil.name == 'verb' %} style="float:left; margin-right:15px;" {% endif %} >
-                              {% if not fil.name == 'edid' %}
-                                <label>{{ fil.label }}:</label>
-                              {% endif %}
-                                {{ fil }}
-                              {% if fil.help_text %}<br/><span class="helptext">{{ fil.help_text }}</span>{% endif %}
-                            </div>
-                          {% endfor %}
 
-                          <!-- <input type="hidden" id="edid" name="edid" value="" /> -->
-                          <input type="hidden" id="next" name="next" value="members_agent" />
-                          <div class="modal-footer">
-                            <button class="btn" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
-                            <input type="submit" class="btn btn-primary" name="new_skill_type" value="{% trans 'Save' %}" />
-                          </div>
-                        </form>
-                      </div>
-                    </div>
                   {% endif %}
+                </div>
               </div>
           {% endif %}
 
@@ -1095,165 +1139,227 @@
   	        <div class="span6 assoc infobox" style="width:100%;">
               <h3>
                 {% trans "Relations:" %}
-                {% if request.user.is_superuser %}<small class="small">co:{{ assobj.coords|length }} mb:{{ assobj.members|length }} ca:{{ assobj.candids|length }} ch:{{ assobj.childs|length }}</small>{% endif %}
+                {% for asso in user_agent.assos %}
+                  &nbsp;<small class="small">({% blocktrans with state=asso.statetrans assotype=asso.association_type|lower %}you're: {{ state }} {{ assotype }}{% endblocktrans %})</small>
+                {% endfor %}
               </h3>
 
-              <h4 class="hdg"> {{ agent.nick }} {% trans "is associated with" %}: </h4>{% if user_agent.is_superuser %}<!-- debug:managed_projects: {% for pro in agent.managed_projects %}{{ pro.name}} ({{ pro.id }}), {% endfor %} -->{% endif %}
-              <ul>
-                {% for assoc in is_associated_with  %}
-                    {% ifchanged assoc.association_type and assoc.state %}
-                       <h4>{% if not assoc.state == 'active' %}{{ assoc.association_type.label|cut:" of"|cut:" de"|cut:" en"|cut:" a" }} {% trans "candidate of" %}{% else %}
-                                {{ assoc.association_type.label }}{% endif %}: </h4>
-                    {% endifchanged %}
-                    <li><a href="{% url "members_agent" agent_id=assoc.has_associate.id %}">{{ assoc.has_associate.name }}</a>
-                        {% if not assoc.state == "active" and not assoc.has_associate.project %} ({{ assoc.get_state_display }}) {% endif %}
-                        {% for req in assoc.has_associate.project.join_requests.all|reqs_related_agent:agent %}
-                            {% if req.id %}
-                                {% if not assoc.state == "active" %} ({{ assoc.get_state_display }}) {% endif %} &nbsp;
-                                {% get_comment_count for req as ncom  %}
-                                {% if req.project.agent == agent or req.agent == agent %}
-                                    <a href="{% url 'project_feedback' agent_id=agent.id join_request_id=req.id %}">
-                                        <b>{% trans "Feedback" %}</b> {{ ncom }}
-                                    </a>
-                                {% else %}
-                                {% endif %}
-                                {% if req.exchange %}&nbsp; <a href="{% url "exchange_logging_work" context_agent_id=agent.id exchange_type_id=0 exchange_id=req.exchange.id %}"
-                                                               class="{{ req.exchange.status }}">{{ req.exchange.status }}</a> {% endif %}
-                                {% if not req.fobi_data %} &nbsp;<b class="error">ERROR!</b> {% endif %}
-                                {% if not forloop.first %} &nbsp;<b class="error">Error: multiple requests!</b>{% endif %}
-                            {% endif %}
-                        {% endfor %}
-                        {% if not assoc.is_associate.joinaproject_requests and not assoc.state == 'active' %}
-                           &nbsp;<b class="error">error</b>
-                        {% endif %}
-                    </li>
-                {% endfor %}
-              </ul>
-              {% if has_associations %}
-                  <h4 class="hdg">{{ agent.nick }} {% trans "has these associates" %}: <span class="small">{{ has_associations|length }}</span>&nbsp; &nbsp;
-                  {% if user_agent in agent.managers or user_agent == agent or user_agent.is_staff %}
-                      {% if agent.is_context %}
-                        <a href="#agentAssnForm" role="button" class="btn btn-primary btn-mini" data-toggle="modal">{% trans "Edit member relations" %}</a>
-                        <div class="modal hide fade" id="agentAssnForm" tabindex="-1" role="dialog" aria-labelledby="assn-label" aria-hidden="true">
-                          <div class="modal-header">
-                              <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                              <h3 id="assn-label">{% trans "Maintain Associates for" %} {{ agent }}</h3>
-                          </div>
-                          <div class="modal-body">
-                              <form id="assnForm" enctype="multipart/form-data" action="{% url "edit_relations" agent_id=agent.id %}" method="POST" >
-                                  {% csrf_token %}
-                                  {{ assn_form|as_bootstrap }}
-                                  <p>
-                                       &nbsp;
-                                  </p>
-                                  <p>
-                                       &nbsp;
-                                  </p>
+              <h4 class="hdg"> {{ agent.nick }} {% trans "is associated with" %}: <small class="small">{{ is_associated_with }}</small>
 
-                                  <div class="modal-footer">
-                                  <button class="btn" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
-                                  <button class="btn btn-primary">{% trans "Save" %}</button>
-                                  </div>
-                              </form>
-                          </div>
-                        </div>
+              </h4>{% if user_agent.is_superuser %}<!-- debug:managed_projects: {% for pro in agent.managed_projects %}{{ pro.name}} ({{ pro.id }}), {% endfor %} -->{% endif %}
+              <ul>
+                <div>
+                  {% if True or user_is_agent or request.user.is_staff %}
+                    {% for beha in relobj.behaviors %}
+                        {% for state in relobj.states %}
+                          {% if state == 'active' %}
+                            {% if relobj.coords %}
+                                {% with relobj.coor as asso %}
+                                    {% if beha == asso.association_type.association_behavior %}
+                                        <h4>{{ asso.association_type.label }}:  <span class="small">{{ relobj.coords }}</span>
+                                            <span class="showhide smaller small" style="font-size:0.9em"
+                                                  id="sh-rela_{{ beha }}{{ state }}" >{% trans "(SHOW)" %}</span>
+                                        </h4>
+                                        <div class="list ajaxlist" id="list-rela_{{ beha }}{{ state }}">
+                                            <ul class="assolist" behavior="{{ beha }}" state="{{ state }}" number="{{ relobj.coords }}" relside="up">
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                            {% if relobj.member %}
+                                {% with relobj.memb as asso %}
+                                    {% if beha == asso.association_type.association_behavior %}
+                                        <h4>{{ asso.association_type.label }}:  <span class="small">{{ relobj.member }}</span>
+                                            <span class="showhide smaller small" style="font-size:0.9em"
+                                                  id="sh-relam_{{ beha }}{{ state }}" >{% trans "(SHOW)" %}</span>
+                                        </h4>
+                                        <div class="list ajaxlist" id="list-relam_{{ beha }}{{ state }}">
+                                            <ul class="assolist" behavior="{{ beha }}" state="{{ state }}" number="{{ relobj.member }}" relside="up">
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                            {% if relobj.parti %}
+                                {% with relobj.part as asso %}
+                                    {% if beha == asso.association_type.association_behavior %}
+                                        <h4>{{ asso.association_type.label }}:  <span class="small">{{ relobj.parti }}</span>
+                                            <span class="showhide smaller small" style="font-size:0.9em"
+                                                  id="sh-relap_{{ beha }}{{ state }}" >{% trans "(SHOW)" %}</span>
+                                        </h4>
+                                        <div class="list ajaxlist" id="list-relap_{{ beha }}{{ state }}">
+                                            <ul class="assolist" behavior="participant" state="{{ state }}" number="{{ relobj.parti }}" relside="up">
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                            {% if relobj.child %}
+                                {% with relobj.chil as asso %}
+                                    {% if beha == asso.association_type.association_behavior %}
+                                        <h4>{{ asso.association_type.label }}:  <span class="small">{{ relobj.child }}</span>
+                                            <span class="showhide smaller small" style="font-size:0.9em"
+                                                  id="sh-relac_{{ beha }}{{ state }}" >{% trans "(SHOW)" %}</span>
+                                        </h4>
+                                        <div class="list ajaxlist" id="list-relac_{{ beha }}{{ state }}">
+                                            <ul class="assolist" behavior="{{ beha }}" state="{{ state }}" number="{{ relobj.child }}" relside="up">
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                            {% if relobj.peers %}
+                                {% with relobj.peer as asso %}
+                                    {% if beha == asso.association_type.association_behavior %}
+                                        <h4>{{ asso.association_type.label }}:  <span class="small">{{ relobj.peers }}</span>
+                                            <span class="showhide smaller small" style="font-size:0.9em"
+                                                  id="sh-relape_{{ beha }}{{ state }}" >{% trans "(SHOW)" %}</span>
+                                        </h4>
+                                        <div class="list ajaxlist" id="list-relape_{{ beha }}{{ state }}">
+                                            <ul class="assolist" behavior="{{ beha }}" state="{{ state }}" number="{{ relobj.peers }}" relside="up">
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                          {% elif state == 'potential' %}
+                            {% if relobj.mcands %}
+                                {% with relobj.mcand as asso %}
+                                    {% if beha == asso.association_type.association_behavior %}
+                                        <h4>{{ asso.association_type.label|cut:" of"|cut:" de"|cut:" en"|cut:" a" }} {% trans "candidate of" %}:  <span class="small">{{ relobj.mcands }}</span>
+                                            <span class="showhide smaller small" style="font-size:0.9em"
+                                                  id="sh-relamc_{{ beha }}{{ state }}" >{% trans "(SHOW)" %}</span>
+                                        </h4>
+                                        <div class="list ajaxlist" id="list-relamc_{{ beha }}{{ state }}">
+                                            <ul class="assolist" behavior="{{ beha }}" state="{{ state }}" number="{{ relobj.mcands }}" relside="up">
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                            {% if relobj.pcands %}
+                                {% with relobj.pcand as asso %}
+                                    {% if beha == asso.association_type.association_behavior %}
+                                        <h4>{{ asso.association_type.label|cut:" of"|cut:" de"|cut:" en"|cut:" a" }} {% trans "candidate of" %}:  <span class="small">{{ relobj.pcands }}</span>
+                                            <span class="showhide smaller small" style="font-size:0.9em"
+                                                  id="sh-relapc_{{ beha }}{{ state }}" >{% trans "(SHOW)" %}</span>
+                                        </h4>
+                                        <div class="list ajaxlist" id="list-relapc_{{ beha }}{{ state }}">
+                                            <ul class="assolist" behavior="participant" state="{{ state }}" number="{{ relobj.pcands }}" relside="up">
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                          {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                {% endif %}
+
+              </ul>
+
+              {% if has_associations %}
+                  <h4 class="hdg">{{ agent.nick }} {% trans "has these associates" %}:
+
+                  {% if user_agent in agent.managers or user_is_agent or request.user.is_staff %}
+                      <span class="small">{{ has_associations }}</span>
+                      {% if agent.is_context %}
+                          &nbsp; &nbsp;
+                          <a href="#agentAssnForm" role="button" class="btn btn-primary btn-mini"
+                             data-toggle="modal">{% trans "Edit member relations" %}</a>
                       {% endif %}
                   {% endif %}
                   </h4>
-                  <ul>
-                      <div>
-                    {% for assoc in has_associations %}
-                        {% ifchanged assoc.association_type and assoc.state %}</div>
-                            <h4>{% if not assoc.state == 'active' %}{{ assoc.association_type.inverse_label }} {% trans "candidates" %}{% else %}
-                                {{ assoc.association_type.inverse_label }}{% endif %}:
-                                <span class="showhide smaller small" style="font-size:0.9em" id="sh-assoc_{{ assoc.association_type.identifier|cut:" " }}_{{ assoc.state }}" >{% trans "(SHOW)" %}</span>
-                            </h4>
-                            <div class="list" id="list-assoc_{{ assoc.association_type.identifier|cut:" " }}_{{ assoc.state }}">
-                        {% endifchanged %}
 
-                        {% if user_agent in agent.managers or user_agent == agent %}
-                          {% if not assoc.state == 'inactive' and not assoc.is_associate in agent.declined_agents %}
-                          <li><a href="{% url "members_agent" agent_id=assoc.is_associate.id %}">{{ assoc.is_associate.name }}</a>
-                            {% with assoc.is_associate.membership_request_id as id %}
-                                {% if id and not agent.project in assoc.is_associate.joinaproject_requests_projects %}
-                                  {% if user_agent.membership_request_id == id or agent.nick == "FC MembershipRequest" or agent.nick == "Freedom Coop" %}
-                                    {% if not assoc.state == "accepted" %} ({{ assoc.get_state_display }}: {{ assoc.is_associate.membership_request.state }}) {% endif %}
-                                    &nbsp;
-                                    {% get_comment_count for assoc.is_associate.membership_request as ncom  %}
-                                    <a href="{% url 'membership_discussion' membership_request_id=id %}">
-                                        {% trans "Migrate the membership!" %} {{ ncom }}
-                                    </a>
-                                  {% endif %}
-                                {% elif id and request.user.is_superuser and agent.nick == "Freedom Coop" %}
-                                    &nbsp;
-                                    (<a href="{% url 'membership_discussion' membership_request_id=id %}">old</a>)
-                                {% endif %}
-                                {% if assoc.is_associate.membership_requests.all|length > 1 %}
-                                    &nbsp;<b class="error">ERROR: multiple FdC memberships!</b>
-                                {% endif %}
-                            {% endwith %}
-                            {% for req in assoc.is_associate.jn_reqs %}
-                              {% if req.id %}
-                                {% if not assoc.state == "active" %} ({{ assoc.get_state_display }}{% if not req.state == "new" %} - {{ req.state }}{% endif %}) {% endif %} &nbsp;
-                                {% get_comment_count for req as ncom  %}
-                                {% if req.project.agent == agent or req.agent == agent %}
-                                    <a href="{% url 'project_feedback' agent_id=agent.id join_request_id=req.id %}">
-                                        <b>{% trans "Feedback" %}</b> {{ ncom }}
-                                    </a>
-                                {% else %}
-                                {% endif %}
-                                {% if req.exchange %}&nbsp; <a href="{% url "exchange_logging_work" context_agent_id=agent.id exchange_type_id=0 exchange_id=req.exchange.id %}"
-                                                               class="bold">{% trans "Exchange" %}</a> {% endif %}
-                                {% if not req.fobi_data %} &nbsp;<b class="error">ERROR!</b> {% endif %}
-                                {% if not forloop.first %} &nbsp;<b class="error">Error: multiple requests!</b>{% endif %}
-                              {% endif %}
-                            {% endfor %}
-                            {% if not assoc.is_associate.joinaproject_requests and not assoc.state == 'active' %}
-                               &nbsp;<b class="error">error</b>
-                            {% endif %}
-                            {% if assoc.association_type.association_behavior == "member" or assoc.association_type.association_behavior == "manager" %}
-                              {% if agent.project.shares_type %}
-                                {% with assoc.is_associate.oldshares as oldshares %}
-                                  {% if oldshares %}
-                                      &nbsp; <span class="error">OldShares: {{ oldshares|length }}</span>
-                                  {% endif %}
+                <ul>
+                {% if True %}
+                    {% for beha in assobj.behaviors %}
+                        {% for state in assobj.states %}
+                          {% if state == 'active' %}
+                            {% if assobj.coords %}
+                                {% with assobj.coor as asso %}
+                                    {% if beha == asso.association_type.association_behavior %}
+                                        <h4>{{ asso.association_type.inverse_label }}:  <span class="small">{{ assobj.coords }}</span>
+                                            <span class="showhide smaller small" style="font-size:0.9em"
+                                                  id="sh-assoc_{{ beha }}{{ state }}" >{% trans "(SHOW)" %}</span>
+                                        </h4>
+                                        <div class="list ajaxlist" id="list-assoc_{{ beha }}{{ state }}">
+                                            <ul class="assolist" behavior="{{ beha }}" state="{{ state }}" number="{{ assobj.coords }}" relside="down">
+                                            </ul>
+                                        </div>
+                                    {% endif %}
                                 {% endwith %}
-                                {% with assoc.is_associate.newshares as shares %}
-                                  {% if shares %}
-                                      &nbsp; <span style="color:#476B6B">({% blocktrans count shares=shares %}{{ shares }} share{% plural %}{{ shares }} shares{% endblocktrans %})</span>
-                                  {% elif assoc.state == "active" %}
-                                      &nbsp;<b class="error">warning</b>
-                                  {% endif %}
-                                {% endwith %}
-                              {% endif %}
                             {% endif %}
-                          </li>
+                            {% if assobj.members %}
+                                {% with assobj.memb as asso %}
+                                    {% if beha == asso.association_type.association_behavior %}
+                                        <h4>{{ asso.association_type.inverse_label }}:  <span class="small">{{ assobj.members }}</span>
+                                            <span class="showhide smaller small" style="font-size:0.9em"
+                                                  id="sh-assoc_{{ beha }}{{ state }}" >{% trans "(SHOW)" %}</span>
+                                        </h4>
+                                        <div class="list ajaxlist" id="list-assoc_{{ beha }}{{ state }}">
+                                            <ul class="assolist" behavior="{{ beha }}" state="{{ state }}" number="{{ assobj.members }}" relside="down">
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                            {% if assobj.childs %}
+                                {% with assobj.chil as asso %}
+                                    {% if beha == asso.association_type.association_behavior %}
+                                        <h4>{{ asso.association_type.inverse_label }}:  <span class="small">{{ assobj.childs }}</span>
+                                            <span class="showhide smaller small" style="font-size:0.9em"
+                                                  id="sh-assoc_{{ beha }}{{ state }}" >{% trans "(SHOW)" %}</span>
+                                        </h4>
+                                        <div class="list ajaxlist" id="list-assoc_{{ beha }}{{ state }}">
+                                            <ul class="assolist" behavior="{{ beha }}" state="{{ state }}" number="{{ assobj.childs }}" relside="down">
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+
+                          {% elif user_is_agent or user_agent in agent.managers %}
+                            {% if assobj.candids and state == 'potential' %}
+                                {% with assobj.cand as asso %}
+                                    {% if beha == asso.association_type.association_behavior %}
+                                        <h4>{{ asso.association_type.inverse_label }} {% trans "candidates" %}:  <span class="small">{{ assobj.candids }}</span>
+                                            <span class="showhide smaller small" style="font-size:0.9em"
+                                                  id="sh-assoc_{{ beha }}{{ state }}" >{% trans "(SHOW)" %}</span>
+                                        </h4>
+                                        <div class="list ajaxlist" id="list-assoc_{{ beha }}{{ state }}">
+                                            <ul class="assolist" behavior="{{ beha }}" state="{{ state }}" number="{{ assobj.candids }}" relside="down">
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                            {% if assobj.declins %}
+                                {% with assobj.decl as asso %}
+                                    {% if beha == asso.association_type.association_behavior %}
+                                        <h4>{{ asso.association_type.inverse_label }} ({{ state }}):  <span class="small">{{ assobj.declins }}</span>
+                                            <span class="showhide smaller small" style="font-size:0.9em"
+                                                  id="sh-assoc_{{ beha }}{{ state }}" >{% trans "(SHOW)" %}</span>
+                                        </h4>
+                                        <div class="list ajaxlist" id="list-assoc_{{ beha }}{{ state }}">
+                                            <ul class="assolist" behavior="{{ beha }}" state="{{ state }}" number="{{ assobj.declins }}" relside="down">
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+
+
                           {% endif %}
-                        {% elif not assoc.state == "inactive" and not assoc.is_associate in agent.declined_agents %}
-                          <li><a href="{% url "members_agent" agent_id=assoc.is_associate.id %}">{{ assoc.is_associate.name }}</a>
-                              {% for req in assoc.is_associate.jn_reqs %}
-                                {% if req.agent == user_agent %}
-                                  {% if req.id %}
-                                    {% if not assoc.state == "active" %} ({{ assoc.get_state_display }} - {{ req.state }}) {% endif %}
-                                    &nbsp;
-                                    {% get_comment_count for req as ncom  %}
-                                    <a href="{% url 'project_feedback' agent_id=agent.id join_request_id=req.id %}">
-                                        <b>{% trans "Feedback" %}</b> {{ ncom }}
-                                    </a>
-                                    {% if req.exchange %}&nbsp; <a href="{% url "exchange_logging_work" context_agent_id=agent.id exchange_type_id=0 exchange_id=req.exchange.id %}"
-                                                                   class="bold">{% trans "Exchange" %}</a> {% endif %}
-                                    {% if not req.fobi_data %} &nbsp;<b class="error">ERROR!</b> {% endif %}
-                                  {% endif %}
-                                  {% if not forloop.first %} &nbsp;<b class="error">Error: multiple requests!</b>{% endif %}
-                                {% endif %}
-                              {% endfor %}
-                          </li>
-                        {% endif %}
 
-
+                        {% endfor %}
                     {% endfor %}
 
-                  </ul>
+
+
+                {% endif %}
+                </ul>
               {% endif %}
 
 	          </div>
@@ -1274,8 +1380,83 @@
                   {% endif %}
               </div>
           {% endif %}
-        </div>
 
+
+          {% if agent.project and not user_agent in agent.managers %}
+            {% if not user_agent in agent.participants %}
+            <div id="join-this-project" class="secondcol">
+              <h3>
+                {% trans "Join this project:" %}
+              </h3>
+              {% if agent.project.is_moderated %}
+                {% if user_agent.req %}
+                    {% if user_agent.req.state == 'declined' %}
+                      <p>{% trans "Sorry, you've tried to join this project but your request was <b>declined</b> for any reason. See the thread at" %}:
+                      <b><a href="{% url 'project_feedback' agent_id=user_agent.id join_request_id=user_agent.req.id %}">{% trans "Your Declined Joining Feedback" %}</a></b> </p>
+                    {% else %}
+                      <p>{% trans "You've requested to join this project. To keep track of the joining process go to" %}:
+                          <br><b><a href="{% url 'project_feedback' agent_id=user_agent.id join_request_id=user_agent.req.id %}"
+                                    class="btn btn-primary" >{% trans "Your Joining Feedback" %}</a></b></p>
+                    {% endif %}
+                {% else %}
+                  <p>{% trans "This project has a moderated access workflow. Please fill the following form to request access, and then you will have a special feedback page to comunicate with the project coordinators" %}:</p>
+                  <p> {% if agent.project.fobi_form %}<b><a href="{% url 'project_joinform' agent_id=agent.id %}"
+                                                            class="btn btn-primary">{% trans "Form to join" %} "{{ agent.name }}"</a></b>
+                      {% else %} <div class="alert"><em>{% trans "Sorry, the form is not ready, try tomorrow" %}</em></div> {% endif %}
+                  </p>
+                {% endif %}
+              {% elif agent.project.joining_style == "autojoin" %}
+                <div>
+                  {% trans "You can simply join this project with one click" %}: &nbsp;
+                    <form
+                        class="action-form"
+                        id="join-form"
+                        action="{% url "join_project" project_id=agent.id %}"
+                        method="POST" >
+                        {% csrf_token %}
+                        <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Join" %}' />
+                    </form>
+                </div>
+              {% endif %}
+            </div>
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+
+
+    {% if user_agent in agent.managers or user_agent == agent or user_agent.is_staff %}
+        {% if agent.is_context %}
+            <div class="modal hide fade" id="agentAssnForm" tabindex="-1" role="dialog" aria-labelledby="assn-label" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 id="assn-label">{% trans "Maintain Associates for" %} {{ agent }}</h3>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="assnForm" enctype="multipart/form-data" action="{% url "edit_relations" agent_id=agent.id %}" method="POST" >
+                                {% csrf_token %}
+                                {{ assn_form|as_bootstrap }}
+                                <p>
+                                   &nbsp;
+                                </p>
+                                <p>
+                                   &nbsp;
+                                </p>
+                                <div class="modal-footer">
+                                  <button class="btn" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
+                                  <button class="btn btn-primary">{% trans "Save" %}</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
 
 
       {% if False and agent.is_individual and agent.need_skills and user.is_staff %}
@@ -1309,60 +1490,17 @@
 
 
 
-  {% if agent.project and not user_agent in agent.managers %}
-    {% if not user_agent in agent.participants %}
-    <div id="join-this-project"  class="span5">
-      <h3>
-        {% trans "Join this project:" %}
-      </h3>
-      {% if agent.project.is_moderated %}
-        {% if user_agent.req %}
-            {% if user_agent.req.state == 'declined' %}
-              <p>{% trans "Sorry, you've tried to join this project but your request was <b>declined</b> for any reason. See the thread at" %}:
-              <b><a href="{% url 'project_feedback' agent_id=user_agent.id join_request_id=user_agent.req.id %}">{% trans "Your Declined Joining Feedback" %}</a></b> </p>
-            {% else %}
-              <p>{% trans "You've requested to join this project. To keep track of the joining process go to" %}:
-                  <br><b><a href="{% url 'project_feedback' agent_id=user_agent.id join_request_id=user_agent.req.id %}"
-                            class="btn btn-primary" >{% trans "Your Joining Feedback" %}</a></b></p>
-            {% endif %}
-        {% else %}
-          <p>{% trans "This project has a moderated access workflow. Please fill the following form to request access, and then you will have a special feedback page to comunicate with the project coordinators" %}:</p>
-          <p> {% if agent.project.fobi_form %}<b><a href="{% url 'project_joinform' agent_id=agent.id %}"
-                                                    class="btn btn-primary">{% trans "Form to join" %} "{{ agent.name }}"</a></b>
-              {% else %} <div class="alert"><em>{% trans "Sorry, the form is not ready, try tomorrow" %}</em></div> {% endif %}
-          </p>
-        {% endif %}
-      {% elif agent.project.joining_style == "autojoin" %}
-        <div>
-          {% trans "You can simply join this project with one click" %}: &nbsp;
-            <form
-                class="action-form"
-                id="join-form"
-                action="{% url "join_project" project_id=agent.id %}"
-                method="POST" >
-                {% csrf_token %}
-                <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Join" %}' />
-            </form>
-        </div>
-      {% endif %}
-    </div>
-    {% endif %}
-  {% endif %}
         </div>
     </div>
 {% endblock %}
 
 {% block extra_script %}
-    <!-- <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-	<script src="https://code.jquery.com/ui/1.9.2/jquery-ui.js"></script> -->
-    <script src="https://code.jquery.com/jquery-1.12.1.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
-	<script type="text/javascript" src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.10.0/jquery.validate.min.js"></script>
+    <script type="text/javascript" src="{% static 'js/jquery-ui.min.js' %}"></script>
+	<script type="text/javascript" src="{% static 'js/jquery.validate.min.js' %}"></script>
     <!-- <script type="text/javascript" src="https://www.google.com/jsapi"></script> -->
-	<script src="{% static 'js/chosen.jquery.js' %}"></script>
-    <script src="{% static 'js/jquery.fancytree-all.min.js' %}"></script>
-    <script src="{% static 'js/ocp-trees.js' %}"></script>
+	<script type="text/javascript" src="{% static 'js/chosen.jquery.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jquery.fancytree-all.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/ocp-trees.js' %}"></script>
 {% endblock %}
 
 
@@ -1373,22 +1511,81 @@
 
     $(document).ready(function(){
 
-        $(".list").each(function(){
-            if($(this).find('li').length > 10){
-                $(this).hide();
-            } else {
-                //alert($(this).prev('.showhide').html());
-                $(this).prev('h4').find('.showhide').text('{% trans "(HIDE)" %}');
-                //$(this).text($(this).text() == {% trans '(HIDE)' %} ? {% trans '(SHOW)' %} : {% trans '(HIDE)' %});
-                //$(this).hide();
+        /*$('.assolist').each(function(){
+            var behavior = $(this).attr('behavior');
+            var state = $(this).attr('state');
+            var obj = $(this);
+            $.post({
+                data: {"behavior":behavior, "state":state },
+                url: '{% url "view_agents_list" agent_id=agent.id %}',
+                success: function(data) {
+                    obj.html(data);
+                }
+            });
+        });*/
+
+        $(".showhide").click(function(event){
+            var id = event.target.id;
+            var listId = '#list-' + id.split('-')[1];
+            $(listId).slideToggle(200);
+            $(this).text($(this).text() == "{% trans '(HIDE)' %}" ? "{% trans '(SHOW)' %}" : "{% trans '(HIDE)' %}");
+            //alert($(listId).html());
+            var $lis = $(listId).find(".assolist");
+            var behavior = $lis.attr('behavior');
+            var state = $lis.attr('state');
+            var side = $lis.attr('relside');
+            var number = $lis.attr('number') * 1;
+            if($lis.find('li').length < number){
+
+                //$lis.html('<li><img src="{% static 'img/loading.gif' %}" style="margin: 1em;"/></li>');
+                //alert('behavior: '+behavior+' state: '+state);
+                //var ready = 0;
+                var obj = {"behavior":behavior,
+                           "state":state,
+                           "side":side,
+                           "number":number,
+                           "list":$lis
+                          };
+                call_relations_block(obj);
             };
         });
-        $(".showhide").click(function(event){
-          var id = event.target.id;
-          var listId = '#list-' + id.split('-')[1];
-          $(listId).slideToggle(200);
-          $(this).text($(this).text() == "{% trans '(HIDE)' %}" ? "{% trans '(SHOW)' %}" : "{% trans '(HIDE)' %}");
+
+        function call_relations_block(obj){
+            var ready = $(obj['list']).find('li').length;
+            $(obj['list']).append('<li id="loader"><img src="{% static 'img/loading.gif' %}" style="margin: 1em;"/></li>');
+            $.post({
+                data: {"behavior":obj['behavior'], "state":obj['state'], "number":obj['number'], "ready":ready, "side":obj['side']},
+                url: '{% url "view_agents_list" agent_id=agent.id %}',
+                success: function(data) {
+                    var lis = $(obj['list']);
+                    //alert(data);
+                    lis.find('#loader').remove();
+                    lis.append(data);
+                    if(lis.find('li').length < obj['number']){
+                        call_relations_block(obj);
+                    }
+                }
+            });
+        }
+
+        $(".list").each(function(){
+            if($(this).find('li').length > 10 || ($(this).hasClass('ajaxlist') && $(this).find('ul').attr('number')*1 > 1)){
+                $(this).hide();
+                //$(this).prev('h4').find('.showhide').text('{% trans "(SHOW)" %}');
+            } else {
+                //alert($(this).find('ul').attr('number')*1);
+                if($(this).hasClass('ajaxlist') && $(this).find('ul').attr('number')*1 == 1){
+                    //alert($(this).prev('h4').find('.showhide'));
+                    $(this).hide();
+                    $(this).prev('h4').find('.showhide').click();
+                } else {
+                    $(this).prev('h4').find('.showhide').text('{% trans "(HIDE)" %}');
+                    //$(this).text($(this).text() == {% trans '(HIDE)' %} ? {% trans '(SHOW)' %} : {% trans '(HIDE)' %});
+                    //$(this).hide();
+                };
+            };
         });
+
 
         /*var ObjChosSingle = {
           allow_single_deselect: true,
@@ -1526,6 +1723,7 @@
     });
 
     if(typeof(google) != "undefined"){
+        alert('google Chart active?');
         google.load("visualization", "1", {packages:["corechart"]});
         {% if agent.is_individual %}
             if(typeof drawChartIndividualStats != 'undefined') google.setOnLoadCallback(drawChartIndividualStats);
@@ -1546,12 +1744,14 @@
                 chart.draw(data, options);
             }
         {% else %}
-            if(typeof drawChart_recent != 'undefined') google.setOnLoadCallback(drawChart_recent);
+            /*if(typeof drawChart_recent != 'undefined') google.setOnLoadCallback(drawChart_recent);
             function drawChart_recent() {
                 var data = google.visualization.arrayToDataTable([
                 ['Member', 'Qty'],
                 {% for member, hours in member_hours_recent %}
                     ['{{ member }}',  {{ hours }} ],
+                {% empty %}
+                    ['', 0],
                 {% endfor %}
                 ]);
 
@@ -1570,6 +1770,8 @@
                 ['Member', 'Qty'],
                 {% for member, hours in member_hours_stats %}
                     ['{{ member }}',  {{ hours }} ],
+                {% empty %}
+                    ['', 0],
                 {% endfor %}
                 ]);
 
@@ -1616,7 +1818,7 @@
                         'chartArea':{'width': '80%', 'height':'100%'}
                     }
                 );
-            }
+            }*/
         {% endif %}
     }
     </script>

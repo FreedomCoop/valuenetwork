@@ -16,7 +16,7 @@ class AgentResourceClassification(DjangoObjectType):
 
     class Meta:
         model = AgentResourceType
-        only_fields = ('id')
+        fields = ('id',)
 
     def resolve_agent(self, args, *rargs):
         return formatAgent(self.agent)

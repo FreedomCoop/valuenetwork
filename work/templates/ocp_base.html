@@ -1,0 +1,346 @@
+{% extends "site_base.html" %}
+
+{% load i18n %}
+{% load thumbnail %}
+
+{% block topbar %}
+    {% block site_brand %}
+        {% if request.user.agent.agent.related_contexts|length == 1 %}
+            {% with request.user.agent.agent.related_contexts|first as ag %}
+                {% if ag.project.fobi_slug %}
+                    <a class="navbar-brand" href="{% url 'project_login' form_slug=ag.project.fobi_slug %}">{{ ag.name }}</a>
+                {% else %}
+                    <a class="navbar-brand" href="{% url 'members_agent' agent_id=ag.id %}">{{ ag.name }}</a>
+                {% endif %}
+            {% endwith %}
+        {% else %}
+            <a class="navbar-brand" href="{% url 'home' %}">{{ SITE_NAME }}</a>
+        {% endif %}
+    {% endblock %}
+
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent">
+        <!-- <span class="fa fa-bars"></span> -->
+        <i class="hamburger"></i>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        {% block nav %}
+            <ul class="navbar-nav mr-auto">
+                {% block nav_items %}
+
+                  {% if request.user.is_authenticated %}
+                    <li id="your-dashboard" class="nav-item">
+                      <a href="{% url 'home' %}" class="nav-link"
+                          title="{% trans 'Dashboard page with your available options' %}"
+                          >{% trans 'Home' %}</a>
+                    </li>
+
+                    {% if request.user.agent.agent.joinaproject_requests and request.user.agent.agent.is_participant_candidate %}
+                        {% if request.user.agent.agent.joinaproject_requests|length == 1 %}
+                            {% with request.user.agent.agent.joinaproject_requests|first as req %}
+                                <li id="join-project" class="nav-item">
+                                     <a class="nav-link" href="{% url 'project_feedback' agent_id=req.agent.id join_request_id=req.id %}">{% trans "Joining Process" %}</a>
+                                </li>
+                            {% endwith %}
+                        {% else %}
+                            <li id="my_join_requests" class="dropdown nav-item">
+                              <a class="nav-link" href="#" class="dropdown-toggle nav-link" data-toggle="dropdown">{% trans 'Joining Projects' %} <b class="caret"></b></a>
+                              <ul class="subnav dropdown-menu" id="tasks-menu">
+                              {% for req in request.user.agent.agent.joinaproject_requests %}
+                                {% if req.project %}
+
+                                  <li class="joinaproject" >
+                                    <a class="nav-link" href="{% url 'project_feedback' agent_id=req.agent.id join_request_id=req.id %}"
+                                      title="{% trans 'Your join-a-project process' %}"
+                                      >{% blocktrans with name=req.project.agent.name %}{{ name }} Feedback{% endblocktrans %}</a>
+                                  </li>
+                                {% endif %}
+                              {% endfor %}
+                              </ul>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+
+                    {% if request.user.agent.agent.need_projects and not request.user.agent.agent.is_participant_candidate %}
+                      {% if not request.user.agent.agent.is_context and request.user.agent.agent.related_contexts|length == 1 %}
+                        {% with request.user.agent.agent.related_contexts|first as ag %}
+                            {% if 'projects' in ag.project.services %}
+                              <li id="my-projects" class="dropdown nav-item">
+                              <a href="#" class="dropdown-toggle nav-link" data-toggle="dropdown">{% trans 'Projects' %} <b class="caret"></b></a>
+                              <ul class="subnav dropdown-menu" id="projects-menu">
+                                <li id="your-projects" >
+                                  <a class="nav-link" href="{% url 'your_projects' %}"
+                                  title="{% trans 'Your projects list' %}"
+                                  >{% trans 'Your projects' %}</a>
+                                </li>
+                                {% if 'tasks' in ag.project.services %}
+                                  <li id="project-work" >
+                                      <a class="nav-link" href="{% url 'project_work' %}"
+                                      title="{% trans 'List of project related tasks' %}"
+                                      >{% trans 'Your project tasks' %}</a>
+                                  </li>
+                                {% endif %}
+                                {% if 'processes' in ag.project.services %}
+                                    <li id="project-orders" >
+                                      <a class="nav-link" href="{% url 'order_list' %}"
+                                      title="{% trans 'Open orders in your projects' %}"
+                                      >{% trans 'Your project open orders' %}</a>
+                                    </li>
+                                    <li id="project-process" >
+                                      <a class="nav-link" href="{% url "plan_work" rand=1 %}"
+                                      title="{% trans 'Plan process tasks for a project' %}"
+                                      >{% trans 'Plan project process' %}</a>
+                                    </li>
+                                {% endif %}
+                              </ul></li>
+                            {% elif not ag.project or not ag.project.services %}
+                              <li id="my-projects" class="dropdown nav-item">
+                                <a href="#" class="dropdown-toggle nav-link" data-toggle="dropdown">{% trans 'Projects' %} <b class="caret"></b></a>
+                                <ul class="subnav dropdown-menu" id="projects-menu">
+                                  <li id="your-projects" >
+                                    <a class="nav-link" href="{% url 'your_projects' %}"
+                                    title="{% trans 'Your projects list' %}"
+                                    >{% trans 'Your projects' %}</a>
+                                  </li>
+                                  <li id="project-work" >
+                                      <a class="nav-link" href="{% url 'project_work' %}"
+                                      title="{% trans 'List of project related tasks' %}"
+                                      >{% trans 'Your project tasks' %}</a>
+                                  </li>
+                                  <li id="project-orders" >
+                                      <a class="nav-link" href="{% url 'order_list' %}"
+                                      title="{% trans 'Open orders in your projects' %}"
+                                      >{% trans 'Your project open orders' %}</a>
+                                  </li>
+                                  <li id="project-process" >
+                                      <a class="nav-link" href="{% url "plan_work" rand=1 %}"
+                                      title="{% trans 'Plan process tasks for a project' %}"
+                                      >{% trans 'Plan project process' %}</a>
+                                  </li>
+                                  <li id="tutorial" >
+                                      <a href="#" class="disabled nav-link"
+                                      title="{% trans 'How to create a project in OCP' %}"
+                                      >{% trans "OCP project's tutorial" %}</a>
+                                  </li>
+                                </ul>
+                              </li>
+                            {% endif %}
+                        {% endwith %}
+                      {% elif not request.user.agent.agent.is_context and request.user.agent.agent.related_contexts|length > 1 %}
+                        <li id="my-projects" class="dropdown nav-item">
+                          <a href="#" class="dropdown-toggle nav-link" data-toggle="dropdown">{% trans 'Projects' %} <b class="caret"></b></a>
+                          <ul class="subnav dropdown-menu" id="projects-menu">
+                            <li id="your-projects" >
+                              <a class="nav-link" href="{% url 'your_projects' %}"
+                              title="{% trans 'Your projects list' %}"
+                              >{% trans 'Your projects' %}</a>
+                            </li>
+                            {% if request.user.agent.agent.need_tasks %}
+                              <li id="project-work" >
+                                <a class="nav-link" href="{% url 'project_work' %}"
+                                title="{% trans 'List of project related tasks' %}"
+                                >{% trans 'Your project tasks' %}</a>
+                              </li>
+                            {% endif %}
+                            {% if request.user.agent.agent.managed_projects %}
+                              <li id="project-orders" >
+                                <a class="nav-link" href="{% url 'order_list' %}"
+                                title="{% trans 'Open orders in your projects' %}"
+                                >{% trans 'Your project open orders' %}</a>
+                              </li>
+                              <li id="project-process" >
+                                <a class="nav-link" href="{% url "plan_work" rand=1 %}"
+                                title="{% trans 'Plan process tasks for a project' %}"
+                                >{% trans 'Plan project process' %}</a>
+                              </li>
+                            {% endif %}
+                          </ul>
+                        </li>
+                      {% elif request.user.agent.agent.is_context and request.user.agent.agent.related_contexts|length > 2 %}
+                        <li id="my-projects" class="dropdown nav-item">
+                          <a href="#" class="dropdown-toggle nav-link" data-toggle="dropdown">{% trans 'Projects' %} <b class="caret"></b></a>
+                          <ul class="subnav dropdown-menu" id="projects-menu">
+                            <li id="your-projects" >
+                              <a class="nav-link" href="{% url 'your_projects' %}"
+                              title="{% trans 'Your projects list' %}"
+                              >{% trans 'Your projects' %}</a>
+                            </li>
+                            <li id="project-work" >
+                              <a class="nav-link" href="{% url 'project_work' %}"
+                              title="{% trans 'List of project related tasks' %}"
+                              >{% trans 'Your project tasks' %}</a>
+                            </li>
+                            <li id="project-orders" >
+                              <a class="nav-link" href="{% url 'order_list' %}"
+                              title="{% trans 'Open orders in your projects' %}"
+                              >{% trans 'Your project open orders' %}</a>
+                            </li>
+                            <li id="project-process" >
+                              <a class="nav-link" href="{% url "plan_work" rand=1 %}"
+                              title="{% trans 'Plan process tasks for a project' %}"
+                              >{% trans 'Plan project process' %}</a>
+                            </li>
+                            <li id="tutorial" >
+                              <a href="#" class="disabled nav-link"
+                              title="{% trans 'How to create a project in OCP' %}"
+                              >{% trans "OCP project's tutorial" %}</a>
+                            </li>
+                            <!-- <li id="new-project" >
+                              <a href="#" class="disabled"
+                              title="{% trans 'Create a new project' %}"
+                              >{% trans 'New Project' %}</a>
+                            </li> -->
+                          </ul>
+                        </li>
+                      {% else %} <!-- <li>projects?</li> solved by the single Feedback menu below -->
+                      {% endif %}
+                    {% endif %}
+                    {% if request.user.agent.agent.related_contexts|length == 1 %}
+                        {% with request.user.agent.agent.related_contexts|first as ag %}
+                            {% if 'tasks' in ag.project.services %}
+                                <li id="my-tasks" class="dropdown nav-item">
+                                  <a href="#" class="dropdown-toggle nav-link" data-toggle="dropdown">{% trans 'Tasks' %} <b class="caret"></b></a>
+                                  <ul class="subnav dropdown-menu" id="tasks-menu">
+
+                                    <li id="my-dashboard" >
+                                      <a class="nav-link" href="{% url 'my_tasks' %}"
+                                      title="{% trans 'Do your planned tasks' %}"
+                                      >{% trans 'Your tasks' %}</a>
+                                    </li>
+                                    <li id="my-dashboard" >
+                                      <a class="nav-link" href="{% url 'take_new_tasks' %}"
+                                      title="{% trans 'Take new tasks for your skills' %}"
+                                      >{% trans 'Take a new task' %}</a>
+                                    </li>
+                                    <li id="non-process-logging" >
+                                      <a class="nav-link" href="{% url 'non_process_logging' %}"
+                                      title="{% trans 'Register other extra tasks you did' %}"
+                                      >{% trans 'Log extra tasks' %}</a>
+                                    </li>
+                                    <li id="my-history" >
+                                      <a class="nav-link" href="{% url 'my_history' %}"
+                                      title="{% trans 'Your work history with payments' %}"
+                                      >{% trans 'Tasks history' %}</a>
+                                    </li>
+                                  </ul>
+                                </li>
+                            {% endif %}
+                        {% endwith %}
+                    {% elif request.user.agent.agent.need_tasks and request.user.agent.agent.is_participant %}
+                        <li id="my-tasks" class="dropdown nav-item">
+                          <a href="#" class="dropdown-toggle nav-link" data-toggle="dropdown">{% trans 'Tasks' %} <b class="caret"></b></a>
+                          <ul class="subnav dropdown-menu" id="tasks-menu">
+
+                            <li id="my-dashboard" >
+                              <a class="nav-link" href="{% url 'my_tasks' %}"
+                              title="{% trans 'Do your planned tasks' %}"
+                              >{% trans 'Your tasks' %}</a>
+                            </li>
+                            <li id="my-dashboard" >
+                              <a class="nav-link" href="{% url 'take_new_tasks' %}"
+                              title="{% trans 'Take new tasks for your skills' %}"
+                              >{% trans 'Take a new task' %}</a>
+                            </li>
+                            <li id="non-process-logging" >
+                              <a class="nav-link" href="{% url 'non_process_logging' %}"
+                              title="{% trans 'Register other extra tasks you did' %}"
+                              >{% trans 'Log extra tasks' %}</a>
+                            </li>
+                            <li id="my-history" >
+                              <a class="nav-link" href="{% url 'my_history' %}"
+                              title="{% trans 'Your work history with payments' %}"
+                              >{% trans 'Tasks history' %}</a>
+                            </li>
+                          </ul>
+                        </li>
+                    {% endif %}
+                    {% if not request.user.agent.agent.is_active_freedom_coop_member %}
+                      {% with request.user.agent.agent.membership_request.id as id %}
+                        {% if id and request.user.agent.agent.joinaproject_requests|length == 0 %}
+                          <li id="membership" class="nav-item" >
+                            <a class="nav-link" href="{% url 'membership_discussion' membership_request_id=id %}"
+                              title="{% trans 'Your membership process' %}"
+                              >{% trans 'Membership' %}</a>
+                          </li>
+                        {% endif %}
+                      {% endwith %}
+                      {% if request.user.agent.agent.faircoin_resource and request.user.agent.agent.membership_request %}
+                        <li id="my-wallet" class="nav-item" >
+                          <a class="nav-link" href="{% url "manage_faircoin_account" resource_id=request.user.agent.agent.faircoin_resource.id %}"
+                          title="{% trans 'Your personal faircoin wallet in OCP' %}"
+                          >{% trans 'Faircoin Account' %}</a>
+                        </li>
+                      {% endif %}
+                    {% endif %}
+                    {% if request.user.agent.agent.is_active_freedom_coop_member or request.user.agent.agent.is_participant %}
+                      {% if request.user.agent.agent.joinaproject_requests|length == 1 %}
+                        {% with request.user.agent.agent.joinaproject_requests|first as req %}
+                          <li id="feedback" class="nav-item" >
+                            <a class="nav-link" href="{% url 'project_feedback' agent_id=req.agent.id join_request_id=req.id %}"
+                                  title="{% trans 'Feedback page with' %} {{ req.project.agent.name }}" >{% trans "Feedback" %}</a>
+                          </li>
+                        {% endwith %}
+                      {% else %}
+                        <li id="feedback" class="dropdown nav-item">
+		                    <a href="#" class="dropdown-toggle nav-link" data-toggle="dropdown">{% trans "Feedback" %} <b class="caret"></b></a>
+		                    <ul class="subnav dropdown-menu" id="feedback-menu">
+                          {% with request.user.agent.agent.membership_request.fdc as fdc %}
+                            {% if request.user.agent.agent.membership_request.id and not fdc.project in request.user.agent.agent.joinaproject_requests_projects %}
+                              <li id="membership" >
+                                <a class="nav-link" href="{% url 'membership_discussion' membership_request_id=request.user.agent.agent.membership_request.id %}"
+                                  title="{% trans 'Your membership process' %}"
+                                  >{% trans 'FreedomCoop Feedback' %}</a>
+                              </li>
+                            {% endif %}
+                          {% endwith %}
+                          {% for req in request.user.agent.agent.joinaproject_requests %}
+                            {% if req.project %}
+                              <li class="joinaproject" >
+                                <a class="nav-link" href="{% url 'project_feedback' agent_id=req.agent.id join_request_id=req.id %}"
+                                  title="{% trans 'Your join-a-project process' %}"
+                                  >{% blocktrans with name=req.project.agent.name %}{{ name }} Feedback{% endblocktrans %}</a>
+                              </li>
+                            {% endif %}
+                          {% endfor %}
+                          </ul>
+                        </li>
+                      {% endif %}
+                    {% endif %}
+
+                    {% if request.user.agent.agent.is_active_freedom_coop_member %}
+                    <!-- <li id="my-services" class="dropdown">
+                      <a href="#" class="dropdown-toggle" data-toggle="dropdown">{% trans 'Member Options' %} <b class="caret"></b></a>
+                      <ul class="subnav dropdown-menu" id="tasks-menu">
+
+                        <li id="legal-services" class="dropdown">
+                          <a href="#" class="disabled" >{% trans 'Legal Tools' %}</a>
+                        </li>
+
+                      </ul>
+                    </li> -->
+                    {% endif %}
+
+                    {% if not request.user.agent.agent.is_active_freedom_coop_member and request.user.agent.agent.membership_request and request.user.agent.agent.related_contexts|length < 2 %}
+                    <li id="profile" class="nav-item" >
+                      <a href="{% url 'profile' %}" class="nav-link"
+                      title="{% trans 'Your personal information and skills' %}"
+                      >{% trans 'Profile' %}</a>
+                    </li>
+                    {% endif %}
+
+                    {% if request.user.agent.agent.is_staff %}
+                    <li id="map" class="nav-item" >
+                      <a href="{% url 'map' %}" class="nav-link"
+                      title="{% trans 'Map of worker locations' %}"
+                      >{% trans 'Map' %}</a>
+                    </li>
+                    {% endif %}
+
+                  {% endif %}
+
+                {% endblock %}
+            </ul>
+        {% endblock %}
+        {% block account_bar %}{% include "_account_bar.html" %}{% endblock %}
+    </div>
+{% endblock %}

@@ -20,7 +20,7 @@ class DurationWidget(MultiWidget):
         return [0, 0, 0]
 
     def format_output(self, rendered_widgets):
-        return u''.join(rendered_widgets)
+        return ''.join(rendered_widgets)
 
     def value_from_datadict(self, data, files, name):
         dlist = [
@@ -71,7 +71,7 @@ class DecimalDurationWidget(MultiWidget):
         return [0, 0]
 
     def format_output(self, rendered_widgets):
-        return u''.join(rendered_widgets)
+        return ''.join(rendered_widgets)
 
     def value_from_datadict(self, data, files, name):
         dlist = [
@@ -96,7 +96,7 @@ class DecimalDurationWidget(MultiWidget):
 
     def _has_changed(self, initial, data):
         if initial is None:
-            initial = [u'' for x in range(0, 2)]
+            initial = ['' for x in range(0, 2)]
         else:
             if not isinstance(initial, list):
                 initial = self.decompress(initial)

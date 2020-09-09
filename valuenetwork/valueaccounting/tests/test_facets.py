@@ -38,7 +38,7 @@ class FacetTest(TestCase):
         
     def test_facet_values(self):
         value_list = self.source.value_list()
-        self.assertEqual(value_list, u'Them, Us')
+        self.assertEqual(value_list, 'Them, Us')
 
     def test_optical_pattern_resource_types(self):
         rts = self.optical_pattern.get_resource_types(self.event_type)

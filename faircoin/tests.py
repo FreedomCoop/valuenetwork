@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 from mock import patch
 import json, time
 
 from django.test import TestCase, Client
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.auth.models import User
 
 from valuenetwork.valueaccounting.models import AgentType, EconomicAgent,\
@@ -48,8 +48,8 @@ def fake_send_command(cmd, params):
 class FaircoinTest(TestCase):
 
     def setUp(self):
-        print
-        print "------- Faircoin Account Test (start)-------"
+        print()
+        print("------- Faircoin Account Test (start)-------")
         self.client = Client()
         self.agent = create_user_agent()
         self.resource = create_faircoin_resource(self.agent)
@@ -61,11 +61,11 @@ class FaircoinTest(TestCase):
         url = reverse('manage_faircoin_account', args=[self.resource.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        print "t- manage_faircoin_account ok!"
+        print("t- manage_faircoin_account ok!")
 
         url = reverse('faircoin_history', args=[self.resource.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        print "t- faircoin_history ok!"
+        print("t- faircoin_history ok!")
 
-        print "------- faircoin account test (end) -------"
+        print("------- faircoin account test (end) -------")

@@ -9,9 +9,7 @@
 
   <head>
 
-    <!-- <link href="{% static "pinax/css/theme.css" %}" rel="stylesheet"> -->
-    <link href="{% static "bootstrap/css/bootstrap.css" %}" rel="stylesheet">
-    <link href="{% static "bootstrap/css/bootstrap-responsive.css" %}" rel="stylesheet">
+    <link href="{% static "css/app.css" %}" rel="stylesheet">
     <link href="{% static "css/buttons.css" %}" rel="stylesheet">
 
     <link href="{% static "css/coop.css" %}" rel="stylesheet">
@@ -37,7 +35,7 @@
         </style>
     {% endif %}
 
-    <script src="{% static "pinax/js/jquery.js" %}"></script>
+    <script src="{% static "js/jquery-1.4.2.min.js" %}"></script>
 
     <script type="text/javascript" src="{% static 'js/jquery.validate.min.js' %}"></script>
 
@@ -154,7 +152,9 @@
     <title>{% trans "Request to Join: " %} {{ project.agent.name }}</title>
 
   </head>
-  <body style="background-image: url({% if project.background_url %}{% static project.background_url %}{% else %}{% static 'img/photo-OCP-1600x900_green.jpg' %}{% endif %}); text-align:center; background-attachment:fixed;">
+  <body style="background-image:
+               url({% if project.background_url %}{% static project.background_url %}{% else %}{% static 'img/photo-OCP-1600x900_green.jpg' %}{% endif %});
+               text-align:center; /* background-size:cover; */ background-attachment:fixed; display:inherit;">
     <div style="position:absolute; left:13px; top:9px;">
       <a class="btn btn-mini" href="{% url 'project_login' form_slug=project.fobi_slug %}">
           {% trans "Login" %}</a>
@@ -179,18 +179,22 @@
       </h2><br>
       <h1>
         {% if project.agent.url %}<a href="{{ project.agent.url }}" target="_blank">
-          {% if project.agent.photo %}
+          {% if project.agent.photo and project.agent.photo.readable %}
               <img src="{% thumbnail project.agent.photo 400x400 %}" title="{{ project.agent.name }}" />
+          {% elif project.agent.photo.url and not project.agent.photo.url == 'None' %}
+              <img src="{{ project.agent.photo.url }}" width="400" title="{{ project.agent.name }}" />
           {% elif project.agent.photo_url %}
-              <img src="{{ project.agent.photo_url }}" width="400" />
+              <img src="{{ project.agent.photo_url }}" width="400" title="{{ project.agent.name }}"/>
           {% else %}
               {{ project.agent.name }}
           {% endif %}
         </a>{% else %}
-          {% if project.agent.photo %}
+          {% if project.agent.photo and project.agent.photo.readable %}
               <img src="{% thumbnail project.agent.photo 400x400 %}" title="{{ project.agent.name }}" />
+          {% elif project.agent.photo.url and not project.agent.photo.url == 'None' %}
+              <img src="{{ project.agent.photo.url }}" width="400" title="{{ project.agent.name }}" />
           {% elif project.agent.photo_url %}
-              <img src="{{ project.agent.photo_url }}" width="400" />
+              <img src="{{ project.agent.photo_url }}" width="400" title="{{ project.agent.name }}"/>
           {% else %}
               {{ project.agent.name }}
           {% endif %}

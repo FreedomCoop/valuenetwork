@@ -80,7 +80,7 @@ class EmailBackend(BaseBackend):
         body = render_to_string("pinax/notifications/email_body.txt", context)
 
         #logger.debug('ocp sending email from '+str(from_email)+' to '+str(recipient.email)+' - time:'+str(time.time()))
-        #print 'sending email from: '+from_email
+        #print('sending email from: '+from_email)
         # EmailMultiAlternatives(subject='', body='', from_email=None, to=None, bcc=None, connection=None, attachments=None,
         #                        headers=None, alternatives=None, cc=None, reply_to=None)
 
