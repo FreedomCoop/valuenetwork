@@ -17,10 +17,10 @@ Ideas, testing, issue and bug reporting
 =======================================
 
 Enric Duran
-Maro
+Maro Horta
 Valentina Messeri
 Ivan Minutillo
-Michalis 
+Michalis
 Guy James
 Ale Fernandez
 Sporos
@@ -31,4 +31,3 @@ Tiberius Brastaviceanu
 Francois Bergeron
 Jonathan Olesik
 Abran Khalid
-
