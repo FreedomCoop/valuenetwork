@@ -11,8 +11,7 @@ install:
   - sudo curl --output /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/85.0.4183.87/chromedriver_linux64.zip
   - sudo unzip /tmp/chromedriver.zip -d /usr/local/bin/
   - pip install --upgrade pip setuptools --quiet
-  - pip install -U -r requirements.txt --trusted-host dist.pinaxproject.com --quiet
-  - cp /usr/local/bin/chromedriver /home/travis/virtualenv/python3.6.7/lib/python3.6/site-packages/chromedriver_binary/chromedriver
+  - pip install -U -r requirements.txt --trusted-host dist.pinaxproject.com
   - pip install Image --quiet
   - pip install tox --quiet
   - npm ci
