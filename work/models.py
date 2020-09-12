@@ -2589,7 +2589,7 @@ class JoinRequest(models.Model):
 
     def create_useragent_randompass(self, request=None, hash_func=hashlib.sha256):
         from work.forms import ProjectAgentCreateForm # if imported generally it breaks other imports, requires a deep imports rebuild TODO
-        randpass = hash_func(str(random.SystemRandom().getrandbits(64))).hexdigest()[:settings.RANDOM_PASSWORD_LENGHT]
+        randpass = hash_func(str(random.SystemRandom().getrandbits(64)).encode('utf-8')).hexdigest()[:settings.RANDOM_PASSWORD_LENGHT]
 
         at = None
         password = None

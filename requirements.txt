@@ -2,7 +2,7 @@
 -r requirements-account.txt
 
 pinax-theme-bootstrap
-pinax-notifications
+pinax-notifications<6
 django-extensions
 django-appconf==1.0.2
 webtest
@@ -35,4 +35,3 @@ django-bootstrap-form
 chromedriver_binary
 psycopg2-binary
 django-datatables-view
-

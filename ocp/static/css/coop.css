@@ -94,6 +94,10 @@ h4 img {
     width: 80%;
 }
 
+.error, .error-msg {
+  color: #b34;
+}
+
 input[type="checkbox"], input[type="radio"] {
 	width: 30px !important;
 }

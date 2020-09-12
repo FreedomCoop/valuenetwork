@@ -50,10 +50,12 @@
         {% if project.agent.photo or project.agent.photo_url %}
             <br />
             <a href="{{ agent.url }}">
-              {% if project.agent.photo %}
+              {% if project.agent.photo and project.agent.photo.readable %}
                 <img src="{% thumbnail project.agent.photo 400x400 %}" title="{{ project.agent.name }}" />
+			  {% elif project.agent.photo.url and not project.agent.photo.url == 'None' %}
+  	            <img src="{{ project.agent.photo.url }}" width="400" title="{{ project.agent.name }}" />
               {% elif project.agent.photo_url %}
-                <img src="{{ project.agent.photo_url }}" width="400" />
+                <img src="{{ project.agent.photo_url }}" width="400" title="{{ project.agent.name }}" />
               {% endif %}
             </a>
         {% else %}
@@ -90,4 +92,3 @@
 </div>
 </body>
 </html>
-
