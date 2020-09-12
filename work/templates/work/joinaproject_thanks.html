@@ -8,7 +8,8 @@
 <head>
 <title>{% trans "Thank you for your request to join this project" %}</title>
 
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" media="all">
+    <link href="{% static "css/app.css" %}" rel="stylesheet">
+    <link href="{% static "css/buttons.css" %}" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/coop.css' %}">
 
     {% if project.custom_css %}
@@ -62,14 +63,14 @@
             <br /><span style="font-size:180%">{% if project.agent.url %}<a href="{{ project.agent.url }}" target="_blank">{{ project.agent.name }}</a>{% else %}{{ project.agent.name }}{% endif %}</span>
         {% endif %}
     </h2>
-    <div class="row-fluid">
+    <div class="row-fluid row justify-content-md-center">
         {% if not jn_req.payment_url %}
             <p style="text-align:center">{% trans "You will receive an initial password in your email, to log in the system and confirm the email address." %}<br>
                 {% trans "Please change your password the first time you enter the system to ensure total security." %}</p>{% endif %}
         <p> &nbsp; </p>
         {% if project.payment_options and jn_req.pending_shares %}
             <p style="text-align:center; font-size:120%; ">
-                {% trans "You've choosed to make a payment of" %} <b>{{ jn_req.payment_amount }} {{ jn_req.payment_unit.abbrev }}</b>
+                {% trans "You've choosed to make a payment of" %} <b>{{ jn_req.show_total_price }}</b>
                 <!-- {% trans "via" %} <span style="font-weight:bold;">{{ jn_req.payment_option.val }}</span> -->
             </p>
             {% if jn_req.payment_url or jn_req.multiwallet_user %}
@@ -84,11 +85,14 @@
                 </p>
 
             {% elif jn_req.payment_html %}
-                <p style="text-align:center; font-size:120%; max-width:85%;">{{ jn_req.payment_html|safe }}</p>
+				<div class="col-lg-9 col-sm-12" >
+                	<p style="text-align:center; font-size:120%;">{{ jn_req.payment_html|safe }}</p>
+				</div>
             {% endif %}
         {% endif %}
     </div>
     {% endif %}
+	<p> &nbsp; </p>
 </div>
 </body>
 </html>
