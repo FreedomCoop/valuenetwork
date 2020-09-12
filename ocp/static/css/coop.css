@@ -95,7 +95,7 @@ h4 img {
 }
 
 .error, .error-msg {
-  color: #b34;
+  color: #dc3545;
 }
 
 input[type="checkbox"], input[type="radio"] {

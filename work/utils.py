@@ -179,7 +179,7 @@ def convert_price(amount, shunit, unit, obj=None, deci=settings.DECIMALS):
                             ratio = update_unitratio(shunit, unit, ur)
 
                             price = amount/ratio
-                            if obj and hasattr(obj, 'exchange'):
+                            if obj and hasattr(obj, 'exchange') and obj.exchange:
                                 for tr in obj.exchange.transfers.all():
                                     if tr.transfer_type.is_currency:
                                         if not len(tr.events.all()):

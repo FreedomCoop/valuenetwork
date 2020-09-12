@@ -1,7 +1,7 @@
 #!/bin/sh
 # 5.5.2005 18:50 binsh
 # mysql backup script
-WEBAPP=~/app/valuenetwork
+WEBAPP=~/app/ocp
 BASEDIR=~/app/backups/latest
 TIMESTAMP=`date +%Y%m%d%H%M%S`
 #TIMESTAMP=`date +%u`
@@ -16,4 +16,4 @@ echo "Dumping $DB to $DUMPFILE ..."
 #   hostname:port:database:username:password
 # and chmod 0644 ~/.pgpass
 pg_dump --clean $DB | gzip > $DUMPFILE
-tar czf $BASEDIR/app-valuenetwork.$TIMESTAMP.tar.gz $WEBAPP
+tar czf $BASEDIR/app-ocp.$TIMESTAMP.tar.gz $WEBAPP
