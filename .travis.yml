@@ -3,10 +3,10 @@ addons:
 language: python
 sudo: false
 node_js: 10.15
-python: 3.6
+python: 3.7
 cache: pip
 env:
-  - TOXENV="py36_django20"
+  - TOXENV="py37_django22"
 install:
   - sudo curl --output /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/85.0.4183.87/chromedriver_linux64.zip
   - sudo unzip /tmp/chromedriver.zip -d /usr/local/bin/
