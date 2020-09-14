@@ -10,7 +10,6 @@ from django.utils.http import int_to_base36
 from account.models import EmailConfirmation, SignupCode
 from account.views import INTERNAL_RESET_URL_TOKEN, PasswordResetTokenView
 
-import unittest
 
 class SignupViewTestCase(TestCase):
 
@@ -374,7 +373,8 @@ class PasswordResetTokenViewTestCase(TestCase):
             "email": user.email,
         }
         self.client.post(reverse("account_password_reset"), data)
-        parsed = urlparse(mail.outbox[0].body.strip())
+        parsed = urlparse(mail.outbox[0].body.strip().split('\n\n')[1])
+        #print("+++ parsed: "+str(parsed))
         return user, parsed.path
 
     def test_get_bad_user(self):
@@ -402,11 +402,10 @@ class PasswordResetTokenViewTestCase(TestCase):
         self.assertTemplateUsed(response,
                                 PasswordResetTokenView.template_name_fail)
 
-    @unittest.skip("Skip because the url fails...")
     def test_get_reset(self):
         user, url = self.request_password_reset()
+        #print("+++ URL: "+url)
         response = self.client.get(url)
-        print(":: url: "+url+" - Response: "+str(response))
         self.assertRedirects(
             response,
             reverse(
@@ -419,11 +418,9 @@ class PasswordResetTokenViewTestCase(TestCase):
             fetch_redirect_response=False
         )
 
-    @unittest.skip("Skip because the url fails...")
     def test_post_reset(self):
         user, url = self.request_password_reset()
         response = self.client.get(url)
-        print(":: url: "+url+" - Response: "+str(response))
         self.assertEqual(response.status_code, 302)
         data = {
             "password": "new-password",

@@ -172,6 +172,7 @@ INSTALLED_APPS = [
 
     # external
     "account",
+    "django_jsonfield_backport",
     "pinax.eventlog",
     "pinax.webanalytics",
 
@@ -327,7 +328,9 @@ ACCOUNT_LOGIN_REDIRECT_URL = "/work/home" # was: home
 ACCOUNT_LOGOUT_REDIRECT_URL = "/"
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 2
 ACCOUNT_USE_AUTH_AUTHENTICATE = True
-ACCOUNT_PASSWORD_RESET_REDIRECT_URL = "/"
+ACCOUNT_PASSWORD_RESET_REDIRECT_URL = "profile"
+ACCOUNT_PASSWORD_CHANGE_REDIRECT_URL = "profile"
+#ACCOUNT_SIGNUP_REDIRECT_URL = ""
 
 #ACCOUNT_USE_OPENID = False
 #ACCOUNT_REQUIRED_EMAIL = False
@@ -340,8 +343,8 @@ AUTH_USER_MODEL = "auth.User"
 LOGIN_URL = '/account/login/'
 LOGIN_EXEMPT_URLS = [
     r"^$",
-    r'^membership/',
-    r'^membershipthanks/',
+    #r'^membership/',
+    #r'^membershipthanks/',
     r'^joinaproject/',
     r'^join/',
     r'^joinaproject-thanks/',
@@ -449,4 +452,3 @@ try:
     from local_settings import *
 except ImportError:
     pass
-

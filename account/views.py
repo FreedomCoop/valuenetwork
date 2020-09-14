@@ -172,7 +172,6 @@ class SignupView(PasswordMixin, FormView):
             self.signup_code_present = False
 
     def get(self, *args, **kwargs):
-
         # bumbum hack to redirect register
         domain = self.request.get_host() #get_current_site(self.request)
         if settings.PROJECTS_LOGIN:
@@ -376,7 +375,6 @@ class LoginView(FormView):
         return super(LoginView, self).dispatch(*args, **kwargs)
 
     def get(self, *args, **kwargs):
-
         # bumbum hack to redirect login
         domain = self.request.get_host() #get_current_site(self.request)
         if settings.PROJECTS_LOGIN:
@@ -911,16 +909,19 @@ class WorkSettingsView(LoginRequiredMixin, FormView):
         return default_redirect(self.request, fallback_url, **kwargs)
 
 
-class WorkChangePasswordView(FormView):
+class WorkChangePasswordView(PasswordMixin, FormView):
 
     template_name = "account/work_password_change.html"
     form_class = ChangePasswordForm
+    redirect_field_name = "next"
     messages = {
         "password_changed": {
             "level": messages.SUCCESS,
             "text": _("Password successfully changed.")
         }
     }
+    form_password_field = "password_new"
+    fallback_url_setting = "ACCOUNT_PASSWORD_CHANGE_REDIRECT_URL"
 
     def get(self, *args, **kwargs):
         if not self.request.user.is_authenticated:
@@ -932,8 +933,39 @@ class WorkChangePasswordView(FormView):
             return HttpResponseForbidden()
         return super(WorkChangePasswordView, self).post(*args, **kwargs)
 
+    def form_valid(self, form):
+        self.change_password(form)
+        self.create_password_history(form, self.request.user)
+        self.after_change_password()
+        return redirect(self.get_success_url())
+
+    def get_user(self):
+        return self.request.user
+
+    def get_form_kwargs(self):
+        """
+        Returns the keyword arguments for instantiating the form.
+        """
+        kwargs = {"user": self.request.user, "initial": self.get_initial()}
+        if self.request.method in ["POST", "PUT"]:
+            kwargs.update({
+                "data": self.request.POST,
+                "files": self.request.FILES,
+            })
+        return kwargs
+
+    def change_password(self, form):
+        user = super(WorkChangePasswordView, self).change_password(form)
+        # required on Django >= 1.7 to keep the user authenticated
+        if hasattr(auth, "update_session_auth_hash"):
+            auth.update_session_auth_hash(self.request, user)
+
+
+
+    '''
     def change_password(self, form):
         user = self.request.user
+        print(dir(form))
         form.save(user)
         if settings.ACCOUNT_NOTIFY_ON_PASSWORD_CHANGE:
             self.send_email(user)
@@ -978,8 +1010,10 @@ class WorkChangePasswordView(FormView):
         subject = "".join(subject.splitlines())
         message = render_to_string("account/email/password_change.txt", ctx)
         send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
+    '''
 
 # -------------
+
 
 
 class DeleteView(LoginRequiredMixin, LogoutView):
