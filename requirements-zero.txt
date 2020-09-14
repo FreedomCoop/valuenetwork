@@ -1,2 +1,2 @@
-Django==2.0.13
-pinax-templates==2.0.1
+Django<2.3
+pinax-templates #==2.0.5
