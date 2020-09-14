@@ -35,3 +35,4 @@ django-bootstrap-form
 chromedriver_binary
 psycopg2-binary
 django-datatables-view
+django_jsonfield_backport
