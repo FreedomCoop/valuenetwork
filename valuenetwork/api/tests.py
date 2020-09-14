@@ -33,16 +33,21 @@ class APITest(TestCase):
         at_org = AgentType.objects.get(name="Organization")
         aat_member = AgentAssociationType.objects.get(identifier="member")
         aat_supplier = AgentAssociationType.objects.get(identifier="supplier")
+        test_user = User.objects.filter(username="testUser11222")
         test_user = User.objects.create_user('testUser11222','user@test.com', '123456') #, _ = User.objects.get_or_create(username='testUser11222')
         test_user.set_password('123456')
         test_user.save()
-        test_agent, _ = EconomicAgent.objects.get_or_create(nick='testUser11222', agent_type=at_person)
+        test_agent = EconomicAgent.objects.filter(nick="testUser11222")
+        test_agent, c = EconomicAgent.objects.get_or_create(nick='testUser11222', agent_type=at_person)
+        #if c: print("- created EconomicAgent: "+str(test_agent.id))
         test_agent.name = 'testUser11222'
         if test_user not in test_agent.users.all():
             from valuenetwork.valueaccounting.models import AgentUser
-            agent_user, _ = AgentUser.objects.get_or_create(agent=test_agent, user=test_user)
+            agent_user, c = AgentUser.objects.get_or_create(agent=test_agent, user=test_user)
+            #if c: print("- created AgentUser: "+str(agent_user.id))
             test_agent.users.add(agent_user)
         test_agent.save()
+
         notice_type = NoticeType(
             label="api_test",
             display="api test",
@@ -389,6 +394,7 @@ class APITest(TestCase):
             commitment=None,
             )
         proc3_e1.save()
+        #print("API test: setUp (end)")
 
     def test_basic_me_query(self):
         print("API test: test_basic_me_query")
@@ -503,7 +509,7 @@ class APITest(TestCase):
                 '''
         result = schema.execute(query)
         allAgents = result.data['viewer']['allAgents']
-        #print("- allAgents: "+unicode(allAgents))
+        #print("- allAgents: len "+str(allAgents[1]))
         self.assertEqual(len(allAgents), 7) #5)
         org1 = allAgents[3] #1]
         self.assertEqual(org1['name'], 'org1')
@@ -512,7 +518,7 @@ class APITest(TestCase):
         self.assertEqual(supplier['subject']['name'], 'supp1')
         self.assertEqual(org1['__typename'], 'Organization')
         self.assertEqual(org1['type'], 'Organization')
-        person = allAgents[2] #0]
+        person = allAgents[1] #0]
         self.assertEqual(person['__typename'], 'Person')
         roles = person['agentRoles']
         role = roles[0]
@@ -593,10 +599,12 @@ class APITest(TestCase):
         token = call_result['token']
         test_agent = EconomicAgent.objects.get(name="testUser11222")
 
+        org1 = EconomicAgent.objects.get(nick="org1")
+
         query = '''
                 query {
                   viewer(token: "''' + token + '''") {
-                    agent(id: 4) {
+                    agent(id: ''' + str(org1.id) + ''') {
                       name
                       ownedEconomicResources(category: INVENTORY) {
                         id
@@ -634,10 +642,10 @@ class APITest(TestCase):
         processes = result.data['viewer']['agent']['agentProcesses']
         plans = result.data['viewer']['agent']['agentPlans']
         self.assertEqual(agent['name'], 'org1')
-        self.assertEqual(ownedEconomicResources[0]['resourceClassifiedAs']['name'], 'product1')
-        self.assertEqual(ownedEconomicResources[0]['resourceClassifiedAs']['processCategory'], 'produced')
+        self.assertEqual(ownedEconomicResources[1]['resourceClassifiedAs']['name'], 'product1')
+        self.assertEqual(ownedEconomicResources[1]['resourceClassifiedAs']['processCategory'], 'produced')
         self.assertEqual(len(ownedEconomicResources), 2)
-        self.assertEqual(ownedEconomicResources[0]['currentQuantity']['unit']['name'], 'Each')
+        self.assertEqual(ownedEconomicResources[1]['currentQuantity']['unit']['name'], 'Each')
         self.assertEqual(len(processes), 1)
         self.assertEqual(processes[0]['name'], 'proc1')
         self.assertEqual(len(plans), 1)
@@ -655,6 +663,8 @@ class APITest(TestCase):
         call_result = result.data['createToken']
         token = call_result['token']
         test_agent = EconomicAgent.objects.get(name="testUser11222")
+
+        proc1 = Process.objects.get(name="proc1")
 
         query = '''
                 fragment coreEventFields on EconomicEvent {
@@ -726,7 +736,7 @@ class APITest(TestCase):
                 }
                 query {
                   viewer(token: "''' + token + '''") {
-                    process(id: 1) {
+                    process(id: ''' + str(proc1.id) + ''') {
                         name
                         processPlan {
                           name
@@ -775,6 +785,7 @@ class APITest(TestCase):
         inputs = process['inputs']
         outputs = process['outputs']
         committedInputs = process['committedInputs']
+        #print("+++ committedInputs: "+str(committedInputs[1]))
         committedOutputs = process['committedOutputs']
         nextProcesses = process['nextProcesses']
         previousProcesses = process['previousProcesses']
@@ -793,11 +804,11 @@ class APITest(TestCase):
         self.assertEqual(inputs[2]['affects']['resourceClassifiedAs']['name'], "component1")
         self.assertEqual(inputs[3]['provider']['name'], "testUser11222")
         self.assertEqual(outputs[0]['action'], "produce")
-        self.assertEqual(committedInputs[0]['action'], "work")
+        self.assertEqual(committedInputs[1]['action'], "work") # was 0
         self.assertEqual(committedInputs[1]['committedQuantity']['numericValue'], 2.5)
         self.assertEqual(committedInputs[1]['plan']['name'], 'order1')
         self.assertEqual(committedInputs[1]['plan']['scope'][0]['name'], 'org1')
-        self.assertEqual(committedInputs[2]['resourceClassifiedAs']['name'], "component1")
+        self.assertEqual(committedInputs[0]['resourceClassifiedAs']['name'], "component1")
         self.assertEqual(committedInputs[1]['provider']['name'], "not user")
         self.assertEqual(committedOutputs[0]['action'], "produce")
         self.assertEqual(previousProcesses[0]['name'], 'proc2')
@@ -816,11 +827,12 @@ class APITest(TestCase):
         call_result = result.data['createToken']
         token = call_result['token']
         test_agent = EconomicAgent.objects.get(name="testUser11222")
+        org1 = EconomicAgent.objects.get(name="org1")
 
         query = '''
                 query {
                   viewer(token: "''' + token + '''") {
-                    agent(id: 4) {
+                    agent(id: ''' + str(org1.id) + ''') {
                       name
                       ownedEconomicResources(category: INVENTORY) {
                         id
@@ -855,13 +867,14 @@ class APITest(TestCase):
         result = schema.execute(query)
         agent = result.data['viewer']['agent']
         ownedEconomicResources = result.data['viewer']['agent']['ownedEconomicResources']
+        #print("+++ ownedEconomicResources: "+str(ownedEconomicResources))
         processes = result.data['viewer']['agent']['agentProcesses']
         plans = result.data['viewer']['agent']['agentPlans']
         self.assertEqual(agent['name'], 'org1')
-        self.assertEqual(ownedEconomicResources[0]['resourceClassifiedAs']['name'], 'product1')
-        self.assertEqual(ownedEconomicResources[0]['resourceClassifiedAs']['processCategory'], 'produced')
+        self.assertEqual(ownedEconomicResources[1]['resourceClassifiedAs']['name'], 'product1')
+        self.assertEqual(ownedEconomicResources[1]['resourceClassifiedAs']['processCategory'], 'produced')
         self.assertEqual(len(ownedEconomicResources), 2)
-        self.assertEqual(ownedEconomicResources[0]['currentQuantity']['unit']['name'], 'Each')
+        self.assertEqual(ownedEconomicResources[1]['currentQuantity']['unit']['name'], 'Each')
         self.assertEqual(len(processes), 1)
         self.assertEqual(processes[0]['name'], 'proc1')
         self.assertEqual(len(plans), 1)
@@ -879,6 +892,7 @@ class APITest(TestCase):
         call_result = result.data['createToken']
         token = call_result['token']
         test_agent = EconomicAgent.objects.get(name="testUser11222")
+        #scope_ag = EconomicAgent.objects.get(nick="org1")
 
         #result1 = schema.execute('''
         #        mutation {
@@ -905,7 +919,7 @@ class APITest(TestCase):
         query = '''
                 query {
                   viewer(token: "''' + token + '''") {
-                    agent(id: 3) {
+                    agent(id: ''' + str(test_agent.id) + ''') {
                         name
                         agentNotificationSettings {
                             id
@@ -926,9 +940,10 @@ class APITest(TestCase):
                 '''
         result5 = schema.execute(query)
         notifSettings = result5.data['viewer']['agent']['agentNotificationSettings']
+        #print("+++ notifSettings: "+str(notifSettings))
         if not notifSettings:
             print("ERR: Can't find notifSettings to assert!")
-        self.assertEqual(notifSettings[0]['id'], "1")
+        self.assertEqual(notifSettings[0]['id'], "6")
         self.assertEqual(notifSettings[0]['notificationType']['label'], "api_test")
 
     def test_create_update_delete_process(self):
@@ -943,11 +958,13 @@ class APITest(TestCase):
         call_result = result.data['createToken']
         token = call_result['token']
         test_agent = EconomicAgent.objects.get(name="testUser11222")
-
+        scope_ag = EconomicAgent.objects.get(nick="org1")
+        proc3 = Process.objects.get(name="proc3")
+        plan = Order.objects.get(name="order1")
         #print("token: "+str(token))
         result1 = schema.execute('''
                 mutation {
-                  createProcess(token: "''' + token + '''", name: "Make something cool", plannedStart: "2017-07-07", plannedFinish: "2017-07-14", scopeId: 4, planId: 1) {
+                  createProcess(token: "''' + token + '''", name: "Make something cool", plannedStart: "2017-07-07", plannedFinish: "2017-07-14", scopeId: ''' + str(scope_ag.id) + ''', planId: ''' + str(plan.id) + ''') {
                     process {
                         name
                         scope {
@@ -957,6 +974,7 @@ class APITest(TestCase):
                         plannedStart
                         plannedFinish
                         plannedDuration
+                        id
                     }
                   }
                 }
@@ -970,9 +988,11 @@ class APITest(TestCase):
         self.assertEqual(result1.data['createProcess']['process']['plannedFinish'], "2017-07-14")
         self.assertEqual(result1.data['createProcess']['process']['plannedDuration'], "7 days, 0:00:00")
 
+        ide = result1.data['createProcess']['process']['id']
+
         result2 = schema.execute('''
                     mutation {
-                        updateProcess(token: "''' + token + '''", id: 4, plannedFinish: "2017-07-15", isFinished: true) {
+                        updateProcess(token: "''' + token + '''", id: ''' + str(ide) + ''', plannedFinish: "2017-07-15", isFinished: true) {
                             process {
                                 name
                                 scope {
@@ -997,7 +1017,7 @@ class APITest(TestCase):
 
         result3 = schema.execute('''
                     mutation {
-                        deleteProcess(token: "''' + token + '''", id: 4) {
+                        deleteProcess(token: "''' + token + '''", id: ''' + ide + ''') {
                             process {
                                 name
                             }

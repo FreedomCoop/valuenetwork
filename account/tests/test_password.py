@@ -101,7 +101,7 @@ class PasswordExpirationTestCase(TestCase):
         response = self.client.get(reverse(url_name))
 
         # verify desired page is set as "?next=" in redirect URL
-        redirect_url = "{}?next={}".format(reverse("account_password"), url_name)
+        redirect_url = "{}?next={}".format(reverse("profile"), url_name) # "account_password"
         self.assertRedirects(response, redirect_url)
 
     def test_password_expiration_reset(self):

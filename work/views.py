@@ -135,6 +135,8 @@ def change_language(request):
 @login_required
 def profile(request):
     agent = get_agent(request)
+    if not agent:
+        return render(request, 'work/no_permission.html')
     return members_agent(request, agent.id)
 
 
@@ -1361,7 +1363,7 @@ def run_fdc_scripts(request, agent):
 
     print("............ start run_fdc_scripts ("+str(agent)+") .............")
     loger.info("............ start run_fdc_scripts ("+str(agent)+") .............")
-    user_agent = get_agent(request)
+
     acctyp = fdc.project.shares_account_type()
     shrtyp = fdc.project.shares_type()
     oldshr = EconomicResourceType.objects.membership_share()
@@ -1653,6 +1655,8 @@ def run_fdc_scripts(request, agent):
 @login_required
 def your_projects(request):
     agent = get_agent(request)
+    if not agent:
+        return render(request, 'work/no_permission.html')
     agent_form = WorkAgentCreateForm()
     proj_form = ProjectCreateForm() #initial={'agent_type': 'Project'})
     projects = agent.related_contexts()
