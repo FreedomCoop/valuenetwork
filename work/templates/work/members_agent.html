@@ -214,7 +214,7 @@
 		<div class="button-row row">
 
             {% if user_agent in agent.managers or user_agent == agent or user_agent.is_staff %}
-                {% if auto_resource %}<div class="alert">
+                {% if auto_resource %}<div class="alert alert-info">
                     {{ auto_resource|safe }}
                     </div>
                 {% endif %}
