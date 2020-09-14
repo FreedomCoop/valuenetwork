@@ -1,5 +1,6 @@
 {% load i18n %}
 {% load mptt_tags %}
+{% load staticfiles %}
 
 <h3 style="margin-bottom:2px;">{% trans "Filter Resource Types:" %}</h3>
 <form id="category-form" action="." method="POST">
@@ -8,9 +9,10 @@
 	{% csrf_token %}
 	<p><input type="checkbox" class="category" id="all" name="all" value="all" {% if select_all %}checked="yes"{% endif %} /> {% trans "All" %}
 
-    &nbsp; <input type="submit" name="submit" class="btn btn-info" value="{% trans 'Filter the list' %}" /> </p>
-
-        <div class="" id="material">
+    &nbsp; <input type="submit" name="submit" class="btn btn-info" value="{% trans 'Filter the list' %}" /> &nbsp;  <span class="showhide" id="sh-filters">(SHOW)</span>
+    </p>
+    <div class="list" id="list-filters" style="display:none">
+        <div id="material">
           {% if False and request.user.is_staff %}  <a href="#addResTypeModal" role="button" class="btn btn-primary btn-mini" data-toggle="modal" title="Create a new physical resource type" style="margin: -6px 0px -5px 20px; float:right;">{% trans "New Resource Type" %}</a>
           {% endif %}
           <ul class="root" id="treeData" style="/*display: none;*/">
@@ -62,7 +64,7 @@
           </ul>
         </div>
         {% endif %}
-
+    </div>
 	<input type='hidden' id='categories' name='categories' value='' />
 	{% for facet in facets %}
         <!-- <p class="facet"> {{ facet.name }} </p>
@@ -91,3 +93,25 @@
   </div>
 </div>
 {% endcomment %}
+
+<script src="{% static "js/site.js" %}"></script>
+<script type="text/javascript">
+
+$(document).ready(function(){
+    $(".showhide").click(function(event){
+        var id = event.target.id;
+        var listId = '#list-' + id.split('-')[1];
+        $(listId).slideToggle(200);
+        $(this).text($(this).text() == "{% trans '(HIDE)' %}" ? "{% trans '(SHOW)' %}" : "{% trans '(HIDE)' %}");
+    });
+});
+
+</script>
+<style>
+    .showhide {
+      color: #734279;
+      margin-left: 3px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+</style>

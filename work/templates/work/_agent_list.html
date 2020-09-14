@@ -34,7 +34,7 @@
                 {% if not forloop.first %} &nbsp;<b class="error">Error: multiple requests!</b>{% endif %}
             {% endif %}
         {% empty %}
-            {% if agent.project.is_moderated and not asso.association_type.association_behavior in no_shares %}
+            {% if agent.project.is_moderated and agent.project.fobi_form and not asso.association_type.association_behavior in no_shares %}
                 &nbsp;<span class="small"><b class="error">no-form!</b></span>
             {% endif %}
         {% endfor %}

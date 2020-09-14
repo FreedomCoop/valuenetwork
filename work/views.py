@@ -2761,7 +2761,8 @@ def check_duplicate_agents(request, agent):
 
                 aas = AgentAssociation.objects.filter(is_associate=ag.is_associate, has_associate=agent, association_type=ag.association_type )
                 if len(aas) > 1:
-                    #print(More than one AgentAssociation? "+str(aas))
+                    #print("More than one AgentAssociation? "+str([a.association_type for a in aas]))
+                    mem = aas[0]
                     for aa in aas:
                         if not aa == ag:
                             if not aa.state == 'active':
@@ -2769,6 +2770,10 @@ def check_duplicate_agents(request, agent):
                                 print("- Deleted a duplicate relation! "+str(ag))
                                 loger.info("- Deleted a duplicate relation! "+str(ag))
                                 messages.info(request, "- Deleted a duplicate relation! "+str(ag))
+                            elif mem.state == 'active' and not aa == mem and mem.association_type == aa.association_type:
+                                print("Error: The found duplicated AgentAssociation is active, DELETED "+str(aa))
+                                loger.warning("Error: The found duplicated AgentAssociation is active, DELETED "+str(aa))
+                                aa.delete()
                             else:
                                 print("Error: The found duplicated AgentAssociation is active, not deleted! "+str(aa))
                                 loger.warning("Error: The found duplicated AgentAssociation is active, not deleted! "+str(aa))
