@@ -120,7 +120,7 @@ class ExplosionTest(TestCase):
         child_output=child_input.associated_producing_commitments()[0]
         self.assertEqual(child_output.quantity, Decimal("5"))
         child_process=child_output.process
-        grandchild_input = child_process.incoming_commitments()[1]
+        grandchild_input = child_process.incoming_commitments()[0]
         #print("+++ child_process.incoming_commitments(): "+str(child_process.incoming_commitments()))
         self.assertEqual(grandchild_input.quantity, Decimal("15"))
         cyclic_input_commitment = child_process.incoming_commitments()[0]

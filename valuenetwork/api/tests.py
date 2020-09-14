@@ -518,7 +518,7 @@ class APITest(TestCase):
         self.assertEqual(supplier['subject']['name'], 'supp1')
         self.assertEqual(org1['__typename'], 'Organization')
         self.assertEqual(org1['type'], 'Organization')
-        person = allAgents[0] #0]
+        person = allAgents[1] #0]
         self.assertEqual(person['__typename'], 'Person')
         roles = person['agentRoles']
         role = roles[0]
