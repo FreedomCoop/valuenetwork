@@ -182,11 +182,11 @@ class ValueEquationTest(TestCase):
             )
         community_use_event.save()
 
-        child_input = process.incoming_commitments()[1]
+        child_input = process.incoming_commitments()[1] # 0
         #print("+++ process.incoming_commitments(): "+str(process.incoming_commitments()))
         child_output=child_input.associated_producing_commitments()[0]
         child_process=child_output.process
-        grandchild_input = child_process.incoming_commitments()[0]
+        grandchild_input = child_process.incoming_commitments()[1] # 0
         used_commitment = process.used_input_requirements()[0]
         use_event = EconomicEvent(
             event_type=used_commitment.event_type,
