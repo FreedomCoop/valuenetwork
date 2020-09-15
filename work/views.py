@@ -2311,7 +2311,7 @@ def check_empty_langs(request, agent):
                     setattr(agent, 'name_'+lan, nam)
                     agent.save()
                     loger.info("FIXED 'name_"+lan+"' from 'name_"+ln+"'! "+nam)
-                    messages.warning(request, "FIXED 'name_"+lan+"' from 'name_"+ln+"' ! "+nam)
+                    #messages.warning(request, "FIXED 'name_"+lan+"' from 'name_"+ln+"' ! "+nam)
                     fixed += 1
 
         if not getattr(agent, 'nick_'+lan, None):
@@ -2323,7 +2323,7 @@ def check_empty_langs(request, agent):
                     setattr(agent, 'nick_'+lan, nam)
                     agent.save()
                     loger.info("FIXED 'nick_"+lan+"' from 'nick_"+ln+"'! "+nam)
-                    messages.warning(request, "FIXED 'nick_"+lan+"' from 'nick_"+ln+"' ! "+nam)
+                    #messages.warning(request, "FIXED 'nick_"+lan+"' from 'nick_"+ln+"' ! "+nam)
                     fixed += 1
 
         if not getattr(agent, 'email_'+lan, None):
@@ -2335,7 +2335,7 @@ def check_empty_langs(request, agent):
                     setattr(agent, 'email_'+lan, nam)
                     agent.save()
                     loger.info("FIXED 'email_"+lan+"' from 'email_"+ln+"'! "+nam)
-                    messages.warning(request, "FIXED 'email_"+lan+"' from 'email_"+ln+"' ! "+nam)
+                    #messages.warning(request, "FIXED 'email_"+lan+"' from 'email_"+ln+"' ! "+nam)
                     fixed += 1
 
         if not getattr(agent, 'url_'+lan, None):
@@ -3925,7 +3925,7 @@ class JoinreqListJson(BaseDatatableView):
             req.addr = req.address
 
             if req.agent:
-                req.nam = '<a href="{% url "members_agent" agent_id=req.agent.id %}">'+req.agent.name+'</a>'
+                req.nam = '<a href="'+reverse('members_agent', args=(req.agent.id,))+'">'+req.agent.name+'</a>'
                 if not req.name and not req.surname:
                     arr = req.agent.name.split(' ')
                     if len(arr) > 1:
@@ -3936,7 +3936,7 @@ class JoinreqListJson(BaseDatatableView):
                     loger.info("- added missing name to the jnreq: "+str(req))
                     req.save()
 
-                req.nick = '<a href="{% url "members_agent" agent_id=req.agent.id %}"><b><em>'+req.agent.nick+'</em></b></a>'
+                req.nick = '<a href="'+reverse('members_agent', args=(req.agent.id,))+'"><b><em>'+req.agent.nick+'</em></b></a>'
                 if not req.requested_username:
                     req.requested_username = req.agent.nick
                     loger.info("- added missing username to the jnreq: "+str(req))
