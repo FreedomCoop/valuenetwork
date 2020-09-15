@@ -518,7 +518,7 @@ class APITest(TestCase):
         self.assertEqual(supplier['subject']['name'], 'supp1')
         self.assertEqual(org1['__typename'], 'Organization')
         self.assertEqual(org1['type'], 'Organization')
-        person = allAgents[0] #0]
+        person = allAgents[1] #0]
         self.assertEqual(person['__typename'], 'Person')
         roles = person['agentRoles']
         role = roles[0]
@@ -642,10 +642,10 @@ class APITest(TestCase):
         processes = result.data['viewer']['agent']['agentProcesses']
         plans = result.data['viewer']['agent']['agentPlans']
         self.assertEqual(agent['name'], 'org1')
-        self.assertEqual(ownedEconomicResources[0]['resourceClassifiedAs']['name'], 'product1')
-        self.assertEqual(ownedEconomicResources[0]['resourceClassifiedAs']['processCategory'], 'produced')
+        self.assertEqual(ownedEconomicResources[1]['resourceClassifiedAs']['name'], 'product1')
+        self.assertEqual(ownedEconomicResources[1]['resourceClassifiedAs']['processCategory'], 'produced')
         self.assertEqual(len(ownedEconomicResources), 2)
-        self.assertEqual(ownedEconomicResources[0]['currentQuantity']['unit']['name'], 'Each')
+        self.assertEqual(ownedEconomicResources[1]['currentQuantity']['unit']['name'], 'Each')
         self.assertEqual(len(processes), 1)
         self.assertEqual(processes[0]['name'], 'proc1')
         self.assertEqual(len(plans), 1)
@@ -943,7 +943,7 @@ class APITest(TestCase):
         #print("+++ notifSettings: "+str(notifSettings))
         if not notifSettings:
             print("ERR: Can't find notifSettings to assert!")
-        self.assertEqual(notifSettings[0]['id'], "1")
+        self.assertEqual(notifSettings[0]['id'], "6")
         self.assertEqual(notifSettings[0]['notificationType']['label'], "api_test")
 
     def test_create_update_delete_process(self):
