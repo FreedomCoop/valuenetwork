@@ -3,7 +3,7 @@ addons:
 language: python
 sudo: false
 node_js: 10.15
-python: 3.6
+python: 3.6.9
 cache: pip
 env:
   - TOXENV="py36_django22"

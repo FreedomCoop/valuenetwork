@@ -182,7 +182,7 @@ class ValueEquationTest(TestCase):
             )
         community_use_event.save()
 
-        child_input = process.incoming_commitments()[1] # 0
+        child_input = process.incoming_commitments()[1] # 0 if travis
         #print("+++ process.incoming_commitments(): "+str(process.incoming_commitments()))
         child_output=child_input.associated_producing_commitments()[0]
         child_process=child_output.process
