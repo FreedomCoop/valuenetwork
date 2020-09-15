@@ -808,7 +808,7 @@ class APITest(TestCase):
         self.assertEqual(committedInputs[1]['committedQuantity']['numericValue'], 2.5)
         self.assertEqual(committedInputs[1]['plan']['name'], 'order1')
         self.assertEqual(committedInputs[1]['plan']['scope'][0]['name'], 'org1')
-        self.assertEqual(committedInputs[2]['resourceClassifiedAs']['name'], "component1")
+        self.assertEqual(committedInputs[0]['resourceClassifiedAs']['name'], "component1")
         self.assertEqual(committedInputs[1]['provider']['name'], "not user")
         self.assertEqual(committedOutputs[0]['action'], "produce")
         self.assertEqual(previousProcesses[0]['name'], 'proc2')
@@ -871,10 +871,10 @@ class APITest(TestCase):
         processes = result.data['viewer']['agent']['agentProcesses']
         plans = result.data['viewer']['agent']['agentPlans']
         self.assertEqual(agent['name'], 'org1')
-        self.assertEqual(ownedEconomicResources[0]['resourceClassifiedAs']['name'], 'product1')
-        self.assertEqual(ownedEconomicResources[0]['resourceClassifiedAs']['processCategory'], 'produced')
+        self.assertEqual(ownedEconomicResources[1]['resourceClassifiedAs']['name'], 'product1')
+        self.assertEqual(ownedEconomicResources[1]['resourceClassifiedAs']['processCategory'], 'produced')
         self.assertEqual(len(ownedEconomicResources), 2)
-        self.assertEqual(ownedEconomicResources[0]['currentQuantity']['unit']['name'], 'Each')
+        self.assertEqual(ownedEconomicResources[1]['currentQuantity']['unit']['name'], 'Each')
         self.assertEqual(len(processes), 1)
         self.assertEqual(processes[0]['name'], 'proc1')
         self.assertEqual(len(plans), 1)

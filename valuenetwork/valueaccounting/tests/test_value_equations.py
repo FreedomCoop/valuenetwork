@@ -279,7 +279,7 @@ class ValueEquationTest(TestCase):
         cts = self.order.order_items()
         commitment = cts[0]
         process = commitment.process
-        child_input = process.incoming_commitments()[0]
+        child_input = process.incoming_commitments()[1]
         child_output=child_input.associated_producing_commitments()[0]
         child_process=child_output.process
         grandchild_input = child_process.incoming_commitments()[0]
