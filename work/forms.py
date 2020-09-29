@@ -389,7 +389,7 @@ class JoinRequestInternalForm(forms.ModelForm):
 
     class Meta:
         model = JoinRequest
-        exclude = ('agent', 'project', 'exchange', 'fobi_data', 'type_of_user', 'name', 'surname', 'requested_username', 'email_address', 'phone_number', 'address',)
+        exclude = ('agent', 'project', 'exchange', 'fobi_data', 'type_of_user', 'name', 'surname', 'requested_username', 'email_address', 'phone_number', 'address', 'website',)
 
     def clean(self):
         data = super(JoinRequestInternalForm, self).clean()
