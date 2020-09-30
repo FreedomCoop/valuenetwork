@@ -3499,7 +3499,7 @@ def edit_form_field_data(request, joinrequest_id):
             key = request.POST['id']
             val = request.POST['value']
             if ';' in val:
-                val = val.split(';')
+                pass #val = val.split(';')
             loger.debug("Key:"+str(key)+" Val:"+str(val))
             if req.fobi_data and req.fobi_data.pk:
                 req.entries = SavedFormDataEntry.objects.filter(pk=req.fobi_data.pk).select_related('form_entry')
@@ -3513,6 +3513,7 @@ def edit_form_field_data(request, joinrequest_id):
                 req.headers = json.loads(entry.form_data_headers)
                 if not key in req.headers:
                     print("Fix fobi header! "+key)
+                    loger.info("(req:"+str(req.id)+") Fix fobi header! "+key)
                     for elm in entry.form_entry.formelemententry_set.all():
                         pdata = json.loads(elm.plugin_data)
                         if key == pdata['name']:
@@ -4569,7 +4570,7 @@ def project_feedback(request, agent_id, join_request_id):
                 #pos = elem.position
                 if nam:
                     if choi:
-                        if elem.plugin_uid == "select_multiple":
+                        if elem.plugin_uid == "select_multiple" or elem.plugin_uid == "checkbox_select_multiple":
                             jn_req.elem_typs[nam] = "select_multiple"
                         else:
                             jn_req.elem_typs[nam] = 'select'
