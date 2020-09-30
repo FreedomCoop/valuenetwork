@@ -8533,7 +8533,7 @@ def create_shares_exchange_types(request, agent_id):
             slug = None
             nome = None
             ob = obj[0]
-            if ob == 'transfer' or ob == 'ccard' or ob == 'debit' or ob == 'cash' or ob == 'botcw':
+            if 'transfer' in ob or ob == 'ccard' or ob == 'debit' or ob == 'cash' or ob == 'botcw' or ob == 'coopfund':
                 slug = 'fiat'
                 nome = 'Fiat'
                 title = 'Fiat-currency'
@@ -8552,7 +8552,9 @@ def create_shares_exchange_types(request, agent_id):
                 gatefv = shrfv
                 continue # the share-buy et tree is already there
             else:
-                raise ValidationError("Payment gateway not known: "+str(ob))
+                messages.warning(request, "Payment gateway not known: "+str(ob))
+                loger.warning("Payment gateway not known: "+str(ob))
+                #raise ValidationError("Payment gateway not known: "+str(ob))
 
 
             if not gatefv:
