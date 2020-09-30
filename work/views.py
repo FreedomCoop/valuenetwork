@@ -8554,6 +8554,7 @@ def create_shares_exchange_types(request, agent_id):
             else:
                 messages.warning(request, "Payment gateway not known: "+str(ob))
                 loger.warning("Payment gateway not known: "+str(ob))
+                continue
                 #raise ValidationError("Payment gateway not known: "+str(ob))
 
 
