@@ -71,7 +71,7 @@ class AutoNameMixin(admin.ModelAdmin):
     if not hasattr(instance, 'name'):
       print(('AUTO NAME SAVE hasnot name!! '+str(obj)))
     #if instance.name is None or instance.name == '':
-    instance.name = instance.__unicode__()
+    instance.name = instance.__str__()
     instance.save()
     form.save_m2m()
     return instance

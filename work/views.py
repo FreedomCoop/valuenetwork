@@ -2100,6 +2100,8 @@ def members_agent(request, agent_id):
 
         if not has_associations:
             has_associations = asso_childs + asso_members + asso_candid + asso_declin + asso_peers
+            if not has_associations:
+                has_associations = asso_coords
 
         if hasattr(agent, 'project') and agent.project.is_moderated():
             if not agent.email and user_agent in agent.managers():
