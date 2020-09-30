@@ -1545,7 +1545,7 @@ class JoinRequest(models.Model):
                         for an in ancs:
                             if an.clas == 'fair_economy':
                                 recs.append(rec)
-                    elif payopt['key'] in ('transfer','ccard','cash','debit','botcw'):
+                    elif payopt['key'] in ('transfer','transfer_eur','transfer_gbp','ccard','cash','debit','botcw','coopfund','stripe'):
                         for an in ancs:
                             if an.clas == 'fiat_economy':
                                 recs.append(rec)
