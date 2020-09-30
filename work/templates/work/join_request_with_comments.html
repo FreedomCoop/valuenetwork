@@ -281,7 +281,7 @@ a.more-link {
                           {% if v == obj.val|last %}{% else %}, {% endif %}
                         {% endfor %}
                       {% else %}
-                        {{ obj.val|linebreaks }}
+                        {{ obj.val|linebreaks|safe }}
                       {% endif %}
                     {% else %}
                     {% endif %}
@@ -417,8 +417,13 @@ a.more-link {
                     {% endif %}
                     {% if req.payment_pending_amount and req.ratio %}
                       {% with req.payment_unit as uni %}
-                        ({% if req.is_flexprice %}≈ {% endif %}{{ req.payment_pending_amount }} {{ uni.abbrev.upper }} {% trans "at exchange rate" %}:
-                        {{ req.ratio.normalize }} {{ req.project.shares_type.unit_of_price.symbol }}{{ req.project.subscription_unit.symbol }}/{% if uni.symbol %}{{ uni.symbol }}{% else %}{{ uni.abbrev }}{% endif %})
+                        ({% if req.is_flexprice %}≈ {% endif %}{{ req.payment_pending_amount.normalize }} {{ uni.abbrev.upper }} {% trans "at exchange rate" %}:
+                        {{ req.ratio.normalize }}
+                        {% if req.ratiorev %}
+                            {% if uni.symbol %}{{ uni.symbol }}{% else %}{{ uni.abbrev }}{% endif %}/{{ req.project.shares_type.unit_of_price.symbol }}{{ req.project.subscription_unit.symbol }}
+                        {% else %}
+                            {{ req.project.shares_type.unit_of_price.symbol }}{{ req.project.subscription_unit.symbol }}/{% if uni.symbol %}{{ uni.symbol }}{% else %}{{ uni.abbrev }}{% endif %}
+                        {% endif %})
                       {% endwith %}
                     {% else %}
                         ({{ req.payment_pending_amount }} {{ req.payment_unit.abbrev.upper }})
@@ -775,7 +780,7 @@ a.more-link {
             function(value, settings) {
                var dr = JSON.parse($(this).attr('data').split("u'").join('"').split("'").join('"'));
                var labl = dr[value];
-               //alert('type:'+typeof(labl)+' labl: '+labl);
+               alert('type:'+typeof(labl)+' labl: '+labl);
 
                var posting = $.post('{% url "edit_form_field_data" joinrequest_id=jn_req.id %}',
                    {id:$(this).attr('id'), value:labl}

@@ -1018,8 +1018,9 @@ class JoinRequest(models.Model):
                     #loger.warning("using CACHED ratio at share_price!")
                 else:
                     from work.utils import convert_price
-                    amount, ratio = convert_price(price, unit, requnit, self)
+                    amount, ratio, revers = convert_price(price, unit, requnit, self)
                     self.ratio = ratio
+                    self.ratiorev = revers
                 amount = amount.quantize(settings.DECIMALS)
             if not amount == price:
                 pass #print("Changed the price!")
@@ -1049,8 +1050,9 @@ class JoinRequest(models.Model):
         if not unit == shunit and amount: #unit.abbrev == 'fair':
             #amountpay = round(decimal.Decimal(self.payment_amount() * self.share_price()), 10)
             from work.utils import convert_price, remove_exponent
-            amountpay, ratio = convert_price(amount, shunit, unit, self)
+            amountpay, ratio, revers = convert_price(amount, shunit, unit, self)
             self.ratio = ratio
+            self.ratiorev = revers
             amountpay = remove_exponent(amountpay)
         return amountpay
 
@@ -1281,8 +1283,9 @@ class JoinRequest(models.Model):
         else:
             if not shunit == unit and amount2 and unit: #unit.abbrev == 'fair':
                 from work.utils import convert_price
-                amountpay, ratio = convert_price(amount2, shunit, unit, self)
+                amountpay, ratio, revers = convert_price(amount2, shunit, unit, self)
                 self.ratio = ratio
+                self.ratiorev = revers
                 self.pending_amount = amountpay
 
         amispay = self.payment_payed_amount()
@@ -1935,11 +1938,13 @@ class JoinRequest(models.Model):
         if not txid:
             from work.utils import convert_price
             if not shunit == unit and amount2: #unit.abbrev == 'fair':
-                amountpay, ratio = convert_price(amount2, shunit, unit, self)
+                amountpay, ratio, revers = convert_price(amount2, shunit, unit, self)
                 self.ratio = ratio
+                self.ratiorev = revers
             if not amountpay:
-                amountpay, ratio = convert_price(amount, shunit, unit, self)
+                amountpay, ratio, revers = convert_price(amount, shunit, unit, self)
                 self.ratio = ratio
+                self.ratiorev = revers
 
             if amount2 and status == 'pending':
               if not amount == amountpay:

@@ -146,6 +146,7 @@ def convert_price(amount, shunit, unit, obj=None, deci=settings.DECIMALS):
     if not unit: raise ValidationError("Convert_price without unit2? amount:"+str(amount)+" unit1:"+str(shunit.name))
     ratio = None
     price = None
+    revers = False
     if amount and shunit and unit:
         if not shunit == unit:
             if not isinstance(amount, decimal.Decimal) and not isinstance(amount, int): # == 'int':
@@ -155,6 +156,8 @@ def convert_price(amount, shunit, unit, obj=None, deci=settings.DECIMALS):
             if obj and hasattr(obj, 'ratio'):
                 ratio = obj.ratio
                 price = amount/ratio
+                if hasattr(obj, 'revers'):
+                    revers = obj.revers
                 #print("using a CACHED obj.ratio: "+str(ratio)+" for obj:"+unicode(obj))
                 #logger.warning("using a CACHED obj.ratio: "+str(ratio)+" for obj:"+str(obj))
             else:
@@ -198,6 +201,7 @@ def convert_price(amount, shunit, unit, obj=None, deci=settings.DECIMALS):
                         ratio = ur.rate
                     #print("ratio:"+str(ratio)+" (type:"+str(type(ratio))+") / amount:"+str(amount)+" (type:"+str(type(amount))+")")
                     price = amount/ratio
+                    revers = False
                     #print("price:"+str(price)+" (type:"+str(type(price))+")")
                 else:
                     print("No UnitRatio with in_unit '"+str(shunit.gen_unit.name)+"' and out_unit: "+str(unit.gen_unit.name)+". Trying reversed...")
@@ -210,6 +214,7 @@ def convert_price(amount, shunit, unit, obj=None, deci=settings.DECIMALS):
                             logger.warning("UR reversed (changed Date: "+str(ur.changed_date)+") NOT UPDATED!!")
                         ratio = ur.rate
                         price = amount*ratio
+                        revers = True
                     else:
                         print("No UnitRatio with out_unit '"+str(shunit.gen_unit.name)+"' and in_unit: "+str(unit.gen_unit.name)+". Trying via botc api...")
                         logger.info("No UnitRatio with out_unit '"+str(shunit.gen_unit.name)+"' and in_unit: "+str(unit.gen_unit.name)+". Trying via botc api...")
@@ -236,7 +241,7 @@ def convert_price(amount, shunit, unit, obj=None, deci=settings.DECIMALS):
                 #print("Convert_price: ratio:"+str(ratio)+" price:"+str(price)+" shunit:"+str(shunit)+" unit:"+str(unit)+" amount:"+str(amount))
         else:
             print("Skip convert price, same unit: "+str(unit))
-        return amount, ratio
+        return amount, ratio, revers
     else:
         raise ValidationError("Convert_price without amount, unit1 or unit2 ??")
         return False
