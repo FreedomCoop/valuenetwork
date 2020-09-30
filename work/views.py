@@ -8533,7 +8533,7 @@ def create_shares_exchange_types(request, agent_id):
             slug = None
             nome = None
             ob = obj[0]
-            if 'transfer' in ob or ob == 'ccard' or ob == 'debit' or ob == 'cash' or ob == 'botcw' or ob == 'coopfund':
+            if 'transfer' in ob or ob == 'ccard' or ob == 'debit' or ob == 'cash' or ob == 'botcw' or ob == 'coopfund' or ob == 'stripe':
                 slug = 'fiat'
                 nome = 'Fiat'
                 title = 'Fiat-currency'
