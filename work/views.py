@@ -3499,8 +3499,13 @@ def edit_form_field_data(request, joinrequest_id):
             key = request.POST['id']
             val = request.POST['value']
             if ';' in val:
-                pass #val = val.split(';')
+                #print('VAL: '+str(val[-1:]))
+                if val.count(';') == 1 and val[-1:] == ';':
+                    val = [val[0:-1]]
+                else:
+                    val = val.split(';')
             loger.debug("Key:"+str(key)+" Val:"+str(val))
+            print("Key:"+str(key)+" Val:"+str(val))
             if req.fobi_data and req.fobi_data.pk:
                 req.entries = SavedFormDataEntry.objects.filter(pk=req.fobi_data.pk).select_related('form_entry')
                 entry = req.entries[0]
@@ -4583,7 +4588,10 @@ def project_feedback(request, agent_id, join_request_id):
                             #    obj[str(arr[0])] = arr[1]
                             #else:
                             if len(arr) == 2 and arr[0] and arr[1]:
-                                obj[str(arr[0])] = arr[1]
+                                tex = arr[1]
+                                if "'" in tex:
+                                    tex = tex.replace("'", "&apos;")
+                                obj[str(arr[0])] = tex #arr[1]
                             elif len(arr) == 1:
                                 selected = ''
                                 if len(jn_req.data[nam]):

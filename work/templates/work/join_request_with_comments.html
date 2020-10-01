@@ -779,8 +779,8 @@ a.more-link {
         $('.fobi td[typ="select"]').editable(
             function(value, settings) {
                var dr = JSON.parse($(this).attr('data').split("u'").join('"').split("'").join('"'));
-               var labl = dr[value];
-               alert('type:'+typeof(labl)+' labl: '+labl);
+               var labl = dr[value].split("&apos;").join("'");
+               //alert('type:'+typeof(labl)+' labl: '+labl);
 
                var posting = $.post('{% url "edit_form_field_data" joinrequest_id=jn_req.id %}',
                    {id:$(this).attr('id'), value:labl}
@@ -859,12 +859,15 @@ a.more-link {
 
         $('.fobi td[typ="select_multiple"]').editable(
             function(value, settings) {
-               //var dr = JSON.parse($(this).attr('data').split("u'").join('"').split("'").join('"'));
+               var dr = JSON.parse($(this).attr('data').split("u'").join('"').split("'").join('"'));
                var labl = "";
                for(val in value){
-                   labl += value[val]+";";
+                   labl += dr[value[val]]+";";
                };
                labl = labl.slice(0, -1);
+               if(labl.indexOf(';') == -1){
+                   labl += ';';
+               }
                //alert('type:'+typeof(labl)+' labl: '+labl+' value:'+value);
 
                var posting = $.post('{% url "edit_form_field_data" joinrequest_id=jn_req.id %}',
