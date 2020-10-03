@@ -40,16 +40,11 @@
   {% include "_messages.html" %}
   <div>
         <legend>
-            {% if resource.owner %}
-              <a href="{% url 'members_agent' agent_id=resource.owner.id %}">{{ resource.owner.name }}</a> >
-            {% endif %}
-            {% if resource.id %}
-              <a class="indent" href="{% url "manage_faircoin_account" resource_id=resource.id %}">{% trans "FairCoin Account" %}</a> >
-            {% endif %}
+
             {% trans "OCP Wallet" %}: &nbsp;&nbsp;
 
             <div class="subnav">
-                <a class="indent" href="https://chain.fair.to/address?address={{ resource.faircoin_address.address }}" target="_blank" >{% trans "Blockchain" %}</a>
+
             </div>
         </legend>
 
@@ -100,6 +95,7 @@
             &nbsp;
         </p>
 
+        {% comment %}
         <!--<h3>
             FairTxs:
         </h3>
@@ -150,20 +146,21 @@
             {% endif %}
         </span>
     </div> -->
+    {% endcomment %}
   </div>
 </div>
 {% endblock %}
 
 {% block extra_script %}
-    <script src="https://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
-    <script type="text/javascript" src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.10.0/jquery.validate.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'js/jquery-ui.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jquery.validate.min.js' %}"></script>
     <script type="text/javascript" src="{% static "js/jquery.jeditable.mini.js" %}"></script>
 
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs/jszip-2.5.0/dt-1.10.18/b-1.5.2/b-colvis-1.5.1/b-html5-1.5.2/r-2.2.2/datatables.min.css"/>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/datatables.min.css' %}"/>
 
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/v/bs/jszip-2.5.0/dt-1.10.18/b-1.5.2/b-colvis-1.5.1/b-html5-1.5.2/r-2.2.2/datatables.min.js"></script>
+    <script type="text/javascript" src="{% static 'js/pdfmake.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/vfs_fonts.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/datatables.min.js' %}"></script>
 
 
 {% endblock %}
@@ -175,7 +172,7 @@
 
   $(document).ready(function(){
 
-    $("#listable, #listable2").DataTable({
+    $("#listable2").DataTable({
         stateSave: true,
         autoWidth: true,
         order: [[2, 'desc']],
