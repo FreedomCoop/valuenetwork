@@ -666,6 +666,7 @@ def migrate_fdc_shares(request, jr):
             jr.save()
 
     aamem = AgentAssociationType.objects.get(identifier="member")
+    agcoor = jr.agent.is_associate_of.filter(has_associate=jr.project.agent, association_type__association_behavior='manager')
     agrel = None
     agrels = jr.agent.is_associate_of.filter(has_associate=jr.project.agent).exclude(association_type__association_behavior='manager')
     if len(agrels) == 1:
@@ -689,15 +690,18 @@ def migrate_fdc_shares(request, jr):
             agrel.association_type = aamem
             agrel.save()
     elif not agrels:
-        agrel, created = AgentAssociation.objects.get_or_create(
+        if not agcoor:
+          agrel, created = AgentAssociation.objects.get_or_create(
             has_associate = jr.project.agent,
             is_associate = jr.agent,
             state = 'potential',
             association_type = aamem)
-        if created:
+          if created:
             print("- created missing AgentAssociation: "+str(agrel))
             loger.info("- created missing AgentAssociation: "+str(agrel))
             messages.info(request, "- created missing AgentAssociation: "+str(agrel))
+        else:
+            agrel = agcoor[0]
     else:
         #agrels = jr.agent.is_associate_of.all() #filter(has_associate=jr.project.agent)
         print("FdC migrating agent has more than one relation with FdC?? "+str(agrels)+" jr:"+str(jr))
@@ -744,7 +748,7 @@ def migrate_fdc_shares(request, jr):
         else:
             print("FdC migrating agent has no old owned shares: "+str(jr.agent)+' jr.state:'+str(jr.state)) #share:'+str(fdcshrt)+' unit:'+str(shacct.unit_of_price)
             loger.info("FdC migrating agent has no old owned shares: "+str(jr.agent)+' jr.state:'+str(jr.state)) #+' share:'+str(fdcshrt)+' unit:'+str(shacct.unit_of_price))
-            if jr.state == 'accepted' and not account.price_per_unit:
+            if jr.state == 'accepted' and not account.price_per_unit and not agcoor:
                 jr.state = 'new'
                 jr.save()
                 print("WRONG STATE! jr without shares should be 'new' or 'declined': "+str(jr))
@@ -762,8 +766,8 @@ def migrate_fdc_shares(request, jr):
             # transfer shares if payed
             if user_agent in fdc.managers() or user_agent == fdc or request.user.is_superuser:
               if jr.pending_shares() and jr.payment_payed_amount() >= jr.total_price():
-
-                print("Found payed tx but shares missing, TRANSFER project shares! jr:"+str(jr))
+                loger.warning("Found payed tx but shares missing, TRANSFER project shares? jr:"+str(jr))
+                print("Found payed tx but shares missing, TRANSFER project shares? jr:"+str(jr))
 
     else:
         #print(str(shacct)+' not in res: '+str(res))
@@ -3507,8 +3511,8 @@ def edit_form_field_data(request, joinrequest_id):
             loger.debug("Key:"+str(key)+" Val:"+str(val))
             print("Key:"+str(key)+" Val:"+str(val))
             if req.fobi_data and req.fobi_data.pk:
-                req.entries = SavedFormDataEntry.objects.filter(pk=req.fobi_data.pk).select_related('form_entry')
-                entry = req.entries[0]
+                #req.entries = SavedFormDataEntry.objects.filter(pk=req.fobi_data.pk).select_related('form_entry')
+                entry = req.fobi_data #entries[0]
                 req.data = json.loads(entry.saved_data)
                 if key in req.data:
                     old = req.data[key]
