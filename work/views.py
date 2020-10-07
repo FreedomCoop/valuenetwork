@@ -3165,7 +3165,7 @@ def joinaproject_request(request, form_slug = False):
                         password = jn_req.create_useragent_randompass(request or None)
                         if not password:
 
-                            join_form.add_error('email_address', "Seems like the address don't exist?")
+                            join_form.add_error('email_address', "There's a configuration problem or the address doesn't exist.")
                             jn_req.fobi_data.delete()
                             jn_req.delete()
 
