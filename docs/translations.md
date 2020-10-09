@@ -1,8 +1,8 @@
-Generate new .po files:
+### Generate new .po files:
 
 From the repo folder, enter the virtual env and do:
 
-  ./manage.py makemessages --keep-pot
+    ./manage.py makemessages --keep-pot
 
 
 Then move the newly generated .po files (or the .pot file if needed) in the `locale/en/LC_MESSAGES/` folder (forget the .mo) to a Translation Platform:
@@ -44,9 +44,10 @@ When you have the translated .po file of a language, say `es.po` for Spanish:
 
 Do the same for every language and restart the server. That's it!
 
+---
 
 
-To define a model field to be translatable:
+### To define a model field to be translatable:
 
   - if not installed, do: `pip install django-modeltranslation`
 
