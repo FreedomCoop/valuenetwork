@@ -55,10 +55,10 @@
       <div>
 
         <legend>
-            {% trans "Agents" %}  
-            {% if user_agent %} 
+            {% trans "Agents" %}
+            {% if user_agent %}
                 <a href="#create-agent" role="button" class="btn btn-primary" data-toggle="modal">{% trans "Create New Agent" %}</a>
-                
+
                 <div class="modal hide fade" id="create-agent" tabindex="-1" role="dialog" aria-labelledby="agent-label" aria-hidden="true">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
@@ -80,15 +80,16 @@
 
         <div class="agents" >
             {% for agent in agents %}
-                {% ifchanged agent.agent_type %} 
+                {% ifchanged agent.agent_type %}
                     </ul>
-                    <div class="heading"> {{ agent.agent_type.name }}s <span class="showhide" id="sh-{{ agent.agent_type.id }}" >{% trans "(Hide)" %}</span></div>
+                    <div class="heading"> {{ agent.agent_type.name }}s <span class="showhide" id="sh-{{ agent.agent_type.id }}" >{% trans "(Show)" %}</span></div>
                     <ul class="list" id="list-{{ agent.agent_type.id }}" >
                 {% endifchanged %}
 
                 <li>
-                        <b><a href="{{ agent.get_absolute_url }}">{{ agent.name }}</a></b> 
+                        <b><a href="{{ agent.get_absolute_url }}">{{ agent.name }}</a></b>
                         &nbsp;&nbsp;&nbsp;
+                        <span style="font-size: .9em">( {{ agent.email }} )</span> &nbsp;
                         {% if agent.contributions_count %}
                             {% if agent.is_individual %}
                                 <a href="{% url "contribution_history" agent_id=agent.id %}">{% trans "Contributions" %}: {{ agent.contributions_count }}</a>
@@ -98,7 +99,10 @@
                         {% endif %}
 
                         {% if agent.description %}
-                            <div class="description" >{{ agent.description|urlize|linebreaks }}</div>
+                            <span class="showhide" id="sh-{{ agent.agent_type.id }}{{ agent.id }}" style="font-size: .9em">{% trans "(Show)" %}</span>
+                            <div class="list" id="list-{{ agent.agent_type.id }}{{ agent.id }}">
+                              <div class="description" >{{ agent.description|urlize|linebreaks }}</div>
+                            </div>
                         {% endif %}
                 </li>
 
@@ -125,15 +129,15 @@
         $('#projects').addClass('active');
 
         $( "#help" ).toggle( function(){
-            $('#help-content').show("slide", { direction: "right" }, "slow" ); 
+            $('#help-content').show("slide", { direction: "right" }, "slow" );
             $( "#help" ).text("Hide Help");
         }, function() {
             $('#help-content').hide("slide", { direction: "right" }, "slow");
             $( "#help" ).text("Show Help");
         })
-        
-        $(".list").show();
-       
+
+        $(".list").hide(); //show();
+
         $(".showhide").click(function(event)
         {
             var id = event.target.id;
@@ -141,7 +145,7 @@
             $(listId).slideToggle(200);
             $(this).text($(this).text() == '(Show)' ? '(Hide)' : '(Show)');
         });
-        
+
         function html_unescape(text) {
             // Unescape a string that was escaped using django.utils.html.escape.
             text = text.replace(/&lt;/g, '<');
@@ -151,9 +155,9 @@
             text = text.replace(/&amp;/g, '&');
             return text;
         }
-        
+
         var nickArray = html_unescape("{{ nicks }}").split("~");
-        
+
         jQuery.validator.addMethod("unique", function(value, element, param) {
             return this.optional(element) || $.inArray(value, param) < 0; // <-- Check if the value is not in the array.
         }, "ID is not unique.");
@@ -174,7 +178,6 @@
         });
 
     }); // end document.ready
-    
+
     </script>
 {% endblock %}
-
