@@ -96,9 +96,13 @@ def broadcast_tx():
                 if mirr:
                     if hasattr(mirr, 'faircoin_transaction') and mirr.faircoin_transaction:
                         pass
-                    elif not events:
-                        logger.warning("Using a 'Receive' event to link a FairTX!? ev:"+str(ev.id)+" ("+str(ev)+")")
-                        print("Using a 'Receive' event to link a FairTX!? ev:"+str(ev.id)+" ("+str(ev)+")")
+                    else:
+                        if hasattr(ev, 'faircoin_transaction') and ev.faircoin_transaction:
+                            tx = ev.faircoin_transaction
+                            tx.event = mirr
+                            #tx.save()
+                            logger.warning("Using a 'Receive' event to link a FairTX!? Change to Give! ev:"+str(ev.id)+" ("+str(ev)+")")
+                            print("Using a 'Receive' event to link a FairTX!? ev:"+str(ev.id)+" ("+str(ev)+")")
                         #events = [ev]
 
         msg = " ".join(["new FairCoin event count:", str(events.count())])
