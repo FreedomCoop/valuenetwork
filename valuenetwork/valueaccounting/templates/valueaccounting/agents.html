@@ -39,9 +39,7 @@
 .btn {
     margin-left: 2em;
 }
-.modal {
-    width: 600px;
-}
+
 
 </style>
 
@@ -58,26 +56,30 @@
             {% trans "Agents" %}
             {% if user_agent %}
                 <a href="#create-agent" role="button" class="btn btn-primary" data-toggle="modal">{% trans "Create New Agent" %}</a>
-
-                <div class="modal hide fade" id="create-agent" tabindex="-1" role="dialog" aria-labelledby="agent-label" aria-hidden="true">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-                        <h3 id="agent-label">{% trans "Create a New Agent" %}</h3>
-                    </div>
-                    <div class="modal-body">
-                        <form class="validateMe" id="agentForm" enctype="multipart/form-data" action="{% url "create_agent" %}" method="POST" >
-                            {% csrf_token %}
-                            {{ agent_form|as_bootstrap }}
-                            <div class="modal-footer">
-                                <button class="btn" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
-                                <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Save" %}' />
-                            </div>
-                        </form>
-                    </div>
-                </div>
             {% endif %}
         </legend>
-
+        <div class="modal hide fade" id="create-agent" tabindex="-1" role="dialog" aria-labelledby="agent-label" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                  <h3 id="agent-label">{% trans "Create a New Agent" %}</h3>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                  </button>
+              </div>
+              <div class="modal-body">
+                  <form class="validateMe" id="agentForm" enctype="multipart/form-data" action="{% url "create_agent" %}" method="POST" >
+                      {% csrf_token %}
+                      {{ agent_form|as_bootstrap }}
+                      <div class="modal-footer">
+                          <button class="btn btn-secondary" data-dismiss="modal" aria-hidden="true">{% trans "Cancel" %}</button>
+                          <input type="submit" class="btn btn-primary" name="submit" value='{% trans "Save" %}' />
+                      </div>
+                  </form>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="agents" >
             {% for agent in agents %}
                 {% ifchanged agent.agent_type %}
