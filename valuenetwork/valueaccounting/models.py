@@ -9515,7 +9515,7 @@ class Exchange(models.Model):
             loger.info("WARN Exchange has no transfers ?? ex:"+str(self.id)+" "+str(self))
         return name
 
-    def status(self):
+    def status(self): # Exchange
         status = '??'
         arr = []
         trans = self.transfers.all()
@@ -11219,7 +11219,7 @@ class Commitment(models.Model):
         #    print("No agent??")
         return name
 
-    def status(self):
+    def status(self): # Commitment
         if self.unfilled_quantity() > 0: # if over-payed this is negative
             return 'pending'
         else:
@@ -11229,6 +11229,11 @@ class Commitment(models.Model):
                     if hasattr(ev, 'faircoin_transaction') and ev.faircoin_transaction:
                         if not ev.faircoin_transaction.tx_hash:
                             return 'pending'
+                    else:
+                        ev2 = ev.mirror_event()
+                        if hasattr(ev2, 'faircoin_transaction') and ev2.faircoin_transaction:
+                            if not ev2.faircoin_transaction.tx_hash:
+                                return 'pending'
                 return 'complete'
             else:
                 return 'pending'
@@ -13229,6 +13234,33 @@ class EconomicEvent(models.Model):
             return mirr
         else:
             return self.mirror
+
+    def status(self):
+        if hasattr(self, 'faircoin_transaction') and self.faircoin_transaction:
+            if not self.faircoin_transaction.tx_hash:
+                return 'pending'
+        else:
+            mir = self.mirror_event()
+            if hasattr(mir, 'faircoin_transaction') and mir.faircoin_transaction:
+                if not mir.faircoin_transaction.tx_hash:
+                    return 'pending'
+        # TODO same with CryptoTx
+        return 'complete'
+
+    def fairtx_link(self):
+        ev = None
+        if hasattr(self, 'faircoin_transaction') and self.faircoin_transaction:
+            ev = self
+        else:
+            mir = self.mirror_event()
+            if hasattr(mir, 'faircoin_transaction') and mir.faircoin_transaction:
+                ev = mir
+        if ev:
+            if ev.faircoin_transaction.tx_hash:
+                return "<b><a href="+ev.faircoin_transaction.chain_link()+" target='_blank'>FairTx</a></b>"
+            else:
+                return "<b class='pending'>"+ev.faircoin_transaction.tx_state+"</b>"
+        return ''
 
     def show_name(self, agent=None, forced=False):
         name = self.__str__()

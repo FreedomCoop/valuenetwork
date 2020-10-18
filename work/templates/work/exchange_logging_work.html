@@ -734,15 +734,10 @@ h3.trtheading {
                                         {% endif %}
                                         {% if comm.fulfillment_events.all %}
                                           {% for evt in comm.fulfillment_events.all_give %}
-                                            <div class="ce"><span class="{% if evt.faircoin_transaction and not evt.faircoin_transaction.tx_hash %}pending{% else %}complete{% endif %}">&#9679;</span> <span class="event-label">{% trans "Transfer" %}: </span>
+                                            <div class="ce"><span class="{{ evt.status }}">&#9679;</span> <span class="event-label">{% trans "Transfer" %}: </span>
                                                 {{ evt|show_name:context_agent|safe }} {% if request.user.is_superuser %}&nbsp; <em class="small">(tx:{{ xfer.id }} ev:{{ evt.id }} mi:{{ evt.mirror_event.id }})</em>{% endif %}
-                                                {% if evt.faircoin_transaction %}&nbsp; <b>
-                                                  {% if not evt.faircoin_transaction.tx_hash %}
-                                                    <span class="error">{{ evt.faircoin_transaction.tx_state }}</span>
-                                                  {% else %}
-                                                    <a href="{{ evt.faircoin_transaction.chain_link }}" target="_blank">FairTx</a>
-                                                  {% endif %}
-                                                  </b>
+                                                {% if evt.faircoin_transaction or evt.mirror_event.faircoin_transaction %}
+                                                  &nbsp;  {{ evt.fairtx_link|safe }}
                                                 {% endif %}
                                                 {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}+ {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
                                                 {% if logger or evt.created_by == request.user or evt.to_agent == agent or evt.to_agent in agent.managed_projects %}
@@ -837,16 +832,11 @@ h3.trtheading {
                                       {% endfor %}
                                     {% elif xfer.events.all %}
                                       {% for evt in xfer.events.all_give %}
-                                        <div class="evt"><span class="{% if evt.faircoin_transaction and not evt.faircoin_transaction.tx_hash %}pending{% else %}complete{% endif %}">&#9679;</span>
+                                        <div class="evt"><span class="{{ evt.status }}">&#9679;</span>
                                         <span class="event-label">{% trans "Transfer" %}:</span>
                                         {{ evt|show_name:context_agent|safe }} {% if request.user.is_superuser %}&nbsp; <em class="small">(tx:{{ xfer.id }} ev:{{ evt.id }} mi:{{ evt.mirror_event.id }})</em>{% endif %}
-                                        {% if evt.faircoin_transaction %}&nbsp; <b>
-                                          {% if not evt.faircoin_transaction.tx_hash %}
-                                            <span class="error">{{ evt.faircoin_transaction.tx_state }}</span>
-                                          {% else %}
-                                            <a href="{{ evt.faircoin_transaction.chain_link }}" target="_blank">FairTx</a>
-                                          {% endif %}
-                                          </b>
+                                        {% if evt.faircoin_transaction or evt.mirror_event.faircoin_transaction %}
+                                          &nbsp;  {{ evt.fairtx_link|safe }}
                                         {% endif %}
                                         {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}+ {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
                                         {% if logger or evt.created_by == request.user or evt.to_agent == agent or evt.to_agent in agent.managed_projects %}
@@ -1344,15 +1334,10 @@ h3.trtheading {
                                         {% endif %}
                                         {% if comm.fulfillment_events.all %}
                                           {% for evt in comm.fulfillment_events.all_give %}
-                                            <div class="ce"><span class="{% if evt.faircoin_transaction and not evt.faircoin_transaction.tx_hash %}pending{% else %}complete{% endif %}">&#9679;</span> <span class="event-label">{% trans "Transfer" %}: </span>
+                                            <div class="ce"><span class="{{ evt.status }}">&#9679;</span> <span class="event-label">{% trans "Transfer" %}: </span>
                                                 {{ evt|show_name:context_agent|safe }} {% if request.user.is_superuser %}&nbsp; <em class="small">(tx:{{ xfer.id }} ev:{{ evt.id }} mi:{{ evt.mirror_event.id }})</em>{% endif %}
-                                                {% if evt.faircoin_transaction %}&nbsp; <b>
-                                                  {% if not evt.faircoin_transaction.tx_hash %}
-                                                    <span class="error">{{ evt.faircoin_transaction.tx_state }}</span>
-                                                  {% else %}
-                                                    <a href="{{ evt.faircoin_transaction.chain_link }}" target="_blank">FairTx</a>
-                                                  {% endif %}
-                                                  </b>
+                                                {% if evt.faircoin_transaction or evt.mirror_event.faircoin_transaction %}
+                                                  &nbsp;  {{ evt.fairtx_link|safe }}
                                                 {% endif %}
                                                 {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}+ {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
                                                 {% if logger or evt.created_by == request.user or evt.from_agent == agent or evt.from_agent in agent.managed_projects %}
@@ -1447,16 +1432,11 @@ h3.trtheading {
                                       {% endfor %}
                                     {% elif xfer.events.all %}
                                       {% for evt in xfer.events.all_give %}
-                                        <div class="evt"><span class="{% if evt.faircoin_transaction and not evt.faircoin_transaction.tx_hash %}pending{% else %}complete{% endif %}">&#9679;</span>
+                                        <div class="evt"><span class="{{ evt.status }}">&#9679;</span>
                                         <span class="event-label">{% trans "Transfer" %}: </span>
                                         {{ evt|show_name:context_agent|safe }} {% if request.user.is_superuser %}<em class="small">(tx:{{ xfer.id }} ev:{{ evt.id }} co:{{ evt.commitment.id }})</em>{% endif %}
-                                        {% if evt.faircoin_transaction %}&nbsp; <b>
-                                          {% if not evt.faircoin_transaction.tx_hash %}
-                                            <span class="error">{{ evt.faircoin_transaction.tx_state }}</span>
-                                          {% else %}
-                                            <a href="{{ evt.faircoin_transaction.chain_link }}" target="_blank">FairTx</a>
-                                          {% endif %}
-                                          </b>
+                                        {% if evt.faircoin_transaction or evt.mirror_event.faircoin_transaction %}
+                                          &nbsp;  {{ evt.fairtx_link|safe }}
                                         {% endif %}
                                         {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}+ {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
                                         {% if logger or evt.created_by == request.user or evt.from_agent == agent or evt.from_agent in agent.managed_projects  %}
