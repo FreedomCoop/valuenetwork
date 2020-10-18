@@ -10273,7 +10273,7 @@ class Transfer(models.Model):
                     #import pdb; pdb.set_trace()
         return name
 
-    def status(self):
+    def status(self): # Transfer
         #print("tx status")
         if self.exchange.exchange_type.use_case.identifier == 'intrnl_xfer':
             need_evts = 1 #2
@@ -10313,6 +10313,10 @@ class Transfer(models.Model):
                     status = 'complete'
         elif len(events):
           if len(events) >= need_evts:
+            """for ev in events:
+                if hasattr(ev, 'faircoin_transaction') and ev.faircoin_transaction:
+                    if not ev.faircoin_transaction.tx_hash:
+                        return 'pending' """
             status = 'complete' #str([ev.id for ev in events])+' tr:'+str(self.id)+' x:'+str(self.exchange.id)+' complete'
           else:
             status = 'pending' #str([ev.id for ev in events])+' tr:'+str(self.id)+' x:'+str(self.exchange.id)+' pending'
@@ -11219,7 +11223,12 @@ class Commitment(models.Model):
         if self.unfilled_quantity() > 0: # if over-payed this is negative
             return 'pending'
         else:
-            if self.fulfilling_events():
+            fufes = self.fulfilling_events()
+            if fufes:
+                for ev in fufes:
+                    if hasattr(ev, 'faircoin_transaction') and ev.faircoin_transaction:
+                        if not ev.faircoin_transaction.tx_hash:
+                            return 'pending'
                 return 'complete'
             else:
                 return 'pending'
@@ -13203,6 +13212,16 @@ class EconomicEvent(models.Model):
                 event_date=self.event_date,
                 unit_of_quantity=self.unit_of_quantity,
                 unit_of_value=self.unit_of_value)
+            if len(mir) < 2:
+                mir = EconomicEvent.objects.filter(
+                    from_agent=self.from_agent,
+                    to_agent=self.to_agent,
+                    resource_type=self.resource_type,
+                    event_date=self.event_date,
+                    unit_of_quantity=self.unit_of_quantity,
+                    unit_of_value=self.unit_of_value)
+            if len(mir) > 2:
+                raise ValidationError("More than two mirror events ?? "+str(mir))
             for mi in mir:
                 if not mi == self:
                     self.mirror = mi

@@ -87,8 +87,20 @@ def create_requested_addresses():
 def broadcast_tx():
 
     try:
-        events = EconomicEvent.objects.filter(faircoin_transaction__tx_state="new").order_by('pk')
-        events = events.filter(Q(event_type__name='Give')|Q(event_type__name='Distribution'))
+        events1 = EconomicEvent.objects.filter(faircoin_transaction__tx_state="new").order_by('pk')
+        events = events1.filter(Q(event_type__name='Give')|Q(event_type__name='Distribution'))
+        if not events and events1:
+            events2 = events1.filter(Q(event_type__name='Receive'))
+            for ev in events2:
+                mirr = ev.mirror_event()
+                if mirr:
+                    if hasattr(mirr, 'faircoin_transaction') and mirr.faircoin_transaction:
+                        pass
+                    elif not events:
+                        logger.warning("Using a 'Receive' event to link a FairTX!? ev:"+str(ev.id)+" ("+str(ev)+")")
+                        print("Using a 'Receive' event to link a FairTX!? ev:"+str(ev.id)+" ("+str(ev)+")")
+                        #events = [ev]
+
         msg = " ".join(["new FairCoin event count:", str(events.count())])
         logger.debug(msg)
     except Exception:

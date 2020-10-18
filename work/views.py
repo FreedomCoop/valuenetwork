@@ -365,8 +365,12 @@ def share_payment_fair(request, agent_id):
         if not updated:
             raise ValidationError("Error updating the payment status to complete.")
         evts = req.exchange.all_events()
+        if not evts:
+            raise ValidationError("No events after update_payment_status??")
+        if len(evts) < 2:
+            raise ValidationError("Less than 2 events after update_payment_status? "+str(evts))
         for ev in evts:
-            if ev.resource_type == req.payment_unit_rt() and ev.resource_type == fair_rt:
+            if ev.resource_type == req.payment_unit_rt() and ev.resource_type == fair_rt and ev.event_type.name == 'Give':
                 fairtx = FaircoinTransaction(
                     event = ev,
                     tx_state = state,
