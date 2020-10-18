@@ -5,7 +5,7 @@ import valuenetwork.valueaccounting.views
 import work.views
 
 urlpatterns = [
-    url(r"^start/$", valuenetwork.valueaccounting.views.start, name="start"),
+    url(r"^start/$", valuenetwork.valueaccounting.views.agents, name="start"), #valuenetwork.valueaccounting.views.start
     url(r"^projects/$", valuenetwork.valueaccounting.views.projects, name="projects"),
     url(r"^agents/$", valuenetwork.valueaccounting.views.agents, name="agents"),
     #url(r"^create-project/$", valuenetwork.valueaccounting.views.create_project, name="create_project"),
