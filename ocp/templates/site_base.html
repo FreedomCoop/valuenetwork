@@ -19,31 +19,77 @@
 {% endblock %}
 
 {% block topbar_base %}
-<header>
+  <header>
     <div class="navbar {% block navbar_class %}navbar-expand-lg navbar-dark bg-dark{% endblock %}">
         <div class="container">
         {% block topbar %}
-            {% block site_brand %}<a class="navbar-brand" href="{% url "home" %}">{{ SITE_NAME }}</a>{% endblock %}
+            {% block site_brand %}
+                {% if request.user.agent.agent.related_contexts|length == 1 %}
+                    {% with request.user.agent.agent.related_contexts|first as ag %}
+                        {% if ag.project.fobi_slug %}
+                            <a class="navbar-brand" href="{% url 'project_login' form_slug=ag.project.fobi_slug %}">{{ ag.name }}</a>
+                        {% else %}
+                            <a class="navbar-brand" href="{% url 'members_agent' agent_id=ag.id %}">{{ ag.name }}</a>
+                        {% endif %}
+                    {% endwith %}
+                {% else %}
+                    <a class="navbar-brand" href="{% url 'home' %}">{{ SITE_NAME }}</a>
+                {% endif %}
+            {% endblock %}
+
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent">
                 <!-- <span class="fa fa-bars"></span> -->
-                <span class="glyphicon glyphicon-menu-hamburger"></span>
+                <i class="hamburger"></i>
             </button>
-
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 {% block nav %}
-                    <ul class="navbar-nav mr-auto">
-                        {% block nav_items %}{% comment %}
-                        <li class="nav-item"><a class="nav-link" href="#tab_one">One</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#tab_two">Two</a></li>
-                        {% endcomment %}{% endblock %}
-                    </ul>
-                {% endblock %}
+                        <ul class="navbar-nav mr-auto">
+                            <li id="projects" class="nav-item">
+                                <a class="nav-link" href="{% url "projects" %}"
+                                title="{% trans 'Networks and Projects' %}"
+                                >{% trans 'Organization' %}</a>
+                            </li>
+                            <li id="demand" class="nav-item" >
+                                <a class="nav-link" href="{% url "demand" %}"
+                                title="{% trans 'Customer and R&amp;D Orders' %}"
+                                >{% trans 'Demand' %}</a>
+                            </li>
+                            <li id="supply" class="nav-item" >
+                                <a class="nav-link" href="{% url "supply" %}"
+                                title="{% trans 'Purchasing requirements now, purchasing forms to come' %}"
+                                >{% trans 'Supply' %}</a>
+                            </li>
+                            <li id="inventory" class="nav-item" >
+                                <a class="nav-link" href="{% url "inventory" %}"
+                                title="{% trans 'Available resources with their histories' %}"
+                                >{% trans 'Inventory' %}</a>
+                            </li>
+                            <li id="distribution" class="nav-item" >
+                                <a class="nav-link" href="{% url "value_equations" %}"
+                                title="{% trans 'Value Equations and income distributions' %}"
+                                >{% trans 'Distribution' %}</a>
+                            </li>
+
+                            {% if request.user.is_authenticated %}
+                                <li id="my-work" class="nav-item" >
+                                    <a class="nav-link" href="{% url "start" %}"
+                                    title="{% trans 'Your work and comparative stats' %}"
+                                    >{% trans 'My Work' %}</a>
+                                </li>
+                            {% endif %}
+                            <li id="work" class="nav-item" >
+                                <a class="nav-link" href="{% url "work" %}"
+                                title="{% trans 'All the work in the network for a date range' %}"
+                                >{% trans 'All Work' %}</a>
+                            </li>
+                        </ul>
+                 {% endblock %}
                 {% block account_bar %}{% include "_account_bar.html" %}{% endblock %}
             </div>
         {% endblock %}
         </div>
     </div>
-</header>
+  </header>
 {% endblock %}
 
 {% block footer %}
