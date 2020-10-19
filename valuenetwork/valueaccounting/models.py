@@ -13225,8 +13225,8 @@ class EconomicEvent(models.Model):
                     event_date=self.event_date,
                     unit_of_quantity=self.unit_of_quantity,
                     unit_of_value=self.unit_of_value)
-            if len(mir) > 2:
-                raise ValidationError("More than two mirror events ?? "+str(mir))
+                if len(mir) > 2:
+                    raise ValidationError("More than two mirror events ?? "+str(mir))
             for mi in mir:
                 if not mi == self:
                     self.mirror = mi

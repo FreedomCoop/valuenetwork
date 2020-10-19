@@ -542,7 +542,7 @@ h3.trtheading {
                                       {% for comm in xfer.commitments.all_give %}
                                         <div class="comm"><span class="{{ comm.status }}">&#9679;</span>
                                         <span class="event-label">{% trans "Commitment" %}: </span>
-                                        {{ comm|show_name:context_agent|safe }} {% if request.user.is_superuser %}&nbsp; <em>(tx:{{ xfer.id }} co:{{ comm.id }})</em>{% endif %}
+                                        {{ comm|show_name:context_agent|safe }} {% if request.user.is_superuser %}&nbsp; <em class="small">(tx:{{ xfer.id }} co:{{ comm.id }})</em>{% endif %}
                                         {% if logger or comm.created_by == request.user or comm.to_agent == agent or comm.to_agent in agent.managed_projects %}
                                           {% if logger and not exchange.join_request and not exchange.join_request.agent == agent %}
                                             {% if not comm.to_agent %}
@@ -1143,7 +1143,7 @@ h3.trtheading {
                                       {% for comm in xfer.commitments.all_give %}
                                         <div class="comm"><span class="{{ comm.status }}">&#9679;</span>
                                         <span class="event-label">{% trans "Commitment" %}: </span>
-                                        {{ comm|show_name:context_agent|safe }} {% if request.user.is_superuser %}&nbsp; <em>(tx:{{ xfer.id }} co:{{ comm.id }})</em>{% endif %}
+                                        {{ comm|show_name:context_agent|safe }} {% if request.user.is_superuser %}&nbsp; <em class="small">(tx:{{ xfer.id }} co:{{ comm.id }})</em>{% endif %}
                                         {% if logger or comm.created_by == request.user or comm.from_agent == request.user.agent.agent or comm.from_agent in request.user.agent.agent.managed_projects %}
                                           {% if logger and not exchange.join_request and not exchange.join_request.agent == agent %}
                                             {% if not comm.from_agent %}
@@ -1434,7 +1434,7 @@ h3.trtheading {
                                       {% for evt in xfer.events.all_give %}
                                         <div class="evt"><span class="{{ evt.status }}">&#9679;</span>
                                         <span class="event-label">{% trans "Transfer" %}: </span>
-                                        {{ evt|show_name:context_agent|safe }} {% if request.user.is_superuser %}<em class="small">(tx:{{ xfer.id }} ev:{{ evt.id }} co:{{ evt.commitment.id }})</em>{% endif %}
+                                        {{ evt|show_name:context_agent|safe }} {% if request.user.is_superuser %}<em class="small">(tx:{{ xfer.id }} ev:{{ evt.id }} mi:{{ evt.mirror_event.id }})</em>{% endif %}
                                         {% if evt.faircoin_transaction or evt.mirror_event.faircoin_transaction %}
                                           &nbsp;  {{ evt.fairtx_link|safe }}
                                         {% endif %}

@@ -27,7 +27,7 @@ admin.site.register(FaircoinAddress, FaircoinAddressAdmin)
 class FaircoinTransactionAdmin(admin.ModelAdmin):
     readonly_fields = ('tx_hash', 'to_address', 'event',)
     fields = ('tx_hash', 'tx_state', 'to_address', 'event',)
-    list_display = ('tx_hash_short', 'tx_state', 'event_date', 'event_quantity', 'event_from_agent', 'event_to_agent')
+    list_display = ('tx_hash_short', 'tx_state', 'event_date', 'event_quantity', 'event_from_agent', 'event_to_agent', 'event_id',)
     list_filter = ['tx_state',]
     ordering = ['-event_id']
 
@@ -54,5 +54,8 @@ class FaircoinTransactionAdmin(admin.ModelAdmin):
     def tx_hash_short(self, tx_obj):
         return truncatechars(tx_obj.tx_hash, 16)
     tx_hash_short.short_description = 'Tx hash'
+
+    def event_id(self, tx_obj):
+        return tx_obj.event.id
 
 admin.site.register(FaircoinTransaction, FaircoinTransactionAdmin)
