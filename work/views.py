@@ -87,6 +87,7 @@ def my_dashboard(request):
     })
 
 
+@login_required
 def new_features(request):
     new_features = NewFeature.objects.all()
 
@@ -95,6 +96,7 @@ def new_features(request):
         "photo_size": (256, 256),
     })
 
+@login_required
 def map(request):
     agent = get_agent(request)
     locations = Location.objects.all()
@@ -486,6 +488,7 @@ def membership_request(request):
     })
 """
 
+@login_required
 def membership_discussion(request, membership_request_id):
     user_agent = get_agent(request)
     mbr_req = get_object_or_404(MembershipRequest, pk=membership_request_id)
@@ -637,6 +640,7 @@ def membership_discussion(request, membership_request_id):
     })
 
 
+@login_required
 def migrate_fdc_shares(request, jr):
     fdc = Project.objects.filter(fobi_slug='freedom-coop')
     if len(fdc) == 1:
@@ -1362,6 +1366,7 @@ def migrate_fdc_shares(request, jr):
 
 
 
+@login_required
 def run_fdc_scripts(request, agent):
     if not agent.name == "Freedom Coop":
         raise ValidationError("This is only intended for Freedom Coop agent migration")
@@ -2295,6 +2300,7 @@ def view_agents_list(request, agent_id):
         })
 
 
+@login_required
 def check_empty_langs(request, agent):
     fixed = 0
     if agent.photo_url == 'None':
@@ -2695,6 +2701,7 @@ def create_user_accounts(request, agent, project=None):
     return auto_resource
 
 
+@login_required
 def check_duplicate_agents(request, agent):
     loger.info("------ start check_duplicate_agents ("+str(agent)+") ------")
     repair_duplicate_agents(request, agent)
@@ -2798,6 +2805,7 @@ def check_duplicate_agents(request, agent):
     return None
 
 
+@login_required
 def repair_duplicate_agents(request, agent):
     if request.user.is_superuser:
       copis = EconomicAgent.objects.filter(name=agent.name).order_by('id')
@@ -2959,7 +2967,7 @@ from django.utils.html import escape, escapejs
 from django.views.decorators.csrf import csrf_exempt
 from django.template.defaultfilters import striptags
 
-@csrf_exempt
+#@csrf_exempt
 def joinaproject_request(request, form_slug = False):
     if form_slug and form_slug == 'freedom-coop':
         pass #return redirect('membership_request')
@@ -3007,7 +3015,7 @@ def joinaproject_request(request, form_slug = False):
         )
 
 
-    if request.method == "POST":
+    if request.method == "POST": # to use as an endpoint to create a jnreq (e.g. BotC), you'll need to re-activate the @csrf_exempt above
         fobi_form = FormClass(request.POST, request.FILES)
         #form_element_entries = form_entry.formelemententry_set.all()[:]
         #field_name_to_label_map, cleaned_data = get_processed_form_data(
@@ -7883,7 +7891,7 @@ def json_ocp_resource_type_resources_with_locations(request, ocp_artwork_type_id
 
 #    C R E A T E   S H A R E S
 
-
+@login_required
 def create_project_shares(request, agent_id):
 
     agent = EconomicAgent.objects.get(id=agent_id)
@@ -8202,7 +8210,7 @@ def create_project_shares(request, agent_id):
 
 #    S H A R E S   E X C H A N G E   T Y P E S
 
-
+@login_required
 def create_shares_exchange_types(request, agent_id):
 
     agent = EconomicAgent.objects.get(id=agent_id)
@@ -9042,7 +9050,7 @@ def create_shares_exchange_types(request, agent_id):
 
 #    S U B S C R I P T I O N   E X C H A N G E   T Y P E S
 
-
+@login_required
 def create_subscription_exchange_types(request, agent_id):
 
     agent = EconomicAgent.objects.get(id=agent_id)
@@ -9658,7 +9666,7 @@ def create_subscription_exchange_types(request, agent_id):
 
 #    P R O J E C T   R E S O U R C E S
 
-
+@login_required
 def project_all_resources(request, agent_id):
     agent = get_object_or_404(EconomicAgent, id=agent_id)
     #contexts = agent.related_all_contexts()
@@ -9773,6 +9781,7 @@ def project_all_resources(request, agent_id):
 
 
 
+@login_required
 def project_resource(request, agent_id, resource_id):
     resource = get_object_or_404(EconomicResource, id=resource_id)
     agent = get_object_or_404(EconomicAgent, id=agent_id)
@@ -9902,6 +9911,7 @@ def change_resource(request, agent_id, resource_id):
 from mptt.exceptions import InvalidMove
 from mptt.forms import MoveNodeForm
 
+@login_required
 def movenode(request, node_id): # still not used
     rtype = get_object_or_404(Artwork_Type, pk=node_id)
     if request.method == 'POST':
@@ -12154,6 +12164,7 @@ def plan_work(request, rand=0):
         "help": get_help("process_select"),
     })
 
+@login_required
 def project_history(request, agent_id):
     project = get_object_or_404(EconomicAgent, pk=agent_id)
     agent = get_agent(request)
@@ -12219,6 +12230,7 @@ def project_history_csv(request):
 
     return response
 
+@login_required
 def fake_kanban(request, agent_id):
     project = get_object_or_404(EconomicAgent, pk=agent_id)
     agent = get_agent(request)

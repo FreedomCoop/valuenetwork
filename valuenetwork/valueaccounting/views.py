@@ -248,6 +248,7 @@ def create_user_and_agent(request):
         "agent_selection_form": agent_selection_form,
     })
 
+@login_required
 def projects(request):
     page = request.GET.get('page', 1)
     project_name = request.POST.get('project_name', '')
@@ -324,6 +325,7 @@ def create_project(request):
 
 '''
 
+@login_required
 def locations(request):
     agent = get_agent(request)
     locations = Location.objects.all()
@@ -459,6 +461,7 @@ def change_agent(request, agent_id):
     return HttpResponseRedirect('/%s/%s/'
         % ('accounting/agent', agent.id))
 
+@login_required
 def agents(request):
     user_agent = get_agent(request)
     agents = EconomicAgent.objects.all().order_by("agent_type__name", "name")
@@ -474,6 +477,8 @@ def agents(request):
         "nicks": nicks,
     })
 
+
+@login_required
 def radial_graph(request, agent_id):
     agent = get_object_or_404(EconomicAgent, id=agent_id)
     agents = agent.with_all_associations()
@@ -492,6 +497,8 @@ def radial_graph(request, agent_id):
         "root": agent,
     })
 
+
+@login_required
 def agent(request, agent_id):
     agent = get_object_or_404(EconomicAgent, id=agent_id)
     user_agent = get_agent(request)
@@ -1007,6 +1014,8 @@ def select_resource_types(facet_values):
     answer_ids = [a.id for a in answer]
     return list(EconomicResourceType.objects.filter(id__in=answer_ids))
 
+
+@login_required
 def resource_types(request):
     roots = EconomicResourceType.objects.all()
     resource_names = '~'.join([
@@ -1046,6 +1055,7 @@ def resource_types(request):
     })
 
 
+@login_required
 def resource_type(request, resource_type_id):
     resource_type = get_object_or_404(EconomicResourceType, id=resource_type_id)
     create_form = []
@@ -1094,6 +1104,7 @@ def resource_type(request, resource_type_id):
         "help": get_help("resource_type"),
     })
 
+@login_required
 def inventory(request):
     #resources = EconomicResource.objects.select_related().filter(quantity__gt=0).order_by('resource_type')
     rts = EconomicResourceType.objects.all()
@@ -1139,6 +1150,8 @@ def inventory(request):
         "help": get_help("inventory"),
     })
 
+
+@login_required
 def resource_flow_report(request, resource_type_id):
     #todo: this report is dependent on DHEN's specific work flow, will need to be generalized
     if settings.ALL_WORK_PAGE != "/board/dhen-board/":
@@ -1234,6 +1247,8 @@ def resource_flow_report(request, resource_type_id):
         #"sort_form": sort_form,
     })
 
+
+@login_required
 def adjust_resource(request, resource_id):
     resource = get_object_or_404(EconomicResource, id=resource_id)
     form = ResourceAdjustmentForm(data=request.POST)
@@ -1258,6 +1273,8 @@ def adjust_resource(request, resource_id):
     return HttpResponseRedirect('/%s/%s/'
         % ('accounting/event-history', resource.id))
 
+
+@login_required
 def event_history(request, resource_id):
     resource = get_object_or_404(EconomicResource, id=resource_id)
     event_list = resource.events.all()
@@ -1323,6 +1340,8 @@ def validate_faircoin_address(request):
     response = simplejson.dumps(answer, ensure_ascii=False)
     return HttpResponse(response, content_type="text/json-comment-filtered")
 
+
+@login_required
 def all_contributions(request):
     event_list = EconomicEvent.objects.filter(is_contribution=True)
     paginator = Paginator(event_list, 25)
@@ -1341,6 +1360,8 @@ def all_contributions(request):
         "events": events,
     })
 
+
+@login_required
 def contributions(request, project_id):
     project = get_object_or_404(EconomicAgent, pk=project_id)
     agent = get_agent(request)
@@ -1381,6 +1402,8 @@ def contributions(request, project_id):
         "event_ids": event_ids,
     })
 
+
+@login_required
 def project_wip(request, project_id):
     project = get_object_or_404(EconomicAgent, pk=project_id)
     process_list = project.wip()
@@ -1401,6 +1424,8 @@ def project_wip(request, project_id):
         "processes": processes,
     })
 
+
+@login_required
 def finished_processes(request, agent_id):
     project = get_object_or_404(EconomicAgent, pk=agent_id)
     process_list = project.finished_processes()
@@ -1786,6 +1811,7 @@ class AgentSummary(object):
         self.amount=amount
 
 #obsolete
+@login_required
 def value_equation(request, project_id):
     return render(request, 'valueaccounting/no_permission.html')
     project = get_object_or_404(EconomicAgent, pk=project_id)
@@ -1858,6 +1884,7 @@ def value_equation(request, project_id):
         "total": total,
     })
 
+@login_required
 def extended_bill(request, resource_type_id):
     rt = get_object_or_404(EconomicResourceType, pk=resource_type_id)
     output_ctype, inheritance = rt.main_producing_process_type_relationship()
@@ -1958,6 +1985,7 @@ def edit_stream_recipe(request, resource_type_id):
     })
 
 
+@login_required
 def view_stream_recipe(request, resource_type_id):
     rt = get_object_or_404(EconomicResourceType, pk=resource_type_id)
     process_types, inheritance = rt.staged_process_type_sequence()
@@ -2686,6 +2714,7 @@ def create_process_type_for_streaming(request, resource_type_id, process_type_id
             raise ValidationError(form.errors)
 
 
+@login_required
 def network(request, resource_type_id):
     rt = get_object_or_404(EconomicResourceType, pk=resource_type_id)
     nodes, edges = graphify(rt, 3)
@@ -2696,6 +2725,7 @@ def network(request, resource_type_id):
         "edges": edges,
     })
 
+@login_required
 def project_network(request):
     producers = [p for p in ProcessType.objects.all() if p.produced_resource_types()]
     nodes, edges = project_graph(producers)
@@ -2705,6 +2735,7 @@ def project_network(request):
         "edges": edges,
     })
 
+@login_required
 def timeline(request, from_date, to_date, context_id):
     try:
         from_date_date = datetime.datetime(*time.strptime(from_date, '%Y_%m_%d')[0:5]).date()
@@ -2750,6 +2781,7 @@ def json_timeline(request, from_date, to_date, context_id):
     data = simplejson.dumps(events, ensure_ascii=False)
     return HttpResponse(data, content_type="text/json-comment-filtered")
 
+@login_required
 def context_timeline(request, context_id):
     context_agent = get_object_or_404(EconomicAgent, pk=context_id)
     timeline_date = datetime.date.today().strftime("%b %e %Y 00:00:00 GMT-0600")
@@ -2776,6 +2808,7 @@ def json_context_timeline(request, context_id):
     data = simplejson.dumps(events, ensure_ascii=False)
     return HttpResponse(data, content_type="text/json-comment-filtered")
 
+@login_required
 def order_timeline(request, order_id):
     order = get_object_or_404(Order, pk=order_id)
     first_process = order.first_process_in_order()
@@ -2930,10 +2963,12 @@ def json_customer_orders(request, customer_id):
     return HttpResponse(data, content_type="text/json-comment-filtered")
 
 
+@login_required
 def explore(request):
     return render(request, "valueaccounting/explore.html", {
     })
 
+@login_required
 def unfold_commitment(request, commitment_id):
     commitment = get_object_or_404(Commitment, pk=commitment_id)
     process = commitment.process
@@ -2942,6 +2977,7 @@ def unfold_commitment(request, commitment_id):
         "process": process,
     })
 
+@login_required
 def unfold_process(request, process_id):
     process = get_object_or_404(Process, pk=process_id)
     commitment = None
@@ -3241,6 +3277,7 @@ def schedule_commitment(
 
     return schedule
 
+@login_required
 def orders(request, agent_id):
     agent = get_object_or_404(EconomicAgent, id=agent_id)
     orders = agent.active_orders()
@@ -3256,6 +3293,7 @@ def orders(request, agent_id):
     })
 
 
+@login_required
 def order_schedule(request, order_id):
     agent = get_agent(request)
     order = get_object_or_404(Order, pk=order_id)
@@ -3422,6 +3460,7 @@ def delete_workflow_process(request, order_item_id, process_id):
     return HttpResponseRedirect(next)
 
 
+@login_required
 def demand(request):
     agent = get_agent(request)
     orders = Order.objects.customer_orders()
@@ -3444,6 +3483,7 @@ def demand(request):
         "help": help,
     })
 
+@login_required
 def closed_work_orders(request):
     agent = get_agent(request)
     orders = Order.objects.closed_work_orders()
@@ -3454,6 +3494,7 @@ def closed_work_orders(request):
         #"help": help,
     })
 
+@login_required
 def resource_type_lists(request):
     agent = get_agent(request)
     rt_lists = ResourceTypeList.objects.all()
@@ -3585,6 +3626,7 @@ def delete_resource_type_list(request, list_id):
     return HttpResponseRedirect('/%s/'
         % ('accounting/resource-type-lists'))
 
+@login_required
 def supply_older(request):
     mreqs = []
     #todo: needs a lot of work
@@ -3627,6 +3669,7 @@ def supply_older(request):
         "help": get_help("supply"),
     })
 
+@login_required
 def supply_old(request):
     agent = get_agent(request)
     mreqs = []
@@ -3654,6 +3697,7 @@ def supply_old(request):
         "help": get_help("supply"),
     })
 
+@login_required
 def supply(request):
     agent = get_agent(request)
     mrqs = Commitment.objects.filter(
@@ -3742,6 +3786,7 @@ def change_process_sked_ajax(request):
     else:
         return HttpResponse(form.errors, content_type="text/json-comment-filtered")
 
+@login_required
 def work(request):
     next = settings.ALL_WORK_PAGE
     if next != "/accounting/work/":
@@ -3792,6 +3837,7 @@ def work(request):
         "help": get_help("all_work"),
     })
 
+@login_required
 def schedule(request, context_agent_slug=None):
     context_agent = None
     if context_agent_slug:
@@ -3803,6 +3849,7 @@ def schedule(request, context_agent_slug=None):
         "context_agents": context_agents,
     })
 
+@login_required
 def today(request):
     agent = get_agent(request)
     start = datetime.date.today()
@@ -3886,6 +3933,7 @@ def assemble_weekly_activity(event_list):
         processes[es.process].append(es)
     return context_agents
 
+@login_required
 def this_week(request):
     agent = get_agent(request)
     end = datetime.date.today()
@@ -4149,6 +4197,7 @@ def start(request):
     })
 
 
+@login_required
 def agent_stats(request, agent_id):
     agent = get_object_or_404(EconomicAgent, id=agent_id)
     scores = agent.resource_types.all()
@@ -4168,6 +4217,7 @@ def agent_stats(request, agent_id):
         "member_hours": member_hours,
     })
 
+@login_required
 def project_stats(request, context_agent_slug):
     project = None
     member_hours = []
@@ -4191,6 +4241,7 @@ def project_stats(request, context_agent_slug):
         "page_title": "All-time project stats",
     })
 
+@login_required
 def recent_stats(request, context_agent_slug):
     project = None
     member_hours = []
@@ -4218,6 +4269,7 @@ def recent_stats(request, context_agent_slug):
     })
 
 
+@login_required
 def project_roles(request, context_agent_slug):
     project = None
     headings = []
@@ -4254,12 +4306,14 @@ def project_roles(request, context_agent_slug):
         "member_hours": member_hours,
     })
 
+@login_required
 def order_graph(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     return render(request, "valueaccounting/order_graph.html", {
         "order_id": order_id,
     })
 
+@login_required
 def processes_graph(request, object_type=None, object_id=None):
     url_extension = ""
     if object_type:
@@ -4582,6 +4636,7 @@ def create_labnotes_context(
 
 
 #obsolete
+@login_required
 def new_process_output(request, commitment_id):
     commitment = get_object_or_404(Commitment, pk=commitment_id)
     process = commitment.process
@@ -4804,6 +4859,7 @@ def new_process_worker(request, commitment_id):
         return HttpResponseRedirect('/%s/%s/%s/%s/'
             % ('accounting/labnotes-reload', commitment.id, was_running, was_retrying))
 
+@login_required
 def add_process_output(request, process_id):
     process = get_object_or_404(Process, pk=process_id)
     if request.method == "POST":
@@ -4849,6 +4905,7 @@ def add_process_output(request, process_id):
     return HttpResponseRedirect('/%s/%s/'
         % ('accounting/process', process.id))
 
+@login_required
 def add_unplanned_output(request, process_id):
     process = get_object_or_404(Process, pk=process_id)
     if request.method == "POST":
@@ -4990,6 +5047,7 @@ def add_unordered_receipt(request, exchange_id):
     return HttpResponseRedirect('/%s/%s/'
         % ('accounting/exchange', exchange.id))
 
+@login_required
 def add_receipt_to_resource(request, exchange_id):
     exchange = get_object_or_404(Exchange, pk=exchange_id)
     if request.method == "POST":
@@ -5034,6 +5092,7 @@ def add_receipt_to_resource(request, exchange_id):
     return HttpResponseRedirect('/%s/%s/'
         % ('accounting/exchange', exchange.id))
 
+@login_required
 def add_contribution_to_resource(request, exchange_id):
     exchange = get_object_or_404(Exchange, pk=exchange_id)
     if request.method == "POST":
@@ -5527,6 +5586,7 @@ def log_uninventoried_shipment(request, commitment_id):
     return HttpResponseRedirect('/%s/%s/'
         % ('accounting/exchange', ct.exchange.id))
 
+@login_required
 def delete_shipment_event(request, event_id):
     if request.method == "POST":
         event = get_object_or_404(EconomicEvent, pk=event_id)
@@ -7236,6 +7296,7 @@ def save_past_work(request, commitment_id):
         return HttpResponse(data, content_type="text/plain")
 
 
+@login_required
 def process_details(request, process_id):
     agent = get_agent(request)
     process = get_object_or_404(Process, id=process_id)
@@ -7251,6 +7312,7 @@ def process_details(request, process_id):
         "help": get_help("process"),
     })
 
+@login_required
 def process_oriented_logging(request, process_id):
     process = get_object_or_404(Process, id=process_id)
     pattern = process.process_pattern
@@ -7944,6 +8006,7 @@ def log_citation(request, commitment_id, resource_id):
         % ('accounting/process', ct.process.id))
 
 
+@login_required
 def labnotes_history(request):
     agent = get_agent(request)
     procs = Process.objects.all().order_by("-start_date")
@@ -7972,6 +8035,7 @@ def labnotes_history(request):
         "agent": agent,
     })
 
+@login_required
 def todo_history(request):
     todo_list = Commitment.objects.finished_todos().order_by('-due_date',)
 
@@ -7991,6 +8055,7 @@ def todo_history(request):
     })
 
 
+@login_required
 def open_todos(request):
     todo_list = Commitment.objects.todos().order_by('-due_date',)
 
@@ -8010,6 +8075,7 @@ def open_todos(request):
     })
 
 
+@login_required
 def resource(request, resource_id, extra_context=None):
     resource = get_object_or_404(EconomicResource, id=resource_id)
     agent = get_agent(request)
@@ -8128,6 +8194,7 @@ def plan_work_order_for_resource(request, resource_id):
         % ('accounting/resource', resource_id))
 
 
+@login_required
 def incoming_value_flows(request, resource_id):
     resource = get_object_or_404(EconomicResource, id=resource_id)
     #flows = resource.incoming_value_flows()
@@ -8236,6 +8303,7 @@ def get_labnote_context(commitment, request_agent):
         "citations": citations,
     }
 
+@login_required
 def labnotes(request, process_id):
     process = get_object_or_404(Process, id=process_id)
     agent = get_agent(request)
@@ -8251,6 +8319,7 @@ def labnotes(request, process_id):
             "agent": agent,
         })
 
+@login_required
 def labnote(request, commitment_id):
     ct = get_object_or_404(Commitment, id=commitment_id)
     request_agent = get_agent(request)
@@ -10297,6 +10366,7 @@ def create_patterned_facet_formset(pattern, slot, data=None):
     return formset
 
 
+@login_required
 def exchanges(request, agent_id=None):
     agent = None
     if agent_id:
@@ -10413,6 +10483,7 @@ def exchanges(request, agent_id=None):
     })
 
 #obsolete
+@login_required
 def exchanges_old(request):
     end = datetime.date.today()
     start = datetime.date(end.year, 1, 1)
@@ -10513,6 +10584,7 @@ def exchanges_old(request):
         "event_ids": event_ids,
     })
 
+@login_required
 def internal_exchanges(request, agent_id=None):
     agent = None
     if agent_id:
@@ -10598,6 +10670,7 @@ def internal_exchanges(request, agent_id=None):
     })
 
 #obsolete
+@login_required
 def material_contributions(request):
     end = datetime.date.today()
     start = datetime.date(end.year, 1, 1)
@@ -10632,6 +10705,7 @@ def material_contributions(request):
         "event_ids": event_ids,
     })
 
+@login_required
 def demand_exchanges(request, agent_id=None):
     agent = None
     if agent_id:
@@ -10717,6 +10791,7 @@ def demand_exchanges(request, agent_id=None):
     })
 
 #obsolete
+@login_required
 def sales_and_distributions(request, agent_id=None):
     agent = None
     if agent_id:
@@ -10803,6 +10878,7 @@ def sales_and_distributions(request, agent_id=None):
         "agent": agent,
     })
 
+@login_required
 def distributions(request, agent_id=None):
     agent = None
     if agent_id:
@@ -10943,6 +11019,7 @@ def contribution_events_csv(request):
     return response
 
 
+@login_required
 def exchange_logging(request, exchange_type_id=None, exchange_id=None, context_agent_id=None):
     agent = get_agent(request)
     logger = False
@@ -11074,6 +11151,7 @@ def exchange_logging(request, exchange_type_id=None, exchange_id=None, context_a
     })
 
 '''
+@login_required
 def exchange_logging_old(request, exchange_id):
     agent = get_agent(request)
     logger = False
@@ -11457,6 +11535,7 @@ def create_distribution(request, agent_id):
     })
 '''
 
+@login_required
 def distribution_logging(request, distribution_id=None):
     agent = get_agent(request)
     if not agent:
@@ -11694,7 +11773,7 @@ def payment_event_for_commitment(request):
 '''
 
 #demo page for DHEN
-#@login_required
+@login_required
 def resource_flow(request):
     pattern = ProcessPattern.objects.get(name="Change")
     resource_form = ResourceFlowForm(pattern=pattern)
@@ -11706,7 +11785,7 @@ def resource_flow(request):
     })
 
 #demo page for DHEN and GT
-#@login_required
+@login_required
 def workflow_board_demo(request):
     pattern = ProcessPattern.objects.get(name="Change")
     resource_form = ResourceFlowForm(pattern=pattern)
@@ -11718,7 +11797,7 @@ def workflow_board_demo(request):
     })
 
 #demo page for DHEN
-#@login_required
+@login_required
 def inventory_board_demo(request):
     pattern = ProcessPattern.objects.get(name="Change")
     resource_form = ResourceFlowForm(pattern=pattern)
@@ -11735,6 +11814,7 @@ def inventory_board_demo(request):
         "move_seller_form": move_seller_form,
     })
 
+@login_required
 def lots(request):
 
 
@@ -11743,7 +11823,7 @@ def lots(request):
         "process_form": process_form,
     })
 
-#@login_required
+@login_required
 def bucket_filter_header(request):
     header_form = FilterSetHeaderForm(data=request.POST or None)
     if request.method == "POST":
@@ -11763,7 +11843,7 @@ def bucket_filter_header(request):
         "header_form": header_form,
     })
 
-#@login_required
+@login_required
 def bucket_filter(request, agent_id, event_type_id, pattern_id, filter_set):
     agent = get_object_or_404(EconomicAgent, pk=agent_id)
     event_type = get_object_or_404(EventType, pk=event_type_id)
@@ -11948,6 +12028,7 @@ def json_value_equation_bucket(request, value_equation_id):
         json = simplejson.dumps(buckets, ensure_ascii=False)
     return HttpResponse(json, content_type='application/json')
 
+@login_required
 def value_equations(request):
     value_equations = ValueEquation.objects.all()
     agent = get_agent(request)
@@ -11958,6 +12039,7 @@ def value_equations(request):
     })
 
 
+@login_required
 def edit_value_equation(request, value_equation_id=None):
     value_equation = None
     value_equation_bucket_form = None
@@ -12116,6 +12198,7 @@ def value_equation_live_test(request, value_equation_id):
             % ('accounting/edit-value-equation', value_equation.id))
 
 
+@login_required
 def cash_report(request):
     end = datetime.date.today()
     start = datetime.date(end.year, end.month, 1)
@@ -12251,6 +12334,7 @@ def cash_events_csv(request):
         )
     return response
 
+@login_required
 def virtual_accounts(request):
     virtual_accounts = EconomicResource.objects.filter(resource_type__behavior="account")
     agent = get_agent(request)
@@ -12389,6 +12473,7 @@ def agent_type_lod(request, agent_type_name):
     #    "agent_type": agent_type,
     #})
 
+@login_required
 def agent_relationship_type_lod(request, agent_assoc_type_name):
     aats = AgentAssociationType.objects.all()
     agent_assoc_type = None
@@ -12430,6 +12515,7 @@ def agent_relationship_type_lod(request, agent_assoc_type_name):
     #    "agent_assoc_type": agent_assoc_type,
     #})
 
+@login_required
 def agent_relationship_lod(request, agent_assoc_id):
     aa = AgentAssociation.objects.filter(id=agent_assoc_id)
     if not aa:
@@ -12463,6 +12549,7 @@ def agent_relationship_lod(request, agent_assoc_id):
     #})
 
 
+@login_required
 def agent_relationship_inv_lod(request, agent_assoc_id):
     aa = AgentAssociation.objects.filter(id=agent_assoc_id)
     if not aa:
@@ -12495,6 +12582,7 @@ def agent_relationship_inv_lod(request, agent_assoc_id):
     #    "agent_association": agent_association,
     #})
 
+@login_required
 def agent_lod(request, agent_id):
     agents = EconomicAgent.objects.filter(id=agent_id)
     if not agents:
@@ -12651,6 +12739,7 @@ def agent_jsonld(request):
     #return HttpResponse(json.dumps(data, indent=4), content_type='application/json')
     return HttpResponse(ser, content_type='application/json')
 
+@login_required
 def agent_jsonld_query(request):
     from rdflib import Graph
     from rdflib.serializer import Serializer
@@ -12920,6 +13009,7 @@ def create_agent_for_request(request, membership_request_id):
     return HttpResponseRedirect('/%s/%s/'
         % ('accounting/membership-request', membership_request_id))
 
+@login_required
 def connect_agent_to_request(request, membership_request_id):
     mbr_req = get_object_or_404(MembershipRequest, pk=membership_request_id)
     if request.method == "POST":
@@ -12952,6 +13042,7 @@ def send_fdc_welcome(request, agent_id):
         return_data = "OK"
     return HttpResponse(return_data, content_type="text/plain")
 
+@login_required
 def send_email(request, user, faircoin_address, password):
     protocol = getattr(settings, "DEFAULT_HTTP_PROTOCOL", "http")
     current_site = get_current_site(request)
