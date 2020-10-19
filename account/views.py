@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.tokens import default_token_generator
 #from django.contrib.sites.shortcuts import get_current_site
-from account.utils import get_current_site
+from account.utils import get_current_site, get_current_email_from
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -655,6 +655,7 @@ class PasswordResetView(FormView):
         User = get_user_model()
         protocol = getattr(settings, "DEFAULT_HTTP_PROTOCOL", "http")
         current_site = get_current_site(self.request)
+        emailfrom = get_current_email_from(self.request)
         email_qs = EmailAddress.objects.filter(email__iexact=email)
         for user in User.objects.filter(pk__in=email_qs.values("user")):
             uid = int_to_base36(user.id)
@@ -668,6 +669,7 @@ class PasswordResetView(FormView):
                 "user": user,
                 "current_site": current_site,
                 "password_reset_url": password_reset_url,
+                "email_from": emailfrom
             }
             hookset.send_password_reset_email([user.email], ctx)
 

@@ -24,7 +24,7 @@ class AccountDefaultHookSet(object):
         subject = render_to_string("account/email/password_change_subject.txt", ctx)
         subject = "".join(subject.splitlines())
         message = render_to_string("account/email/password_change.txt", ctx)
-        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, to)
+        send_mail(subject, message, ctx.email_from or settings.DEFAULT_FROM_EMAIL, to)
 
     def send_password_reset_email(self, to, ctx):
         subject = render_to_string("account/email/password_reset_subject.txt", ctx)

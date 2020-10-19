@@ -139,6 +139,8 @@ def check_password_expired(user):
         return False
 
 
+from django.apps import apps
+
 def get_current_site(request):
     """ bum2
     Adapted from sites.shortcuts.py to force _get_site_by_request
@@ -150,3 +152,14 @@ def get_current_site(request):
         return Site.objects._get_site_by_request(request)
     else:
         raise ValidationError("The django.contrib.sites app is required!")
+
+def get_current_email_from(request):
+    dom = get_current_site(request).domain
+    if settings.PROJECTS_LOGIN and dom:
+        for val in settings.PROJECTS_LOGIN:
+            if 'domains' in val:
+                if dom in val.domains:
+                    if 'smtp' in val:
+                        if 'username' in val.smtp:
+                            return val.smtp.username
+    return None
