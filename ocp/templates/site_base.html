@@ -43,6 +43,7 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 {% block nav %}
+                    {% if request.user.is_staff or request.user.is_superuser %}
                         <ul class="navbar-nav mr-auto">
                             <li id="projects" class="nav-item">
                                 <a class="nav-link" href="{% url "projects" %}"
@@ -83,6 +84,7 @@
                                 >{% trans 'All Work' %}</a>
                             </li>
                         </ul>
+                    {% endif %}
                  {% endblock %}
                 {% block account_bar %}{% include "_account_bar.html" %}{% endblock %}
             </div>

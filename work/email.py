@@ -84,6 +84,7 @@ class EmailBackend(BaseBackend):
         # EmailMultiAlternatives(subject='', body='', from_email=None, to=None, bcc=None, connection=None, attachments=None,
         #                        headers=None, alternatives=None, cc=None, reply_to=None)
         if not connection:
+            logger.warning("Sending and Email using the default settings 'connection'... ")
             connection = CoreEmailBackend(host=settings.EMAIL_HOST, port=settings.EMAIL_PORT, username=settings.EMAIL_HOST_USER, password=settings.EMAIL_HOST_PASSWORD, use_tls=settings.EMAIL_USE_TLS)
 
         if connection:
