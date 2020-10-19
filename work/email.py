@@ -48,7 +48,7 @@ class EmailBackend(BaseBackend):
                 raise ValidationError("context agent is in context but agent is none?? "+str(context))
 
             if not agent.email:
-                logger.info("The project sending this notice is missing an email address! agent:"+str(agent)+", using:"+str(from_email))
+                logger.error("The project sending this notice is missing an email address!! agent:"+str(agent)+", using:"+str(from_email))
             else:
                 from_email = agent.email
 
@@ -83,10 +83,13 @@ class EmailBackend(BaseBackend):
         #print('sending email from: '+from_email)
         # EmailMultiAlternatives(subject='', body='', from_email=None, to=None, bcc=None, connection=None, attachments=None,
         #                        headers=None, alternatives=None, cc=None, reply_to=None)
+        if not connection:
+            connection = CoreEmailBackend(host=settings.EMAIL_HOST, port=settings.EMAIL_PORT, username=settings.EMAIL_HOST_USER, password=settings.EMAIL_HOST_PASSWORD, use_tls=settings.EMAIL_USE_TLS)
 
         if connection:
             email = EmailMultiAlternatives(subject, body, from_email=from_email, to=[recipient.email], reply_to=[from_email], connection=connection)
         else:
+            logger.warning("Sending and Email without a custom 'connection' ?? ")
             email = EmailMultiAlternatives(subject, body, from_email=from_email, to=[recipient.email], reply_to=[from_email])
 
         #import pdb; pdb.set_trace()

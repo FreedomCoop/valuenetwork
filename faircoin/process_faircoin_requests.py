@@ -100,12 +100,16 @@ def broadcast_tx():
                         if hasattr(ev, 'faircoin_transaction') and ev.faircoin_transaction and mirr.event_type.name == 'Give':
                             tx = ev.faircoin_transaction
                             tx.event = mirr
-                            #tx.save()
                             logger.warning("Using a 'Receive' event to link a FairTX!? CHANGED to Give mirror! mi:"+str(mirr.id)+" ev:"+str(ev.id)+" ("+str(ev)+")")
                             print("Using a 'Receive' event to link a FairTX!? CHANGED to Give mirror! mi:"+str(mirr.id)+" ev:"+str(ev.id)+" ("+str(ev)+")")
-                            #break
-                        #events = [ev]
 
+                            # If you got this warnings in fair_debug.log, you can solve each case by uncommenting the following
+                            # 2 lines and let the cron run this function 2 times (minutes?) for each case, and watch each solving
+                            # step. Comment again both lines after, to stuck again possible errors warnings.
+
+                            #tx.save()
+                            #break
+                        
         msg = " ".join(["new FairCoin event count:", str(events.count())])
         logger.debug(msg)
     except Exception:
@@ -122,7 +126,7 @@ def broadcast_tx():
         if events and efn.is_connected():
             logger.debug("broadcast_tx ready to process events")
             for event in events:
-                if event.resource:
+                if event.resource and event.faircoin_transaction:
                     if event.event_type.name=="Give":
                         address_origin = event.resource.faircoin_address.address
                         address_end = event.faircoin_transaction.to_address
@@ -168,6 +172,9 @@ def broadcast_tx():
                                 refairtx.save()
                         msg = " ".join([ "Broadcasted tx", tx_hash, "amount", str(amount), "from", address_origin, "to", address_end ])
                         logger.info(msg)
+                else:
+                    failed_events += 1
+                    logger.critical("Event has no 'resource' or 'faircoin_trasaction'! id:"+str(event.id)+" ("+str(event)+")")
     except Exception:
         _, e, _ = sys.exc_info()
         logger.critical("an exception occurred in processing events: {0}".format(e))
