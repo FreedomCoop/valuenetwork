@@ -137,3 +137,16 @@ def check_password_expired(user):
         return True
     else:
         return False
+
+
+def get_current_site(request):
+    """ bum2
+    Adapted from sites.shortcuts.py to force _get_site_by_request
+    """
+    # Imports are inside the function because its point is to avoid importing
+    # the Site models when django.contrib.sites isn't installed.
+    if apps.is_installed('django.contrib.sites'):
+        from django.contrib.sites.models import Site
+        return Site.objects._get_site_by_request(request)
+    else:
+        raise ValidationError("The django.contrib.sites app is required!")
