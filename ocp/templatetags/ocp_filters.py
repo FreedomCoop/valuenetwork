@@ -4,5 +4,5 @@ from account.utils import get_current_site_name
 register = template.Library()
 
 @register.filter
-def ocp_sitename(str, request):
+def ocp_sitename(str, request=None):
     return get_current_site_name(request)

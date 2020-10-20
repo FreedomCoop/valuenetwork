@@ -156,6 +156,8 @@ def get_current_site(request):
     # the Site models when django.contrib.sites isn't installed.
     if apps.is_installed('django.contrib.sites'):
         from django.contrib.sites.models import Site
+        if settings.TESTING:
+            return Site.objects.get_current(request)
         return Site.objects._get_site_by_request(request)
     else:
         raise ValidationError("The django.contrib.sites app is required!")

@@ -20,7 +20,7 @@
 {% endblock %}
 
 {% block head_title_base %}
-  {% if SITE_NAME %}{{ SITE_NAME|ocp_sitename:request }} | {% endif %}{% block head_title %}{% endblock %}
+  {% if SITE_NAME and request %}{{ SITE_NAME|ocp_sitename:request }} | {% endif %}{% block head_title %}{% endblock %}
 {% endblock %}
 
 {% block topbar_base %}

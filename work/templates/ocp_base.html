@@ -14,7 +14,7 @@
                     <a class="navbar-brand" href="{% url 'members_agent' agent_id=ag.id %}">{{ ag.name }}</a>
                 {% endif %}
             {% endwith %}
-        {% else %}
+        {% elif request %}
             <a class="navbar-brand" href="{% url 'home' %}">{{ SITE_NAME|ocp_sitename:request }}</a>
         {% endif %}
     {% endblock %}
