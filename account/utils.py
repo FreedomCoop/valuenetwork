@@ -139,7 +139,14 @@ def check_password_expired(user):
         return False
 
 
+# ------
+
+import logging
+loger = logging.getLogger("ocp")
+
 from django.apps import apps
+from django.core.mail.backends.smtp import EmailBackend as CoreEmailBackend
+from valuenetwork.valueaccounting.models import EconomicAgent
 
 def get_current_site(request):
     """ bum2
@@ -156,10 +163,45 @@ def get_current_site(request):
 def get_current_email_from(request):
     dom = get_current_site(request).domain
     if settings.PROJECTS_LOGIN and dom:
-        for val in settings.PROJECTS_LOGIN:
-            if 'domains' in val:
-                if dom in val.domains:
-                    if 'smtp' in val:
-                        if 'username' in val.smtp:
-                            return val.smtp.username
+        obj = settings.PROJECTS_LOGIN
+        for key in obj:
+            if 'domains' in obj[key]:
+                if dom in obj[key]['domains']:
+                    if 'smtp' in obj[key]:
+                        if 'username' in obj[key]['smtp']:
+                            emailfrom = obj[key]['smtp']['username']
+                            loger.debug("Get from address as project's smtp 'username': "+emailfrom)
+                            print("Get from address as project's smtp 'username': "+emailfrom)
+                            return emailfrom
     return None
+
+def get_current_smtp_connection(request):
+    dom = get_current_site(request).domain
+    if settings.PROJECTS_LOGIN and dom:
+        obj = settings.PROJECTS_LOGIN
+        for key in obj:
+            if 'domains' in obj[key]:
+                if dom in obj[key]['domains']:
+                    if 'smtp' in obj[key]:
+                        if 'username' in obj[key]['smtp']:
+                            connection = CoreEmailBackend(host=obj[key]['smtp']['host'], port=obj[key]['smtp']['port'], username=obj[key]['smtp']['username'], password=obj[key]['smtp']['password'], use_tls=obj[key]['smtp']['use_tls'])
+                            loger.debug("SMTP connection found: "+obj[key]['smtp']['host']) #+str(connection))
+                            print("SMTP connection found: "+obj[key]['smtp']['host']) #+str(connection))
+                            #return connection
+    loger.error("Can't find the smtp connection for domain: "+dom)
+    print("Can't find the smtp connection for domain: "+dom)
+    return None
+
+def get_current_site_name(request):
+    dom = get_current_site(request).domain
+    if settings.PROJECTS_LOGIN and dom:
+        obj = settings.PROJECTS_LOGIN
+        for key in obj:
+            if 'domains' in obj[key]:
+                if dom in obj[key]['domains']:
+                    ag = EconomicAgent.objects.filter(project__isnull=False, project__fobi_slug=key)
+                    if ag:
+                        if request.user.is_authenticated:
+                            return settings.SITE_NAME+'-'+ag[0].nick
+                        return ag[0].name
+    return settings.SITE_NAME

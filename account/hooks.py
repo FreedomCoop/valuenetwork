@@ -24,13 +24,14 @@ class AccountDefaultHookSet(object):
         subject = render_to_string("account/email/password_change_subject.txt", ctx)
         subject = "".join(subject.splitlines())
         message = render_to_string("account/email/password_change.txt", ctx)
-        send_mail(subject, message, ctx.email_from or settings.DEFAULT_FROM_EMAIL, to)
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, to)
 
     def send_password_reset_email(self, to, ctx):
         subject = render_to_string("account/email/password_reset_subject.txt", ctx)
         subject = "".join(subject.splitlines())
         message = render_to_string("account/email/password_reset.txt", ctx)
-        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, to)
+        # bum2: get emailfrom from ctx, add connection as 8th argument
+        send_mail(subject, message, ctx['email_from'] or settings.DEFAULT_FROM_EMAIL, to, False, None, None, ctx['connection'] or None)
 
     def generate_random_token(self, extra=None, hash_func=hashlib.sha256):
         if extra is None:
