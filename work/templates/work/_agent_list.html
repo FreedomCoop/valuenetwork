@@ -13,7 +13,7 @@
                   <a href="{% url 'project_feedback' agent_id=agent.id join_request_id=req.id %}"
                          class="btn-mini-icon small"><i class="icon-comment"></i> {{ ncom }}</a>
                   {% if req.exchange %} <a href="{% url "exchange_logging_work" context_agent_id=agent.id exchange_type_id=0 exchange_id=req.exchange.id %}"
-                                     class="btn-mini-icon small"><i class="icon-transfer"></i></a> {% endif %}
+                                     class="btn-mini-icon small {{ req.exchange.status }}"><i class="icon-transfer"></i></a> {% endif %}
                   {% if not req.fobi_data %} &nbsp;<b class="error">ERROR!</b> {% endif %}
               {% endif %}
           {% endfor %}
@@ -29,7 +29,7 @@
                 {% else %}
                 {% endif %}
                 {% if req.exchange %} <a href="{% url "exchange_logging_work" context_agent_id=agent.id exchange_type_id=0 exchange_id=req.exchange.id %}"
-                                   class="btn-mini-icon small"><i class="icon-transfer"></i></a> {% endif %}
+                                   class="btn-mini-icon small {{ req.exchange.status }}"><i class="icon-transfer"></i></a> {% endif %}
                 {% if not req.fobi_data %} &nbsp;<b class="error">ERROR!</b> {% endif %}
                 {% if not forloop.first %} &nbsp;<b class="error">Error: multiple requests!</b>{% endif %}
             {% endif %}

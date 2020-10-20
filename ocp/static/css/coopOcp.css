@@ -189,6 +189,12 @@ a.btn-mini-icon:hover {
     color: #eee;
 }
 
+.btn-mini-icon.complete { color: #fff; }
+.btn-mini-icon.pending, .btn-mini-icon.empty {
+    background: #f28013;
+    color: #fff;
+}
+
 
 /*   G E N E R A L   */
 
