@@ -2,6 +2,7 @@
 
 {% load i18n %}
 {% load thumbnail %}
+{% load ocp_filters %}
 
 {% block topbar %}
     {% block site_brand %}
@@ -14,7 +15,7 @@
                 {% endif %}
             {% endwith %}
         {% else %}
-            <a class="navbar-brand" href="{% url 'home' %}">{{ SITE_NAME }}</a>
+            <a class="navbar-brand" href="{% url 'home' %}">{{ SITE_NAME|ocp_sitename:request }}</a>
         {% endif %}
     {% endblock %}
 

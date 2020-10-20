@@ -54,6 +54,7 @@ MODELTRANSLATION_AUTO_POPULATE = 'default'
 
 
 SITE_ID = int(os.environ.get("SITE_ID", 1))
+SITE_NAME = 'OCP' # override at local_settings
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.

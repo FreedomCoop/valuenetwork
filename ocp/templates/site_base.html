@@ -3,6 +3,7 @@
 {% load staticfiles %}
 {% load pinax_webanalytics_tags %}
 {% load i18n %}
+{% load ocp_filters %}
 
 {% block styles %}
 
@@ -16,6 +17,10 @@
 {% block extra_head_base %}
     <script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
     {% block extra_head %}{% endblock %}
+{% endblock %}
+
+{% block head_title_base %}
+  {% if SITE_NAME %}{{ SITE_NAME|ocp_sitename:request }} | {% endif %}{% block head_title %}{% endblock %}
 {% endblock %}
 
 {% block topbar_base %}
@@ -33,7 +38,7 @@
                         {% endif %}
                     {% endwith %}
                 {% else %}
-                    <a class="navbar-brand" href="{% url 'home' %}">{{ SITE_NAME }}</a>
+                    <a class="navbar-brand" href="{% url 'home' %}">{{ SITE_NAME|ocp_sitename:request }}</a>
                 {% endif %}
             {% endblock %}
 
@@ -43,8 +48,8 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 {% block nav %}
-                    {% if request.user.is_staff or request.user.is_superuser %}
-                        <ul class="navbar-nav mr-auto">
+                    <ul class="navbar-nav mr-auto">
+                        {% if request.user.is_staff or request.user.is_superuser %}
                             <li id="projects" class="nav-item">
                                 <a class="nav-link" href="{% url "projects" %}"
                                 title="{% trans 'Networks and Projects' %}"
@@ -83,8 +88,8 @@
                                 title="{% trans 'All the work in the network for a date range' %}"
                                 >{% trans 'All Work' %}</a>
                             </li>
-                        </ul>
-                    {% endif %}
+                        {% endif %}
+                    </ul>
                  {% endblock %}
                 {% block account_bar %}{% include "_account_bar.html" %}{% endblock %}
             </div>
