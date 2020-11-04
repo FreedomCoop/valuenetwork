@@ -106,7 +106,7 @@ def get_address_history(address):
 def make_transaction_from_address(address_origin, address_end, amount, minus_fee=False):
     global lock
     if lock: return
-    lock = True 
+    lock = True
     logging.info("Trying broadcast transaction. Minus fee: %s\n       Origin : %s\n       End    : %s\n       Amount : %s" %(minus_fee, address_origin, address_end, amount))
     # Validate inputs
     if not is_valid(address_end):
@@ -127,7 +127,7 @@ def make_transaction_from_address(address_origin, address_end, amount, minus_fee
                  if not fee:
                      logging.error("insuficient funds!")
                      lock = False
-                     return False 
+                     return False
             tx = build_tx(address_origin, address_end, amount - fee)
         else:
             tx = build_tx(address_origin, address_end, amount)
@@ -267,7 +267,7 @@ if __name__ == '__main__':
     wallet.start_threads(network)
     cmd_wallet = electrumfair.commands.Commands(config, wallet, network)
     # wait for wallet initialization before start accepting requests
-    time.sleep(100)
+    time.sleep(100) # these are seconds.
     # server thread
     from jsonrpclib.SimpleJSONRPCServer import SimpleJSONRPCServer
     server = SimpleJSONRPCServer(( my_host, my_port))

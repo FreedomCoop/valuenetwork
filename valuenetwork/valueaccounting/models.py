@@ -8664,7 +8664,6 @@ class TransferType(models.Model):
     def get_resource_types(self):
         answer_ids = []
         if self.inherit_types:
-            # TODO
             try:
               if hasattr(self.exchange_type, 'ocp_record_type'):
                 oet = self.exchange_type.ocp_record_type
@@ -9220,9 +9219,13 @@ class Exchange(models.Model):
                     if acval:
                         slot.total += acval
                         slot.total_unit = valunit
+                        if not valunit and quaunit:
+                            slot.total_unit = quaunit
                     elif acqua:
                         slot.total += acqua
                         slot.total_unit = quaunit
+                        if not quaunit and valunit:
+                            slot.total_unit = valunit
                     val = transfer.value(receive)
                     if val:
                         if slot.is_currency:
@@ -9307,7 +9310,6 @@ class Exchange(models.Model):
                             #print("--- not total_com_unit, add rt:"+str(rt)+" in ex:"+str(self.id)+" slot:"+str(slot.id)+" "+str(slot))
                             slot.rts.append(rt)
 
-
             #if slot.total_com_unit and str(slot.total_com_unit) == 'Hours':
             #    print("Hours?"  #slot.total_com_unit = str(slot.total_com_unit)+' '+str(rt))
                 #if rt and not rt in slot.rts:
@@ -9347,6 +9349,7 @@ class Exchange(models.Model):
                 slot.total_com_unit = slot.total_unit
             elif hasattr(self, 'join_request'):
                 pass #print(#"has jreq, is ok? "+str(self))
+
 
             for tr in self.transfers.all():
                 if tr.transfer_type == slot:
@@ -9416,6 +9419,7 @@ class Exchange(models.Model):
                 #print("- don't find rts? ex:"+str(self.id)+" slot:"+str(slot.id)+" "+str(slot)+" tot:"+str(slot.total)+" tot_com:"+str(slot.total_com)+" com_unit:"+str(slot.total_com_unit))
                 #loger.info("- don't find rts? ex:"+str(self.id)+" slot:"+str(slot.id)+" "+str(slot)+" tot:"+str(slot.total)+" tot_com:"+str(slot.total_com)+" com_unit:"+str(slot.total_com_unit))
 
+
             if not memslot:
               if slot.is_incoming(self, context_agent): #is_reciprocal:
                 slot.default_from_agent = default_to_agent
@@ -9464,6 +9468,12 @@ class Exchange(models.Model):
               slot.status = 'empty'
             if not slot.status == 'complete':
                 self.statuss = 'pending'
+
+            # Fix faircoin unit, TODO rebuild or fix the function above to avoid this
+            if isinstance(slot.total_com_unit, Unit) and slot.total_com_unit.abbrev == 'fair' and not slot.total_unit == slot.total_com_unit:
+                #print("Fix total_unit? "+str(slot.total_unit)+' total_com_unit? '+str(slot.total_com_unit))
+                slot.total_unit = slot.total_com_unit
+
         return slots
 
     def show_name(self, agent=None, forced=False):
@@ -10623,6 +10633,8 @@ class Transfer(models.Model):
           for ev in events:
             if ev.unit_of_value:
                 return ev.unit_of_value
+            elif ev.unit_of_price:
+                return ev.unit_of_price
         else:
             commits = self.commitments.all()
             if commits:
@@ -13182,6 +13194,12 @@ class EconomicEvent(models.Model):
         if self.resource:
             if self.resource.resource_type.is_account():
                 resource_string = ''
+                if not self.unit_of_quantity and hasattr(self, 'faircoin_transaction') and self.faircoin_transaction:
+                    fairunit = Unit.objects.get(abbrev='fair')
+                    self.unit_of_quantity = fairunit
+                    self.save()
+                    print("FIXED unit_of_quantity (faircoin) at event: "+str(self.id))
+                    loger.warning("FIXED unit_of_quantity (faircoin) at event: "+str(self.id))
                 if self.unit_of_quantity:
                     quantity_string = " ".join([str(remove_exponent(self.quantity)), self.unit_of_quantity.name])
                 if self.quantity > 1:

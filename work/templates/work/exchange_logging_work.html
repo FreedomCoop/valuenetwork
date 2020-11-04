@@ -979,7 +979,13 @@ h3.trtheading {
                                 {% trans "Total:" %} {{ slot.total }}
                                 {% if exchange.join_request and slot.is_currency %}{{ exchange.join_request.show_payment_unit }}
                                 {% elif slot.total %}
-                                  {% if slot.total_unit.symbol %}{{ slot.total_unit.symbol }}{% else %}{{ slot.total_unit.abbrev }}{% endif %}
+                                  {% if slot.total_unit %}
+                                    {% if slot.total_unit.symbol %}{{ slot.total_unit.symbol }}{% else %}{{ slot.total_unit.abbrev }}{% endif %}
+                                  {% elif slot.total_com_unit %}
+                                    {% if slot.total_com_unit.symbol %}{{ slot.total_com_unit.symbol }}{% else %}{{ slot.total_com_unit.abbrev }}{% endif %}
+                                  {% else %}
+                                    ?
+                                  {% endif %}
                                 {% endif %}
                                 {% if exchange.join_request.payment_pending_amount and slot.is_currency %} &nbsp; &nbsp;
                                   <b class="error">{% trans "Pending:" %} {% if exchange.join_request.is_flexprice %} ≈ {% endif %}{{ exchange.join_request.payment_pending_amount }}

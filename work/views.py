@@ -6918,8 +6918,6 @@ def exchange_logging_work(request, context_agent_id, exchange_type_id=None, exch
                 slot.add_ext_agent = ContextExternalAgent() #initial=None, prefix="AGN"+str(slot.id))#, context_agent=context_agent)
 
 
-
-
     else:
         raise ValidationError("System Error: No exchange or use case.")
 
