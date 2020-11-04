@@ -19,7 +19,9 @@ from valuenetwork.valueaccounting.models import (
     EconomicEvent,
     AgentResourceRole,
     AgentResourceRoleType,
+    Unit,
 )
+
 
 from faircoin import utils as faircoin_utils
 from faircoin.models import FaircoinAddress, FaircoinTransaction
@@ -164,6 +166,7 @@ class ExchangeService(object):
             to_resource = to_resources[0]  # shd be only one
             to_agent = to_resource.owner()
         et_give = EventType.objects.get(name="Give")
+        fairunit = Unit.objects.get(abbrev="fair")
         if to_resource:
             tt = ExchangeService.faircoin_internal_transfer_type()
             xt = tt.exchange_type
@@ -212,6 +215,7 @@ class ExchangeService(object):
             resource_type=resource.resource_type,
             resource=resource,
             quantity=qty,
+            unit_of_quantity=fairunit,
             transfer=transfer,
             event_reference=recipient,
             description=notes,
@@ -236,6 +240,7 @@ class ExchangeService(object):
                 resource_type=to_resource.resource_type,
                 resource=to_resource,
                 quantity=qty,
+                unit_of_quantity=fairunit,
                 transfer=transfer,
                 event_reference=recipient,
                 description=notes,
@@ -369,6 +374,7 @@ class ExchangeService(object):
                         transfer.save()
 
                     et_receive = EventType.objects.get(name="Receive")
+                    fairunit = Unit.objects.get(abbrev="fair")
                     state = "external"
                     if confirmations > 0:
                         state = "broadcast"
@@ -383,6 +389,7 @@ class ExchangeService(object):
                             resource_type=resource.resource_type,
                             resource=resource,
                             quantity=qty,
+                            unit_of_quantity=fairunit,
                             transfer=transfer,
                             event_reference=faircoin_address
                         )
