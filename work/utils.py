@@ -2,6 +2,7 @@ from work.models import Ocp_Skill_Type, Ocp_Artwork_Type
 from general.models import Artwork_Type, Job, UnitRatio
 from django.forms import ValidationError
 from django.conf import settings
+from valuenetwork.valueaccounting.models import EventType
 
 import datetime
 import pytz
@@ -291,8 +292,8 @@ def fixExchangeEvents(ex):
         ev = toFix[0]
         mirr = ev.mirror_event()
         if not mirr:
-            print('No mirror event? for ev:'+str(ev.id)+' ex:'+str(ex.id)+' req:'+str(ex.join_request.id)+' pro:'+str(ex.join_request.project.agent.id))
-            logger.error('No mirror event? for ev:'+str(ev.id)+' ex:'+str(ex.id)+' req:'+str(ex.join_request.id)+' pro:'+str(ex.join_request.project.agent.id))
+            print('No mirror event? for ev:'+str(ev.id)+' ex:'+str(ex.id)+' req:'+str(ex.join_request.id)+' pro:'+str(ex.join_request.project.agent.nick))
+            logger.error('No mirror event? for ev:'+str(ev.id)+' ex:'+str(ex.id)+' req:'+str(ex.join_request.id)+' pro:'+str(ex.join_request.project.agent.nick))
             et_give = EventType.objects.get(name="Give")
             et_receive = EventType.objects.get(name="Receive")
             if ev.event_type == et_give:
