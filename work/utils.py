@@ -274,6 +274,35 @@ def set_lang_defaults(agent):
 
     return agent
 
+def fixExchangeEvents(ex):
+    evs = ex.events.all()
+    #logger.info('EX:'+ex.name+' EVS: '+str(evs))
+    #print('EX:'+ex.name+' EVS: '+str(evs))
+    toFix = []
+    #if len(evs) == 3:
+    for ev in evs:
+        if hasattr(ev, 'chain_transaction') and ev.chain_transaction:
+            toFix.append(ev)
+    if len(toFix) == 1:
+        ev = toFix[0]
+        mirr = ev.mirror_event()
+        if mirr:
+            if hasattr(mirr, 'chain_transaction') and mirr.chain_transaction:
+                print('-- Fix ev chain_transaction? compare ev:'+str(ev.id)+' ev-ch-tx:'+str(ev.chain_transaction.id)+' mir:'+str(mirr.id)+' mir-ch-tx:'+str(mirr.chain_transaction.id))
+            else:
+                chtx, c = BlockchainTransaction.objects.get_or_create(
+                    event=mirr,
+                    tx_hash=ev.chain_transaction.tx_hash,
+                    from_address=ev.chain_transaction.from_address,
+                    to_address=ev.chain_transaction.to_address,
+                    tx_fee=ev.chain_transaction.tx_fee
+                )
+                if c:
+                    print('- Created MISSING BlockchainTransaction: '+str(chtx))
+                    logger.info('- Created MISSING BlockchainTransaction: '+str(chtx))
+        else:
+            print('No mirror event? for ev:'+ev.id)
+            logger.error('No mirror event? for ev:'+ev.id)
 
 """
 def init_resource_types():

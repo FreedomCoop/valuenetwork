@@ -317,7 +317,7 @@ h3.trtheading {
                   <p>
                     <em>logger: {{ logger }} &nbsp; (tts:{% for tt in exchange.exchange_type.transfer_types.all %}{{ tt.id }},{% endfor %} txs:{{ exchange.transfers.all|length }}, coms:{{ exchange.commitments.all|length }}, evts:{{ exchange.events.all|length }})</em><br>
                     {% for tx in exchange.transfers.all %}
-                      tx:{{ tx.id }}(tt:{{ tx.transfer_type.id }})-co:{{ tx.commitments.all|length }}-ev:{{ tx.events.all|length }}-reci:{{ tx.is_reciprocal }}<br> {% endfor %}
+                      tx:{{ tx.id }}(tt:{{ tx.transfer_type.id }})-co:{{ tx.commitments.all|length }}-ev:{{ tx.events.all|length }}-reci:{{ tx.is_reciprocal }} {% for e in tx.events.all %}(e:{{ e.id }}/{{ e.mirror_event.id }}){% endfor %}<br> {% endfor %}
                   </p>
                   <p>
                     <em>notes: {{ exchange.notes }}</em>

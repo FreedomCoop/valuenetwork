@@ -4691,6 +4691,9 @@ def project_feedback(request, agent_id, join_request_id):
     if hasattr(agent, 'project') and agent.project.is_moderated() and not agent.email and user_agent in agent.managers():
         messages.error(request, _("Please provide an email for the \"{0}\" project to use as a remitent for the moderated joining process notifications!").format(agent.name))
 
+    if hasattr(jn_req, 'exchange') and jn_req.exchange:
+        fixExchangeEvents(jn_req.exchange)
+
     return render(request, "work/join_request_with_comments.html", {
         "help": get_help("project_feedback"),
         "jn_req": jn_req,
