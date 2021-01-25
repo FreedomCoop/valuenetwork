@@ -2,7 +2,7 @@ from work.models import Ocp_Skill_Type, Ocp_Artwork_Type
 from general.models import Artwork_Type, Job, UnitRatio
 from django.forms import ValidationError
 from django.conf import settings
-from valuenetwork.valueaccounting.models import EventType
+from valuenetwork.valueaccounting.models import EventType, EconomicEvent, Commitment
 
 import datetime
 import pytz
@@ -283,25 +283,134 @@ def fixExchangeEvents(ex):
     evs = ex.events.all()
     #logger.info('EX:'+ex.name+' EVS: '+str(evs))
     #print('EX:'+ex.name+' EVS: '+str(evs))
+
+    comgive = None
+    comreci = None
     toFix = []
     #if len(evs) == 3:
     for ev in evs:
         if hasattr(ev, 'chain_transaction') and ev.chain_transaction:
             toFix.append(ev)
+
+    if not len(toFix):
+        return False
+
+    et_give = EventType.objects.get(name="Give")
+    et_receive = EventType.objects.get(name="Receive")
     if len(toFix) == 1:
         ev = toFix[0]
+        coms =  ev.transfer.commitments.all()
+        if len(coms) == 2:
+            comgive = coms.filter(event_type=et_give)[0]
+            comreci = coms.filter(event_type=et_receive)[0]
+        else:
+            print("Only one commitment (or more than two) in the transfer:"+str(ev.transfer.id)+' coms:'+str(coms))
+            loger.warning("Only one commitment (or more than two) in the transfer:"+str(ev.transfer.id)+' coms:'+str(coms))
+            return False
+
         mirr = ev.mirror_event()
         if not mirr:
-            print('No mirror event? for ev:'+str(ev.id)+' ex:'+str(ex.id)+' req:'+str(ex.join_request.id)+' pro:'+str(ex.join_request.project.agent.nick))
-            logger.error('No mirror event? for ev:'+str(ev.id)+' ex:'+str(ex.id)+' req:'+str(ex.join_request.id)+' pro:'+str(ex.join_request.project.agent.nick))
-            et_give = EventType.objects.get(name="Give")
-            et_receive = EventType.objects.get(name="Receive")
+            print('No mirror event? for ev:'+str(ev.id)+'(et:'+str(ev.event_type)+') ex:'+str(ex.id)+' req:'+str(ex.join_request.id)+' :: '+str(ev)) #+' pro:'+str(ex.join_request.project.agent.nick))
+            logger.error('No mirror event? for ev:'+str(ev.id)+'(et:'+str(ev.event_type)+') ex:'+str(ex.id)+' req:'+str(ex.join_request.id)+' :: '+str(ev)) # pro:'+str(ex.join_request.project.agent.nick))
             if ev.event_type == et_give:
-                logger.info('Its a give orphan: make the receive?')
+                if not ev.event_type == ev.commitment.event_type:
+                    print('Ev give orphan with wrong comm: FIXED ev.comm ? co:'+str(ev.commitment.id)+'(et:'+str(ev.commitment.event_type)+'!!) comgive:'+str(comgive.id)+' comreci:'+str(comreci.id))
+                    logger.info('Ev give orphan with wrong comm: FIX ev.comm ? co:'+str(ev.commitment.id)+'(et:'+str(ev.commitment.event_type)+'!!) comgive:'+str(comgive.id)+' comreci:'+str(comreci.id))
+                    if comgive and comreci:
+                        ev.commitment = comgive
+                        ev.save()
+                if comreci:
+                    print('Its a give orphan: MAKE the receive ev? co:'+str(ev.commitment.id)+'(et:'+str(ev.commitment.event_type)+') comreci:'+str(comreci))
+                    logger.info('Its a give orphan: MAKE the receive ev? co:'+str(ev.commitment.id)+'(et:'+str(ev.commitment.event_type)+') comreci:'+str(comreci))
+
+                    mirr, c = EconomicEvent.objects.get_or_create(
+                        event_type=et_receive,
+                        event_date=ev.event_date,
+                        from_agent=ev.from_agent,
+                        to_agent=ev.to_agent,
+                        resource_type=ev.resource_type,
+                        resource=ev.resource,
+                        exchange_stage=ev.exchange_stage,
+                        process=ev.process,
+                        exchange=ev.exchange,
+                        transfer=ev.transfer,
+                        distribution=ev.distribution,
+                        context_agent=ev.context_agent,
+                        url=ev.url,
+                        description=ev.description,
+                        quantity=ev.quantity,
+                        unit_of_quantity=ev.unit_of_quantity,
+                        quality=ev.quality,
+                        value=ev.value,
+                        unit_of_value=ev.unit_of_value,
+                        price=ev.price,
+                        unit_of_price=ev.unit_of_price,
+                        commitment=comreci,
+                        is_contribution=ev.is_contribution,
+                        is_to_distribute=ev.is_to_distribute,
+                        accounting_reference=ev.accounting_reference,
+                        event_reference=ev.event_reference,
+                        created_by=ev.created_by,
+                        changed_by=ev.changed_by,
+                        #slug=ev.slug
+                    )
+                    if c:
+                        print("- Created mirror Event: "+str(mirr.id)+" :: "+str(mirr))
+                        logger.info("- Created mirror Event: "+str(mirr.id)+" :: "+str(mirr))
+            elif ev.event_type == et_receive:
+                print("Its an orphan 'receive' event (with chain_tx) ev:"+str(ev.id)+' :: '+str(ev))
+                logger.warning("Its an orphan 'receive' event (with chain_tx) ev:"+str(ev.id)+' :: '+str(ev))
+                if not ev.event_type == ev.commitment.event_type:
+                    print('Ev receive orphan with wrong comm: FIXED ev.comm ?? co:'+str(ev.commitment.id)+'(et:'+str(ev.commitment.event_type)+'!!) comgive:'+str(comgive.id)+' comreci:'+str(comreci.id))
+                    logger.info('Ev receive orphan with wrong comm: FIX ev.comm ?? co:'+str(ev.commitment.id)+'(et:'+str(ev.commitment.event_type)+'!!) comgive:'+str(comgive.id)+' comreci:'+str(comreci.id))
+                    if comgive and comreci:
+                        ev.commitment = comreci
+                        #ev.save()
+                if comgive:
+                    print('Its a receive orphan: MAKE the give ev? co:'+str(ev.commitment.id)+'(et:'+str(ev.commitment.event_type)+') comgive:'+str(comgive))
+                    logger.info('Its a receive orphan: MAKE the give ev? co:'+str(ev.commitment.id)+'(et:'+str(ev.commitment.event_type)+') comgive:'+str(comgive))
+                    mirr, c = EconomicEvent.objects.get_or_create(
+                        event_type=et_give,
+                        event_date=ev.event_date,
+                        from_agent=ev.from_agent,
+                        to_agent=ev.to_agent,
+                        resource_type=ev.resource_type,
+                        resource=ev.resource,
+                        exchange_stage=ev.exchange_stage,
+                        process=ev.process,
+                        exchange=ev.exchange,
+                        transfer=ev.transfer,
+                        distribution=ev.distribution,
+                        context_agent=ev.context_agent,
+                        url=ev.url,
+                        description=ev.description,
+                        quantity=ev.quantity,
+                        unit_of_quantity=ev.unit_of_quantity,
+                        quality=ev.quality,
+                        value=ev.value,
+                        unit_of_value=ev.unit_of_value,
+                        price=ev.price,
+                        unit_of_price=ev.unit_of_price,
+                        commitment=comgive,
+                        is_contribution=ev.is_contribution,
+                        is_to_distribute=ev.is_to_distribute,
+                        accounting_reference=ev.accounting_reference,
+                        event_reference=ev.event_reference,
+                        created_by=ev.created_by,
+                        changed_by=ev.changed_by,
+                        #slug=ev.slug
+                    )
+                    if c:
+                        print("- Created mirror Event: "+str(mirr.id)+" :: "+str(mirr))
+                        logger.info("- Created mirror Event: "+str(mirr.id)+" :: "+str(mirr))
+            else:
+                print("Its an orphan 'receive' event (with chain_tx) ?? "+str(ev.id)+' :: '+str(ev))
+                logger.warning("Its an orphan 'receive' event (with chain_tx) ?? "+str(ev.id)+' :: '+str(ev))
         if mirr:
             if hasattr(mirr, 'chain_transaction') and mirr.chain_transaction:
-                print('-- Fix ev chain_transaction? compare ev:'+str(ev.id)+' ev-ch-tx:'+str(ev.chain_transaction.id)+' mir:'+str(mirr.id)+' mir-ch-tx:'+str(mirr.chain_transaction.id))
+                print('-- Fix ev chain_transaction?? compare ev:'+str(ev.id)+' ev-ch-tx:'+str(ev.chain_transaction.id)+' mir:'+str(mirr.id)+' mir-ch-tx:'+str(mirr.chain_transaction.id))
             else:
+                from multicurrency.models import BlockchainTransaction
                 chtx, c = BlockchainTransaction.objects.get_or_create(
                     event=mirr,
                     tx_hash=ev.chain_transaction.tx_hash,
@@ -312,6 +421,48 @@ def fixExchangeEvents(ex):
                 if c:
                     print('- Created MISSING BlockchainTransaction: '+str(chtx))
                     logger.info('- Created MISSING BlockchainTransaction: '+str(chtx))
+    elif len(toFix) == 2:
+        ev = toFix[0]
+        mir = ev.mirror_event()
+        if mir:
+            if mir == toFix[1]:
+                print(".. correct mirror mir:"+str(mir.id)+" ("+str(mir.event_type)+") for ev:"+str(ev.id)+" ("+str(ev.event_type)+")")
+                #print("mir.ex:"+str(mir.exchange.id)+' ev.ex:'+str(ev.exchange.id))
+                #print("mir.tx:"+str(mir.transfer.id)+' ev.tx:'+str(ev.transfer.id))
+                #print("mir.co:"+str(mir.commitment.id)+' ev.co:'+str(ev.commitment.id))
+                if mir.commitment == ev.commitment: # error, should be different
+                    mcom = mir.commitment
+                    print('.. fix comm.et:'+str(mcom.event_type))
+                    if mcom.event_type == et_receive:
+                        coms = Commitment.objects.filter(
+                            event_type=et_give,
+                            exchange_stage=mcom.exchange_stage,
+                            commitment_date=mcom.commitment_date,
+                            start_date=mcom.start_date,
+                            due_date=mcom.due_date,
+                            from_agent=mcom.from_agent,
+                            to_agent=mcom.to_agent,
+                            resource_type=mcom.resource_type,
+                            exchange=mcom.exchange,
+                            transfer=mcom.transfer,
+                            context_agent=mcom.context_agent,
+                            quantity=mcom.quantity,
+                            unit_of_quantity=mcom.unit_of_quantity,
+                        ).exclude(id=mcom.id)
+                        if len(coms) == 1:
+                            ecom = coms[0]
+                            print('evCOM: '+str(ecom.id)+" fevs: "+str(ecom.fulfilling_events()))
+                            if not ecom.fulfilling_events():
+                                ev.commitment = ecom
+                                ev.save()
+                                print("- FIXED commitment of event mirror! ev:"+str(ev.id)+' :: '+str(ev))
+            else:
+                print("ERROR: the mirror ev don't match?? ev:"+str(ev.id)+' mir:'+str(mir.id)+" for ex:"+str(ex.id))
+        else:
+            print("MISSING MIRROR EVT?")
+
+    print("Compare and fix the pair of events with chain-tx... toFix:"+str(toFix))
+
 
 
 """

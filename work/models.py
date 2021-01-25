@@ -519,6 +519,28 @@ class Project(models.Model):
                     loger.error("Not found any oauth for project: "+str(self.agent))
         return auth
 
+    def cryptoAddress(self, coin=None):
+        gates = self.payment_gateways()
+        #print('cryptoAddress! coin:'+str(coin)+' gates:'+str(coin in gates))
+        if coin in gates:
+            if coin == 'btc':
+                arr = str(gates[coin]['html']).split(' ')
+                #print('arr: '+str(arr))
+                for a in arr:
+                    if len(a) == 34: # = btc ?
+                        print('- found BTC in html: '+str(a))
+                        return a
+        return None
+
+    def cryptoAddrArr(self, coin=None):
+        gates = self.payment_gateways()
+        #print('cryptoAddrArr! coin:'+str(coin)+' gates:'+str(coin in gates))
+        if coin in gates:
+            #print('cryptoAddrArr! coin:'+str(coin)+' gate:'+str(gates[coin]))
+            if 'addrarr' in gates[coin] and len(gates[coin]['addrarr']):
+                #print('cryptoAddrArr! coin:'+str(coin)+' addrarr:'+str(gates[coin]['addrarr']))
+                return gates[coin]['addrarr']
+        return []
 
 
 class SkillSuggestion(models.Model):

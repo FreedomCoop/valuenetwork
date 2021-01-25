@@ -6771,6 +6771,7 @@ def exchange_logging_work(request, context_agent_id, exchange_type_id=None, exch
 
     elif exchange_id != "0": #existing exchange
         exchange = get_object_or_404(Exchange, id=exchange_id)
+        print('Edit exchange: '+str(exchange))
 
         if not exchange.context_agent == context_agent and not context_agent in exchange.related_agents():
             raise ValidationError("NOT VALID URL! please "+str(request.user.agent.agent)+" don't touch the urls manually...")
@@ -6856,25 +6857,26 @@ def exchange_logging_work(request, context_agent_id, exchange_type_id=None, exch
             }
             add_work_form = WorkEventContextAgentForm(initial=work_init, context_agent=context_agent)
 
-            fliped = []
-            for slot in slots:
-                slot.flip = False
-                slot.list_name = slot.show_name(context_agent)
-                if not slot.list_name == slot.name:
-                    slot.flip = True
-                    fliped.append(slot)
-            if len(fliped) < len(slots) and len(fliped) > 0:
-                for slot in slots:
-                    if not slot in fliped:
-                        slot.list_name = slot.show_name(context_agent, True) # 2nd arg is 'forced' (no need commitments or events)
-                        slot.flip = True
-                        #if slot.is_income:
-                        #    print("- Switch slot.is_income to False because is Fliped ?")
-                        #    #slot.is_income = False
-                        #else:
-                        #    print("- Switch slot.is_income to True because is Fliped ?")
-                        #    #slot.is_income = True
-                        fliped.append(slot)
+            print('... exchange before flips ...')
+            # fliped = []
+            # for slot in slots:
+            #     slot.flip = False
+            #     slot.list_name = slot.show_name(context_agent)
+            #     if not slot.list_name == slot.name:
+            #         slot.flip = True
+            #         fliped.append(slot)
+            # if len(fliped) < len(slots) and len(fliped) > 0:
+            #     for slot in slots:
+            #         if not slot in fliped:
+            #             slot.list_name = slot.show_name(context_agent, True) # 2nd arg is 'forced' (no need commitments or events)
+            #             slot.flip = True
+            #             #if slot.is_income:
+            #             #    print("- Switch slot.is_income to False because is Fliped ?")
+            #             #    #slot.is_income = False
+            #             #else:
+            #             #    print("- Switch slot.is_income to True because is Fliped ?")
+            #             #    #slot.is_income = True
+            #             fliped.append(slot)
 
             for slot in slots:
 

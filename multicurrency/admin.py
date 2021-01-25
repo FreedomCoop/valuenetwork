@@ -4,5 +4,7 @@ from multicurrency.models import *
 
 class BlockchainTransactionAdmin(admin.ModelAdmin):
     list_display = ('event', 'tx_hash', 'tx_fee', 'from_address', 'to_address', )
+    raw_id_fields = ["event"]
+
 
 admin.site.register(BlockchainTransaction, BlockchainTransactionAdmin)
