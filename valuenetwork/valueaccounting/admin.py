@@ -91,12 +91,14 @@ class TransferEconomicEventInline(admin.TabularInline):
     model = EconomicEvent
     fk_name = 'transfer'
     fields = ('event_type', 'event_date', 'resource_type', 'exchange_stage', 'quantity', 'unit_of_quantity', 'value', 'unit_of_value', 'from_agent', 'to_agent')
+    raw_id_fields = ["from_agent", "to_agent"]
 
 class TransferAdmin(admin.ModelAdmin):
     date_hierarchy = 'transfer_date'
     list_display = ('id', 'transfer_date', 'transfer_type', 'name', 'context_agent')
     list_filter = ['transfer_type']
     inlines = [ TransferEconomicEventInline ]
+    raw_id_fields = ["context_agent"]
 
 admin.site.register(Transfer, TransferAdmin)
 
@@ -116,12 +118,14 @@ class EconomicEventInline(admin.TabularInline):
     model = EconomicEvent
     fk_name = 'exchange'
     fields = ('event_type', 'event_date', 'resource_type', 'exchange_stage', 'quantity', 'unit_of_quantity', 'value', 'unit_of_value', 'from_agent', 'to_agent')
+    raw_id_fields = ["from_agent", "to_agent"]
 
 class ExchangeAdmin(admin.ModelAdmin):
     date_hierarchy = 'start_date'
     list_display = ('id', 'start_date', 'use_case', 'name', 'context_agent', 'exchange_type')
     list_filter = ['use_case', 'exchange_type']
     inlines = [ TransferInline, EconomicEventInline ]
+    raw_id_fields = ["context_agent"]
 
 admin.site.register(Exchange, ExchangeAdmin)
 
@@ -315,6 +319,7 @@ class EventInline(admin.TabularInline):
     model = EconomicEvent
     fk_name = 'process'
     fields = ('event_type', 'event_date', 'resource_type', 'resource', 'from_agent', 'to_agent', 'quantity', 'unit_of_quantity')
+    raw_id_fields = ["from_agent", "to_agent"]
 
 class ProcessAdmin(admin.ModelAdmin):
     date_hierarchy = 'start_date'
@@ -343,13 +348,13 @@ class ClaimEvent2Inline(admin.TabularInline):
 
 class EconomicEventAdmin(admin.ModelAdmin):
     date_hierarchy = 'event_date'
-    list_display = ('id', 'event_type', 'event_date', 'from_agent', 'to_agent', 'context_agent',
-        'process', 'exchange', 'transfer', 'resource_type', 'quantity', 'unit_of_quantity', 'description',)
+    list_display = ('id', 'event_type', 'event_date', 'from_agent', 'to_agent', 'context_agent', 'quantity', 'unit_of_quantity', 'resource_type', 'exchange', 'transfer', 'process', 'description',)
     list_filter = ['event_type', 'context_agent', 'resource_type', 'from_agent',]
     search_fields = ['description', 'process__name', 'event_type__name', 'from_agent__name', 'to_agent__name',
         'resource_type__name',]
-    list_editable = ['event_date', 'context_agent']
+    #list_editable = ['event_date', 'context_agent']
     inlines = [ ClaimEvent2Inline, ]
+    raw_id_fields = ["from_agent", "to_agent", "context_agent", "transfer", "exchange"]
 
 admin.site.register(EconomicEvent, EconomicEventAdmin)
 

@@ -300,6 +300,7 @@ class BlockchainTransaction(models.Model):
         output_vals = []
         outvals = []
         mesg = ''
+        mirbtx = self.mirror()
         if realamount:
             realamount = Decimal(realamount)
         if not self.tx_fee:
@@ -607,7 +608,7 @@ class BlockchainTransaction(models.Model):
                                         if val and self.event.quantity > val:
                                             print("FIXED ev:"+str(self.event.id)+' quantity:'+str(self.event.quantity)+' to real val:'+str(val)+' outfee:'+str(outfee))
                                             loger.info("FIXED ev:"+str(self.event.id)+' quantity:'+str(self.event.quantity)+' to real val:'+str(val)+' outfee:'+str(outfee))
-                                            mirbtx = self.mirror()
+
                                             if outfee and mirbtx:
                                                 if self.event.event_type == et_give:
                                                     self.event.quantity = val # + outfee
@@ -649,8 +650,17 @@ class BlockchainTransaction(models.Model):
 
                             if self.event:
                                 self.from_address = ' '.join(inputs)
-                                self.to_address = ' '.join(outputs)
+                                if foundadd:
+                                    self.to_address = foundadd
+                                else:
+                                    self.to_address = ' '.join(outputs)
                                 self.save()
+                                if mirbtx:
+                                    mirbtx.from_address = self.from_address
+                                    mirbtx.to_address = self.to_address
+                                    mirbtx.save()
+                                else:
+                                    raise ValidationError("MISSING chain_tx mirror! id:"+str(self.id))
                             #import pdb; pdb.set_trace()
 
                             return mesg
