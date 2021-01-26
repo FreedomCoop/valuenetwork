@@ -135,7 +135,8 @@ PAYMENT_GATEWAYS = {
         #    'url':'',
         #    'html':'Btc Address: <b>the btc address</b>',
         #    'unit':'BTC',
-        #    'margin':0.00000001
+        #    'margin':0.00000001,
+        #    'addrarr': ["BTC_address_ofTheProject'addrarr': ["1D7UWNrUxHRKAKLghnvRif7DPz7e2TBg1W"],"],
         #}
     }
 }

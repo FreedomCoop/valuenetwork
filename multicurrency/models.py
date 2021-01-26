@@ -313,6 +313,7 @@ class BlockchainTransaction(models.Model):
             if unit and unit.abbrev:
                 proj = None
                 proaddr = None
+                proaddrar = None
                 if self.event.to_agent and hasattr(self.event.to_agent, 'project'):
                     proj = self.event.to_agent.project
                     evtmir = self.event.mirror_event()
@@ -373,6 +374,9 @@ class BlockchainTransaction(models.Model):
                 else: # not fairs!  BTC and co
 
                     proaddr = proj.cryptoAddress(unit.abbrev)
+                    proaddrar = proj.cryptoAddrArr(unit.abbrev)
+                    if not proaddr and proaddrar:
+                        proaddr = proaddrar[0]
                     foundadd = None
                     foundval = None
                     key = 'url_'+unit.abbrev+'_tx_json'
