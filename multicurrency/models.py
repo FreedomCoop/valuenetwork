@@ -281,6 +281,16 @@ class BlockchainTransaction(models.Model):
             print("Error: An event without any relted exchange? ev:"+str(self.event.id))
         return None
 
+    def mirror(self):
+        mirs = BlockchainTransaction.objects.filter(tx_hash=self.tx_hash).exclude(id=self.id)
+        if len(mirs) == 1:
+            return mirs[0]
+        elif mirs:
+            #loger.error("More than one mirror of BlockchainTransaction? id:"+str(self.id)+' mirs:'+str(mirs))
+            #print("More than one mirror of BlockchainTransaction? id:"+str(self.id)+' mirs:'+str(mirs))
+            raise ValidationError("More than one mirror of BlockchainTransaction? id:"+str(self.id)+' mirs:'+str(mirs))
+        return None
+
     def update_data(self, realamount=None): #, oauth=None):
         url = None
         json = None
@@ -299,11 +309,13 @@ class BlockchainTransaction(models.Model):
                 #return mesg # cancel update?
             unit = self.unit()
             msg = None
+            evtmir = None
             if unit and unit.abbrev:
                 proj = None
                 proaddr = None
                 if self.event.to_agent and hasattr(self.event.to_agent, 'project'):
                     proj = self.event.to_agent.project
+                    evtmir = self.event.mirror_event()
 
                 if unit.abbrev == 'fair':
                     if self.event.to_agent.nick == "BotC":
@@ -358,7 +370,7 @@ class BlockchainTransaction(models.Model):
                         self.delete()
                         return mesg
 
-                else: # not fairs!
+                else: # not fairs!  BTC and co
 
                     proaddr = proj.cryptoAddress(unit.abbrev)
                     foundadd = None
@@ -433,7 +445,9 @@ class BlockchainTransaction(models.Model):
                                     print("outfee:"+str(outfee)+" type:"+str(type(outfee)))
                                     #outfee = remove_exponent(outfee)
                                     #print("outfee2:"+str(outfee)+" type:"+str(type(outfee)))
-                                    self.tx_fee = outfee
+
+                                    #self.tx_fee = outfee
+                                    #self.mirror().tx_fee = outfee
                                 else:
                                     raise ValidationError("negative fee?? json:"+str(json))
 
@@ -443,25 +457,21 @@ class BlockchainTransaction(models.Model):
                                     #raise ValidationError("Not yet suported various outputs for the crypto TX: "+str(json))
 
                                     if self.event.event_type.name == 'Give':
-                                        val = Decimal( (outval + fee) / DIVISOR).quantize(DECIMALS) #, settings.CRYPTO_DECIMALS)
+                                        val = Decimal( (outval) / DIVISOR).quantize(DECIMALS) # ( + fee), settings.CRYPTO_DECIMALS)
                                         if realamount:
-                                          print("- Is the same (give) realamount:"+str(realamount)+" val:"+str(val-outfee))
-                                          loger.info("- Is the same (give) realamount:"+str(realamount)+" val:"+str(val-outfee))
-                                          if not (realamount+outfee) == val:
-                                            if (val-outfee) == realamount and (val-outfee) == self.event.quantity:
-                                                print("- Is same (give) realamount == val:"+str(val))
-                                                #validval = val
-                                                #rest = 0
+                                          print("- Is the same (give) realamount:"+str(realamount)+" val:"+str(val))
+                                          loger.info("- Is the same (give) realamount:"+str(realamount)+" val:"+str(val))
+                                          if not (realamount) == val: # +outfee
 
-                                            if (realamount+outfee) < val:
-                                                rest = val - (realamount+outfee)
+                                            if (realamount) < val: # +outfee
+                                                rest = val - (realamount) #+outfee)
                                             else:
-                                                rest = (realamount+outfee) - val
+                                                rest = (realamount) - val #+outfee)
                                             jnreq = self.related_join_request()
                                             if jnreq:
                                                 if rest > jnreq.payment_margin():
-                                                    print("ev-give: Declared amount and chain discovered amount are too different!! rest:"+str(remove_exponent(rest))+" fee:"+str(outfee)+", found+fee:"+str(val)+" (type:"+str(type(val))+") - declared+fee:"+str(realamount+outfee)+"(type:"+str(type(realamount))+")")
-                                                    loger.info("ev-give: Declared amount and chain discovered amount are too different!! rest:"+str(remove_exponent(rest))+" fee:"+str(outfee)+", found+fee:"+str(val)+" (type:"+str(type(val))+") - declared+fee:"+str(realamount+outfee)+"(type:"+str(type(realamount))+")")
+                                                    print("ev-give: Declared amount and chain discovered amount are too different!! rest:"+str(remove_exponent(rest))+" fee:"+str(outfee)+", found+fee:"+str(val)+" (type:"+str(type(val))+") - declared:"+str(realamount)+"(type:"+str(type(realamount))+")")
+                                                    loger.info("ev-give: Declared amount and chain discovered amount are too different!! rest:"+str(remove_exponent(rest))+" fee:"+str(outfee)+", found+fee:"+str(val)+" (type:"+str(type(val))+") - declared:"+str(realamount)+"(type:"+str(type(realamount))+")")
                                                     #mesg += ("(give event): Declared amount and chain discovered amount are too different!! fee:"+str(outfee)+", found+fee:"+str(val)+" <> declared+fee:"+str(realamount+outfee)+" (rest:"+str(remove_exponent(rest))+")") #+"(type:"+str(type(realamount))+")")
                                                     #self.event.delete()
                                                     #self.delete()
@@ -494,12 +504,23 @@ class BlockchainTransaction(models.Model):
                                                 loger.info("UPDATE ev give quantity! qty:"+str(self.event.quantity)+" validval:"+str(validval)+" type:"+str(type(validval)))
                                                 self.event.quantity = validval
                                                 self.event.save()
+                                            if not evtmir.quantity == validval:
+                                                print("UPDATE evtmir give quantity! qty:"+str(evtmir.quantity)+" validval:"+str(validval)+" (type:"+str(type(validval))+") <> declared:"+str(realamount)+"(type:"+str(type(realamount))+")")
+                                                loger.info("UPDATE evtmir give quantity! qty:"+str(evtmir.quantity)+" validval:"+str(validval)+" type:"+str(type(validval)))
+                                                evtmir.quantity = validval
+                                                evtmir.save()
                                             if self.event.commitment:
                                                 if not self.event.commitment.quantity == validval:
                                                     print("UPDATE ev give commitment quantity! qty:"+str(self.event.commitment.quantity)+" validval:"+str(validval))
                                                     loger.info("UPDATE ev give commitment quantity! qty:"+str(self.event.commitment.quantity)+" validval:"+str(validval))
                                                     self.event.commitment.quantity = validval
                                                     self.event.commitment.save()
+                                            if evtmir.commitment:
+                                                if not evtmir.commitment.quantity == validval:
+                                                    print("UPDATE evtmir give commitment quantity! qty:"+str(evtmir.commitment.quantity)+" validval:"+str(validval))
+                                                    loger.info("UPDATE evtmir give commitment quantity! qty:"+str(evtmir.commitment.quantity)+" validval:"+str(validval))
+                                                    evtmir.commitment.quantity = validval
+                                                    evtmir.commitment.save()
                                             break
 
                                     elif self.event.event_type.name == 'Receive':
@@ -549,12 +570,23 @@ class BlockchainTransaction(models.Model):
                                                 loger.info("UPDATE ev receive quantity! qty:"+str(self.event.quantity)+" val:"+str(val))
                                                 self.event.quantity = val
                                                 self.event.save()
+                                            if not evtmir.quantity == validval: # mirror ev
+                                                print("UPDATE evtmir receive quantity! qty:"+str(evtmir.quantity)+" val:"+str(val)+" (type:"+str(type(val))+") - realamount:"+str(realamount)+"(type:"+str(type(realamount))+")")
+                                                loger.info("UPDATE evtmir receive quantity! qty:"+str(evtmir.quantity)+" val:"+str(val))
+                                                evtmir.quantity = val
+                                                evtmir.save()
                                             if self.event.commitment:
                                                 if not self.event.commitment.quantity == val:
                                                     print("UPDATE ev receive commitment quantity! qty:"+str(self.event.commitment.quantity)+" val:"+str(val))
                                                     loger.info("UPDATE ev receive commitment quantity! qty:"+str(self.event.commitment.quantity)+" val:"+str(val))
                                                     self.event.commitment.quantity = val
                                                     self.event.commitment.save()
+                                            if evtmir.commitment:
+                                                if not evtmir.commitment.quantity == val:
+                                                    print("UPDATE evtmir receive commitment quantity! qty:"+str(evtmir.commitment.quantity)+" val:"+str(val))
+                                                    loger.info("UPDATE evtmir receive commitment quantity! qty:"+str(evtmir.commitment.quantity)+" val:"+str(val))
+                                                    evtmir.commitment.quantity = val
+                                                    evtmir.commitment.save()
                                             break
                                     else:
                                         raise ValidationError("TX event type not supported: "+str(self.event.event_type.name))
@@ -571,23 +603,26 @@ class BlockchainTransaction(models.Model):
                                         if val and self.event.quantity > val:
                                             print("FIXED ev:"+str(self.event.id)+' quantity:'+str(self.event.quantity)+' to real val:'+str(val)+' outfee:'+str(outfee))
                                             loger.info("FIXED ev:"+str(self.event.id)+' quantity:'+str(self.event.quantity)+' to real val:'+str(val)+' outfee:'+str(outfee))
-                                            if outfee:
+                                            mirbtx = self.mirror()
+                                            if outfee and mirbtx:
                                                 if self.event.event_type == et_give:
-                                                    self.event.quantity = val + outfee
+                                                    self.event.quantity = val # + outfee
                                                 elif self.event.event_type == et_receive:
                                                     self.event.quantity = val
-                                                mir = self.event.mirror_event()
-                                                if mir:
-                                                    if mir.event_type == et_give:
-                                                        mir.quantity = val + outfee
-                                                    elif mir.event_type == et_receive:
-                                                        mir.quantity = val
-                                                    self.event.save()
-                                                    mir.save()
-                                                else:
-                                                    print("ERROR: Missing Mirror?? ev:"+str(self.event.id))
-                                                    loger.error("ERROR: Missing Mirror?? ev:"+str(self.event.id))
-                                                    mesg += "Error "
+
+                                                if not mirbtx == evtmir.chain_transaction:
+                                                    raise ValidationError("The ChainTx mirror is not the same as its event mirror chain_tx ?? ")
+                                                if evtmir.event_type == et_give:
+                                                    evtmir.quantity = val # + outfee
+                                                elif evtmir.event_type == et_receive:
+                                                    evtmir.quantity = val
+
+                                                # uncomment below to avoid scanning again the tx
+                                                #self.tx_fee = outfee
+                                                #mirbtx.tx_fee = outfee
+                                                self.event.save()
+                                                evtmir.save()
+
                                             else:
                                                 print("No outfee! don't fix the ev:"+str(self.event)+' nor mir:'+str(mir.id))
                                                 loger.info("No outfee! don't fix the ev:"+str(self.event)+' nor mir:'+str(mir.id))

@@ -6907,10 +6907,13 @@ def exchange_logging_work(request, context_agent_id, exchange_type_id=None, exch
                     "event_date": datetime.date.today()
                 }
                 slot.add_xfer_form = ContextTransferForm(initial=xfer_init, prefix="ATR" + str(slot.id), context_agent=context_agent, transfer_type=slot)
-                slot.create_role_formset = resource_role_context_agent_formset(prefix=str(slot.id))
-                ctx_qs = context_agent.related_all_agents_queryset()
-                for form in slot.create_role_formset.forms:
-                    form.fields["agent"].queryset = ctx_qs
+                if slot.can_create_resource:
+                    slot.create_role_formset = resource_role_context_agent_formset(prefix=str(slot.id))
+                    print('-- before ctx_qs contexts slot:'+str(slot.id))
+                    ctx_qs = context_agent.related_all_agents_queryset()
+                    print('-- after ctx_qs contexts slot:'+str(slot.id))
+                    for form in slot.create_role_formset.forms:
+                        form.fields["agent"].queryset = ctx_qs
 
                 commit_init = {
                     "from_agent": fa_init,
@@ -6923,8 +6926,11 @@ def exchange_logging_work(request, context_agent_id, exchange_type_id=None, exch
                 slot.add_ext_agent = ContextExternalAgent() #initial=None, prefix="AGN"+str(slot.id))#, context_agent=context_agent)
 
 
+
     else:
         raise ValidationError("System Error: No exchange or use case.")
+
+    print('-- end exchange ')
 
     return render(request, "work/exchange_logging_work.html", {
         "use_case": use_case,
