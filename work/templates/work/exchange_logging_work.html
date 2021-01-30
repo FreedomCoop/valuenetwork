@@ -741,7 +741,7 @@ h3.trtheading {
                                                 {% if evt.faircoin_transaction or evt.mirror_event.faircoin_transaction %}
                                                   &nbsp;  {{ evt.fairtx_link|safe }}
                                                 {% endif %}
-                                                {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}+ {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
+                                                {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}? {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
                                                 {% if logger or evt.created_by == request.user or evt.to_agent == agent or evt.to_agent in agent.managed_projects %}
                                                   {% if logger and not exchange.join_request and not exchange.join_request.agent == agent %}
                                                     <a href="#xferModal{{ evt.id }}" role="button" class="btn btn-info btn-mini-icon" data-toggle="modal">
@@ -840,7 +840,7 @@ h3.trtheading {
                                         {% if evt.faircoin_transaction or evt.mirror_event.faircoin_transaction %}
                                           &nbsp;  {{ evt.fairtx_link|safe }}
                                         {% endif %}
-                                        {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}+ {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
+                                        {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}? {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
                                         {% if logger or evt.created_by == request.user or evt.to_agent == agent or evt.to_agent in agent.managed_projects %}
                                           {% if logger and not exchange.join_request and not exchange.join_request.agent == agent %}
                                             <a href="#xferModal{{ evt.id }}" role="button" class="btn btn-info btn-mini-icon" data-toggle="modal">
@@ -1347,7 +1347,7 @@ h3.trtheading {
                                                 {% if evt.faircoin_transaction or evt.mirror_event.faircoin_transaction %}
                                                   &nbsp;  {{ evt.fairtx_link|safe }}
                                                 {% endif %}
-                                                {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}+ {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
+                                                {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}? {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
                                                 {% if logger or evt.created_by == request.user or evt.from_agent == agent or evt.from_agent in agent.managed_projects %}
                                                   {% if logger and not exchange.join_request %}
                                                     <a href="#xferModal{{ evt.id }}" role="button" class="btn btn-info btn-mini-icon" data-toggle="modal">
@@ -1446,7 +1446,7 @@ h3.trtheading {
                                         {% if evt.faircoin_transaction or evt.mirror_event.faircoin_transaction %}
                                           &nbsp;  {{ evt.fairtx_link|safe }}
                                         {% endif %}
-                                        {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}+ {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
+                                        {% if evt.chain_transaction %}&nbsp; <b><a href="{{ evt.chain_transaction.chain_link }}" target="_blank">CryptoTx</a></b> {% if not evt.chain_transaction.tx_fee %}? {{ evt.chain_transaction.update_data }}{% endif %} {% endif %}
                                         {% if logger or evt.created_by == request.user or evt.from_agent == agent or evt.from_agent in agent.managed_projects  %}
                                           {% if logger and not exchange.join_request and not exchange.join_request.agent == agent %}
                                             <a href="#xferModal{{ evt.id }}" role="button" class="btn btn-info btn-mini-icon" data-toggle="modal">

@@ -98,7 +98,7 @@ class TransferAdmin(admin.ModelAdmin):
     list_display = ('id', 'transfer_date', 'transfer_type', 'name', 'context_agent')
     list_filter = ['transfer_type']
     inlines = [ TransferEconomicEventInline ]
-    raw_id_fields = ["context_agent"]
+    raw_id_fields = ["context_agent", "exchange"]
 
 admin.site.register(Transfer, TransferAdmin)
 

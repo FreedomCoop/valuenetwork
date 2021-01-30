@@ -2053,9 +2053,10 @@ class JoinRequest(models.Model):
                         # if has various commitments? TODO
                         commit_pay = coms[0]
                         if len(coms) > 1 and coms[1]:
-                          commit_pay2 = coms[1]
+                            commit_pay2 = coms[1]
                         if not commit_pay2:
-                          commit_pay2 = commit_pay
+                            loger.warning("Can't find the mirror commitment for com:"+str(commit_pay.id)+" when updating status of jnreq:"+str(self.id)+' ... use same comm??')
+                            commit_pay2 = commit_pay
 
                     if status == 'complete' or status == 'published':
 
@@ -2074,10 +2075,15 @@ class JoinRequest(models.Model):
                                     print("...repair event? qty:"+str(evt.quantity)+" tx:"+str(evt.transfer.name)+" rt:"+str(evt.resource_type)+" ca:"+str(evt.context_agent)+" from:"+str(evt.from_agent)+" to:"+str(evt.to_agent))
                                     print("...amountpay:"+str(amountpay)+" unitofqty:"+str(evt.unit_of_quantity)+" fairtx:"+str(fairtx)+" rs:"+str(evt.resource))
                                     if not evt.quantity and amountpay and not fairtx and evt.transfer == xfer_pay:
+                                        mir = evt.mirror_event()
                                         print("CHANGED evt:"+str(evt.id)+" qty:0 to "+str(amountpay))
                                         loger.info("CHANGED evt:"+str(evt.id)+" qty:0 to "+str(amountpay))
                                         evt.quantity = amountpay
                                         evt.save()
+                                        if mir and mir.quantity != amountpay:
+                                            loger.info("CHANGED also mirror evt:"+str(mir.id)+" qty:0 to "+str(amountpay))
+                                            mir.quantity = amountpay
+                                            mir.save()
                                 if txid and evt.unit_of_quantity.is_currency():
                                     print("Transfer with a txid, REPAIR? unit:"+unit.abbrev+" project:"+self.project.agent.nick)
                                     loger.info("Transfer with a txid, REPAIR? unit:"+unit.abbrev+" project:"+self.project.agent.nick)
@@ -2097,6 +2103,18 @@ class JoinRequest(models.Model):
                                             if created:
                                                 print("- created MultiwalletTransaction (repair evt): "+str(tx))
                                                 loger.info("- created MultiwalletTransaction (repair evt): "+str(tx))
+                                        mir = evt.mirror_event()
+                                        if hasattr(mir, 'multiwallet_transaction'):
+                                            mtx = mir.multiwallet_transaction
+                                        else:
+                                            from multicurrency.models import MultiwalletTransaction
+                                            mtx, created = MultiwalletTransaction.objects.get_or_create(
+                                                tx_id = txid,
+                                                event = mir)
+                                            if created:
+                                                print("- created MultiwalletTransaction (repair mir evt): "+str(mtx))
+                                                loger.info("- created MultiwalletTransaction (repair mir evt): "+str(mtx))
+
                                         oauth = self.project.multiwallet_auth()
                                         msg = tx.update_data(oauth, request, realamount)
                                         if not msg == '':
