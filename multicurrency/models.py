@@ -409,7 +409,10 @@ class BlockchainTransaction(models.Model):
                             if 'inputs' in json:
                                 for inp in json['inputs']:
                                     if 'prev_out' in inp:
-                                        if 'hash' in inp['prev_out']:
+                                        if 'addr' in inp['prev_out']:
+                                            inputs.append(inp['prev_out']['addr'])
+                                            input_vals.append(inp['prev_out']['value'])
+                                        elif 'hash' in inp['prev_out']:
                                             inputs.append(inp['prev_out']['hash'])
                                             input_vals.append(inp['prev_out']['value'])
                                         else:
@@ -423,20 +426,7 @@ class BlockchainTransaction(models.Model):
                                 mesg += ("tx has no inputs? json:"+str(json))
                             if 'out' in json:
                                 for out in json['out']:
-                                    if 'hash' in out:
-                                        if out['hash'] in inputs:
-                                            print("tx skip output to same input")
-                                        else:
-                                            if proj and proaddr:
-                                                if out['hash'] == proaddr or out['hash'] in proj.cryptoAddrArr(unit.abbrev):
-                                                    print("Found proj crypto address!!")
-                                                    foundadd = out['hash']
-                                                    foundval = out['value']
-                                                    #outvals.append(out['value'])
-                                            outputs.append(out['hash'])
-                                            outvals.append(out['value'])
-                                        output_vals.append(out['value'])
-                                    elif 'addr' in out:
+                                    if 'addr' in out:
                                         if out['addr'] in inputs:
                                             print("tx skip output to same input")
                                         else:
@@ -447,6 +437,19 @@ class BlockchainTransaction(models.Model):
                                                     foundval = out['value']
                                                     #outvals.append(out['value'])
                                             outputs.append(out['addr'])
+                                            outvals.append(out['value'])
+                                        output_vals.append(out['value'])
+                                    elif 'hash' in out:
+                                        if out['hash'] in inputs:
+                                            print("tx skip output to same input")
+                                        else:
+                                            if proj and proaddr:
+                                                if out['hash'] == proaddr or out['hash'] in proj.cryptoAddrArr(unit.abbrev):
+                                                    print("Found proj crypto address!!")
+                                                    foundadd = out['hash']
+                                                    foundval = out['value']
+                                                    #outvals.append(out['value'])
+                                            outputs.append(out['hash'])
                                             outvals.append(out['value'])
                                         output_vals.append(out['value'])
                                     else:
