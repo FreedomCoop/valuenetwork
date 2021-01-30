@@ -436,6 +436,19 @@ class BlockchainTransaction(models.Model):
                                             outputs.append(out['hash'])
                                             outvals.append(out['value'])
                                         output_vals.append(out['value'])
+                                    elif 'addr' in out:
+                                        if out['addr'] in inputs:
+                                            print("tx skip output to same input")
+                                        else:
+                                            if proj and proaddr:
+                                                if out['addr'] == proaddr or out['addr'] in proj.cryptoAddrArr(unit.abbrev):
+                                                    print("Found proj crypto address!!")
+                                                    foundadd = out['addr']
+                                                    foundval = out['value']
+                                                    #outvals.append(out['value'])
+                                            outputs.append(out['addr'])
+                                            outvals.append(out['value'])
+                                        output_vals.append(out['value'])
                                     else:
                                         print("tx output without address? out:"+str(out))
                                         mesg += ("tx output without address? out:"+str(out))
@@ -648,7 +661,7 @@ class BlockchainTransaction(models.Model):
 
                                     return mesg
                             else:
-                                raise ValidationError("not tx totals? total_in:"+str(total_in)+" total_out:"+str(total_out))
+                                raise ValidationError("not tx totals? total_in:"+str(total_in)+" total_out:"+str(total_out)+' mesg:'+mesg)
 
                             if self.event:
                                 self.from_address = ' '.join(inputs)
