@@ -241,6 +241,8 @@ class BlockchainTransaction(models.Model):
     to_address = models.CharField(_('To Address'), max_length=128, blank=True, null=True) # 33 btc, 34 fair, 42 eth
     #amount = models.DecimalField(_('Quantity'), max_digits=20, decimal_places=9, default=0) # is already in the event
     tx_fee = models.DecimalField(_('Transaction Fee'), max_digits=20, decimal_places=9, default=0)
+    #used_ratio = models.DecimalField(_('Used unit ratio'), max_digits=20, decimal_places=9, blank=True, null=True)
+
     #include_fee = models.BooleanField('Quantity includes fee', default=False) # comparing events qty we see which is lower due the fee
     # will be true for sender give event, and false for receiver event
 
@@ -407,12 +409,12 @@ class BlockchainTransaction(models.Model):
                             if 'inputs' in json:
                                 for inp in json['inputs']:
                                     if 'prev_out' in inp:
-                                        if 'addr' in inp['prev_out']:
-                                            inputs.append(inp['prev_out']['addr'])
+                                        if 'hash' in inp['prev_out']:
+                                            inputs.append(inp['prev_out']['hash'])
                                             input_vals.append(inp['prev_out']['value'])
                                         else:
-                                            print("tx has no addr in inputs prev_out? inp['prev_out']:"+str(inp['prev_out']))
-                                            mesg += ("tx has no addr in inputs prev_out? inp['prev_out']:"+str(inp['prev_out']))
+                                            print("tx has no hash in inputs prev_out? inp['prev_out']:"+str(inp['prev_out']))
+                                            mesg += ("tx has no hash in inputs prev_out? inp['prev_out']:"+str(inp['prev_out']))
                                     else:
                                         print("tx has no prev_out? inp:"+str(inp))
                                         mesg += ("tx has no prev_out? inp:"+str(inp))
@@ -421,17 +423,17 @@ class BlockchainTransaction(models.Model):
                                 mesg += ("tx has no inputs? json:"+str(json))
                             if 'out' in json:
                                 for out in json['out']:
-                                    if 'addr' in out:
-                                        if out['addr'] in inputs:
+                                    if 'hash' in out:
+                                        if out['hash'] in inputs:
                                             print("tx skip output to same input")
                                         else:
                                             if proj and proaddr:
-                                                if out['addr'] == proaddr or out['addr'] in proj.cryptoAddrArr(unit.abbrev):
+                                                if out['hash'] == proaddr or out['hash'] in proj.cryptoAddrArr(unit.abbrev):
                                                     print("Found proj crypto address!!")
-                                                    foundadd = out['addr']
+                                                    foundadd = out['hash']
                                                     foundval = out['value']
                                                     #outvals.append(out['value'])
-                                            outputs.append(out['addr'])
+                                            outputs.append(out['hash'])
                                             outvals.append(out['value'])
                                         output_vals.append(out['value'])
                                     else:
@@ -445,7 +447,7 @@ class BlockchainTransaction(models.Model):
                             total_out = sum(out for out in output_vals)
                             if total_in and total_out:
                                 fee = total_in - total_out
-                                if fee > 0:
+                                if fee and fee > 0:
                                     outfee = Decimal(str(fee / DIVISOR)).quantize(DECIMALS) #, settings.CRYPTO_DECIMALS)
                                     print("outfee:"+str(outfee)+" type:"+str(type(outfee)))
                                     #outfee = remove_exponent(outfee)
