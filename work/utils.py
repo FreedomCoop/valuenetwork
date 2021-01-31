@@ -302,6 +302,7 @@ def fixExchangeEvents(ex):
 
     if not len(toFix):
         return False
+    #logger.info('EX:'+ex.id+' toFix: '+str(toFix))
 
     et_give = EventType.objects.get(name="Give")
     et_receive = EventType.objects.get(name="Receive")
@@ -435,12 +436,14 @@ def fixExchangeEvents(ex):
         if mir:
             if mir == toFix[1]:
                 print(".. correct mirror mir:"+str(mir.id)+" ("+str(mir.event_type)+") for ev:"+str(ev.id)+" ("+str(ev.event_type)+")")
+                logger.info(".. correct mirror mir:"+str(mir.id)+" ("+str(mir.event_type)+") for ev:"+str(ev.id)+" ("+str(ev.event_type)+")")
                 #print("mir.ex:"+str(mir.exchange.id)+' ev.ex:'+str(ev.exchange.id))
                 #print("mir.tx:"+str(mir.transfer.id)+' ev.tx:'+str(ev.transfer.id))
                 #print("mir.co:"+str(mir.commitment.id)+' ev.co:'+str(ev.commitment.id))
                 if mir.commitment == ev.commitment: # error, should be different
                     mcom = mir.commitment
                     print('.. fix comm.et:'+str(mcom.event_type))
+                    logger.info('.. fix comm.et:'+str(mcom.event_type))
                     if mcom.event_type == et_receive:
                         coms = Commitment.objects.filter(
                             event_type=et_give,
@@ -464,6 +467,12 @@ def fixExchangeEvents(ex):
                                 ev.commitment = ecom
                                 ev.save()
                                 print("- FIXED commitment of event mirror! ev:"+str(ev.id)+' :: '+str(ev))
+                                logger.warning("- FIXED commitment of event mirror! ev:"+str(ev.id)+' :: '+str(ev))
+                        else:
+                            logger.error("Found more than one Commitment ?? "+str(coms))
+                    elif mcom.event_type == et_give:
+                        logger.error("Its a give commitment ? "+str(mcom)+" for ev.et:"+str(ev.event_type))
+
             else:
                 print("ERROR: the mirror ev don't match?? ev:"+str(ev.id)+' mir:'+str(mir.id)+" for ex:"+str(ex.id))
                 logger.error("ERROR: the mirror ev don't match?? ev:"+str(ev.id)+' mir:'+str(mir.id)+" for ex:"+str(ex.id))

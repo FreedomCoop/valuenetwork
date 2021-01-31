@@ -2,7 +2,7 @@
 from decimal import Decimal
 import requests
 import logging
-loger = logging.getLogger("multicurrency")
+loger = logging.getLogger("ocp") #multicurrency")
 from datetime import date, datetime
 
 from django.db import models
