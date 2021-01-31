@@ -445,9 +445,9 @@ def fixExchangeEvents(ex):
                     print('.. fix comm.et:'+str(mcom.event_type))
                     logger.info('.. fix comm.et:'+str(mcom.event_type))
                     if mcom.event_type == et_receive:
-                        coms =  ev.transfer.commitments.all()
+                        comss =  ev.transfer.commitments.all()
 
-                        coms = coms.exclude(id=mcom.id)
+                        coms = comss.exclude(id=mcom.id)
                         if len(coms) == 1:
                             ecom = coms[0]
                             fevs = ecom.fulfilling_events()
@@ -463,7 +463,10 @@ def fixExchangeEvents(ex):
                                     for fe in fevs:
                                         logger.info("Found fulfilling_event! fe: "+str(fe))
                                 if not ecom.event_type == ev.event_type and ecom.event_type == mir.event_type and mcom.event_type == ev.event_type:
-                                    logger.error("Inverted event_types?? ecom.et == mir.et ! mcon.et == ev.et !  mcom.et:"+str(mcom.event_type))
+                                    logger.error("Inverted event_types?? ecom.et == mir.et ! mcon.et == ev.et !  comss: "+str(comss))
+                                    if not ev.commitment.event_type == ev.event_type and not mir.commitment.event_type == mir.event_type:
+                                        logger.warning("FIX switch ev.com and mir.com ?")
+
 
                         elif not coms:
                             logger.error("Not found any Commitment for ev.transfer: "+str(ev.transfer.id))
