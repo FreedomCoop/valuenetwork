@@ -452,7 +452,7 @@ def fixExchangeEvents(ex):
                             ecom = coms[0]
                             fevs = ecom.fulfilling_events()
                             print('evCOM: '+str(ecom.id)+" com.et:"+str(ecom.event_type)+" ev.et:"+str(ev.event_type)+" fevs: "+str(fevs))
-                            logger.info('evCOM: '+str(ecom.id)+" com.et:"+str(ecom.event_type)+" ev.et:"+str(ev.event_type)+" fevs: "+str(fevs))
+                            logger.info('evCOM: '+str(ecom.id)+" ecom.et:"+str(ecom.event_type)+" ev.et:"+str(ev.event_type)+" ev.co:"+str(ev.commitment.id)+" ev.co.et:"+str(ev.commitment.event_type)+" miCOM: "+str(mcom.id)+" mcom.et:"+str(mcom.event_type)+" fevs: "+str(fevs))
                             if not fevs and ecom.event_type == ev.event_type:
                                 ev.commitment = ecom
                                 ev.save()
@@ -462,6 +462,8 @@ def fixExchangeEvents(ex):
                                 if fevs:
                                     for fe in fevs:
                                         logger.info("Found fulfilling_event! fe: "+str(fe))
+                                if not ecom.event_type == ev.event_type and ecom.event_type == mir.event_type:
+                                    logger.error("Inverted event_types?? ecom.et == mir.et ! mcom.et:"+str(mcom.event_type))
 
                         elif not coms:
                             logger.error("Not found any Commitment for ev.transfer: "+str(ev.transfer.id))
