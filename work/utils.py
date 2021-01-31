@@ -469,7 +469,15 @@ def fixExchangeEvents(ex):
                                         if not mir.commitment.event_type == mir.event_type:
                                             logger.warning("FIX switch ev.com and mir.com ?")
                                     elif not mir.commitment.event_type == mir.event_type:
-                                        logger.warning("FIX mir.com ?")
+                                        logger.warning("FIX mir.com ? ")
+                                        if mir.commitment == ev.commitment:
+                                            logger.error("Both ev and mir have the same commitment ??")
+                                            if mcom == ev.commitment and ecom == mir.commitment:
+                                                logger.warning("SWITCH ev and mir coms ?")
+                                                ev.commitment = ecom
+                                                #ev.save()
+                                                mir.commitment = mcom
+                                                #mir.save()
 
 
                         elif not coms:
