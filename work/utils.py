@@ -445,29 +445,19 @@ def fixExchangeEvents(ex):
                     print('.. fix comm.et:'+str(mcom.event_type))
                     logger.info('.. fix comm.et:'+str(mcom.event_type))
                     if mcom.event_type == et_receive:
-                        coms = Commitment.objects.filter(
-                            event_type=et_give,
-                            exchange_stage=mcom.exchange_stage,
-                            commitment_date=mcom.commitment_date,
-                            start_date=mcom.start_date,
-                            due_date=mcom.due_date,
-                            from_agent=mcom.from_agent,
-                            to_agent=mcom.to_agent,
-                            resource_type=mcom.resource_type,
-                            exchange=mcom.exchange,
-                            transfer=mcom.transfer,
-                            context_agent=mcom.context_agent,
-                            quantity=mcom.quantity,
-                            unit_of_quantity=mcom.unit_of_quantity,
-                        ).exclude(id=mcom.id)
+                        coms =  ev.transfer.commitments.all()
+                        
+                        coms = coms.exclude(id=mcom.id)
                         if len(coms) == 1:
                             ecom = coms[0]
-                            print('evCOM: '+str(ecom.id)+" fevs: "+str(ecom.fulfilling_events.all()))
-                            if not ecom.fulfilling_events.all():
+                            print('evCOM: '+str(ecom.id)+" et:"+str(ecom.event_type)+" fevs: "+str(ecom.fulfilling_events()))
+                            if not ecom.fulfilling_events() and ecom.event_type == ev.event_type:
                                 ev.commitment = ecom
                                 ev.save()
                                 print("- FIXED commitment of event mirror! ev:"+str(ev.id)+' :: '+str(ev))
                                 logger.warning("- FIXED commitment of event mirror! ev:"+str(ev.id)+' :: '+str(ev))
+                        elif not coms:
+                            logger.error("Not found any Commitment for ev.transfer: "+str(ev.transfer.id))
                         else:
                             logger.error("Found more than one Commitment ?? "+str(coms))
                     elif mcom.event_type == et_give:
