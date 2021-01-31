@@ -280,7 +280,15 @@ def fixExchangeEvents(ex):
         logger.warning("Can't fix events in ex:"+str(ex.id)+" without jnreq! ")
         print("Can't fix events in ex:"+str(ex.id)+" without jnreq! ")
         return False
-    evs = ex.events.all()
+    evs = ex.xfer_events()
+    #coms = ex.xfer_commitments()
+    txs = ex.transfers.all()
+    for tx in txs:
+        es = tx.events.all()
+        for e in es:
+            if not e in evs:
+                logger.warning("Added Missing Ev:"+str(e.id)+" to ex:"+str(ex.id))
+                evs.append(e)
     #logger.info('EX:'+ex.name+' EVS: '+str(evs))
     #print('EX:'+ex.name+' EVS: '+str(evs))
 
@@ -451,8 +459,8 @@ def fixExchangeEvents(ex):
                         ).exclude(id=mcom.id)
                         if len(coms) == 1:
                             ecom = coms[0]
-                            print('evCOM: '+str(ecom.id)+" fevs: "+str(ecom.fulfilling_events()))
-                            if not ecom.fulfilling_events():
+                            print('evCOM: '+str(ecom.id)+" fevs: "+str(ecom.fulfilling_events.all()))
+                            if not ecom.fulfilling_events.all():
                                 ev.commitment = ecom
                                 ev.save()
                                 print("- FIXED commitment of event mirror! ev:"+str(ev.id)+' :: '+str(ev))

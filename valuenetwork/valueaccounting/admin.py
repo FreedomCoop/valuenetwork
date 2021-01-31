@@ -90,7 +90,7 @@ admin.site.register(ClaimEvent, ClaimEventAdmin)
 class TransferEconomicEventInline(admin.TabularInline):
     model = EconomicEvent
     fk_name = 'transfer'
-    fields = ('event_type', 'event_date', 'resource_type', 'exchange_stage', 'quantity', 'unit_of_quantity', 'value', 'unit_of_value', 'from_agent', 'to_agent')
+    fields = ('id', 'event_type', 'event_date', 'resource_type', 'exchange_stage', 'quantity', 'unit_of_quantity', 'value', 'unit_of_value', 'from_agent', 'to_agent')
     raw_id_fields = ["from_agent", "to_agent"]
 
 class TransferAdmin(admin.ModelAdmin):
