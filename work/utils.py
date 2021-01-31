@@ -480,9 +480,9 @@ def fixExchangeEvents(ex):
                                                     ev.commitment = other
                                                     #ev.save()
                                                 elif other.event_type == mir.event_type and not other.event_type == ev.event_type:
-                                                    logger.warning("REPAIR mir.event_type !! ")
+                                                    logger.warning("REPAIRED mir.event_type !! changed mir.co:"+str(mir.commitment.id)+" for the other com:"+str(other.id)+" to the ev mir:"+str(mir.id))
                                                     mir.commitment = other
-                                                    #mir.save()
+                                                    mir.save()
                                             if mcom.event_type == ev.commitment.event_type and mcom == mir.commitment:
                                                 logger.warning("SWITCH ev and mir coms ?")
                                                 ev.commitment = ecom
