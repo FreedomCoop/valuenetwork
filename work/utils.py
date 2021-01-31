@@ -464,8 +464,12 @@ def fixExchangeEvents(ex):
                                         logger.info("Found fulfilling_event! fe: "+str(fe))
                                 if not ecom.event_type == ev.event_type and ecom.event_type == mir.event_type and mcom.event_type == ev.event_type:
                                     logger.error("Inverted event_types?? ecom.et == mir.et ! mcon.et == ev.et !  comss: "+str(comss))
-                                    if not ev.commitment.event_type == ev.event_type and not mir.commitment.event_type == mir.event_type:
-                                        logger.warning("FIX switch ev.com and mir.com ?")
+                                    if not ev.commitment.event_type == ev.event_type:
+                                        logger.warning("FIX ev.com ?")
+                                        if not mir.commitment.event_type == mir.event_type:
+                                            logger.warning("FIX switch ev.com and mir.com ?")
+                                    elif not mir.commitment.event_type == mir.event_type:
+                                        logger.warning("FIX mir.com ?")
 
 
                         elif not coms:
