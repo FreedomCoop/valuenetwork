@@ -470,7 +470,10 @@ class BlockchainTransaction(models.Model):
                                     ofee = str(fee / DIVISOR)
                                     print("ofee: "+str(ofee))
                                     loger.info("ofee: "+str(ofee))
-                                    outfee = Decimal(ofee).quantize(DECIMALS) #, settings.CRYPTO_DECIMALS)
+                                    try:
+                                        outfee = Decimal(ofee).quantize(DECIMALS) #, settings.CRYPTO_DECIMALS)
+                                    except InvalidOperation:
+                                        raise ValidationError("Why invalid? "+str(ofee))
                                     print("outfee:"+str(outfee)+" type:"+str(type(outfee)))
                                     #outfee = remove_exponent(outfee)
                                     #print("outfee2:"+str(outfee)+" type:"+str(type(outfee)))

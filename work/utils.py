@@ -458,8 +458,10 @@ def fixExchangeEvents(ex):
                                 print("- FIXED commitment of event mirror! ev:"+str(ev.id)+' :: '+str(ev))
             else:
                 print("ERROR: the mirror ev don't match?? ev:"+str(ev.id)+' mir:'+str(mir.id)+" for ex:"+str(ex.id))
+                logger.error("ERROR: the mirror ev don't match?? ev:"+str(ev.id)+' mir:'+str(mir.id)+" for ex:"+str(ex.id))
         else:
             print("MISSING MIRROR EVT?")
+            logger.error("MISSING MIRROR EVT?")
 
     print("Compare and fix the pair of events with chain-tx... toFix:"+str(toFix))
 
