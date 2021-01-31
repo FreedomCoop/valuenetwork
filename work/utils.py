@@ -446,16 +446,23 @@ def fixExchangeEvents(ex):
                     logger.info('.. fix comm.et:'+str(mcom.event_type))
                     if mcom.event_type == et_receive:
                         coms =  ev.transfer.commitments.all()
-                        
+
                         coms = coms.exclude(id=mcom.id)
                         if len(coms) == 1:
                             ecom = coms[0]
-                            print('evCOM: '+str(ecom.id)+" et:"+str(ecom.event_type)+" fevs: "+str(ecom.fulfilling_events()))
-                            if not ecom.fulfilling_events() and ecom.event_type == ev.event_type:
+                            fevs = ecom.fulfilling_events()
+                            print('evCOM: '+str(ecom.id)+" com.et:"+str(ecom.event_type)+" ev.et:"+str(ev.event_type)+" fevs: "+str(fevs))
+                            logger.info('evCOM: '+str(ecom.id)+" com.et:"+str(ecom.event_type)+" ev.et:"+str(ev.event_type)+" fevs: "+str(fevs))
+                            if not fevs and ecom.event_type == ev.event_type:
                                 ev.commitment = ecom
                                 ev.save()
                                 print("- FIXED commitment of event mirror! ev:"+str(ev.id)+' :: '+str(ev))
                                 logger.warning("- FIXED commitment of event mirror! ev:"+str(ev.id)+' :: '+str(ev))
+                            else:
+                                if fevs:
+                                    for fe in fevs:
+                                        logger.info("Found fulfilling_event! fe: "+str(fe))
+
                         elif not coms:
                             logger.error("Not found any Commitment for ev.transfer: "+str(ev.transfer.id))
                         else:
