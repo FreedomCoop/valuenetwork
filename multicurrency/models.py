@@ -415,7 +415,7 @@ class BlockchainTransaction(models.Model):
                                             inputs.append(inp['prev_out']['hash'])
                                         else:
                                             print("tx has no addr or hash in inputs prev_out? inp['prev_out']:"+str(inp['prev_out']))
-                                            mesg += ("tx has no addr or hash in inputs prev_out? inp['prev_out']:"+str(inp))
+                                            #mesg += ("tx has no addr or hash in inputs prev_out? inp['prev_out']:"+str(inp))
                                         input_vals.append(inp['prev_out']['value'])
                                     else:
                                         print("tx has no prev_out? inp:"+str(inp))
