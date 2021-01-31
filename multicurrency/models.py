@@ -423,6 +423,7 @@ class BlockchainTransaction(models.Model):
                                         mesg += ("tx has no prev_out? inp:"+str(inp))
                             else:
                                 print("tx has no inputs? json:"+str(json))
+                                loger.warning("tx has no inputs? json:"+str(json))
                                 mesg += ("tx has no inputs? json:"+str(json))
                             if 'out' in json:
                                 for out in json['out']:
@@ -454,9 +455,11 @@ class BlockchainTransaction(models.Model):
                                         output_vals.append(out['value'])
                                     else:
                                         print("tx output without address? out:"+str(out))
-                                        mesg += ("tx output without address? out:"+str(out))
+                                        #loger.info("tx output without address? out:"+str(out))
+                                        #mesg += ("tx output without address? out:"+str(out))
                             else:
                                 print("tx without outputs? json:"+str(json))
+                                loger.warning("tx without outputs? json:"+str(json))
                                 mesg += ("tx without outputs? json:"+str(json))
 
                             total_in = sum(inp for inp in input_vals)
@@ -464,7 +467,10 @@ class BlockchainTransaction(models.Model):
                             if total_in and total_out:
                                 fee = total_in - total_out
                                 if fee and fee > 0:
-                                    outfee = Decimal(str(fee / DIVISOR)).quantize(DECIMALS) #, settings.CRYPTO_DECIMALS)
+                                    ofee = str(fee / DIVISOR)
+                                    print("ofee: "+str(ofee))
+                                    loger.info("ofee: "+str(ofee))
+                                    outfee = Decimal(ofee).quantize(DECIMALS) #, settings.CRYPTO_DECIMALS)
                                     print("outfee:"+str(outfee)+" type:"+str(type(outfee)))
                                     #outfee = remove_exponent(outfee)
                                     #print("outfee2:"+str(outfee)+" type:"+str(type(outfee)))
