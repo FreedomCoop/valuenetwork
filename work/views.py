@@ -6007,14 +6007,14 @@ def exchanges_all(request, agent_id): #all types of exchanges for one context ag
             meta = metas[0]
             totdate = meta.changed_date
             if last_date:
-                if last_date > totdate:
+                if last_date > totdate or ('rebuild' in request.GET and request.GET['rebuild']*1 == '1'):
                     print("REBUILD totals!")
                     total_transfers = rebuild_totals(agent, exchanges_by_type)
                     meta.text = json.dumps(total_transfers)
                     meta.save()
                 else:
                     if meta.text:
-                        print("Cached totals...")
+                        print("Cached totals... ") #+str(request.GET['rebuild']*1))
                         total_transfers = json.loads(meta.text)
                     else:
                         total_transfers = rebuild_totals(agent, exchanges_by_type)
