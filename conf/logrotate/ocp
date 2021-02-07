@@ -1,7 +1,7 @@
-/home/ocp/log/ocp_debug.log {
+/home/ocp/log/*.log {
         daily
         missingok
-        rotate 180
+        rotate 100
         compress
         delaycompress
         notifempty
